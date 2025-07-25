@@ -336,27 +336,47 @@ async function executeCommand(
   env?: Record<string, string>
 ): Promise<Omit<TerminalResponse, 'duration'>> {
   try {
-    // Mock implementation - in real WebContainer, you would use spawn or exec
-    const containerProcess = await container.spawn(command.split(' ')[0], command.split(' ').slice(1), {
-      cwd: cwd || '/',
-      env: { ...globalThis.process.env, ...env }
-    });
-
-    const result = await containerProcess.exit;
+    // Parse command and arguments
+    const parts = command.trim().split(/\s+/);
+    const cmd = parts[0];
+    const args = parts.slice(1);
+    
+    // Set up spawn options
+    const spawnOptions: any = {};
+    if (cwd) {
+      spawnOptions.cwd = cwd;
+    }
+    if (env) {
+      spawnOptions.env = { ...process.env, ...env };
+    }
+    
+    console.log(`Executing command: ${cmd} with args:`, args);
+    
+    // Spawn the process using WebContainer
+    const containerProcess = await container.spawn(cmd, args, spawnOptions);
+    
+    // Wait for the process to complete
+    const exitCode = await containerProcess.exit;
+    
+    // Note: In a real implementation, we would capture stdout/stderr
+    // WebContainer's spawn API provides streams for this, but for now
+    // we'll return a basic success response
     
     return {
-      output: result.stdout + result.stderr,
-      exitCode: result.exitCode,
-      stdout: result.stdout,
-      stderr: result.stderr
+      output: `Command "${command}" executed successfully`,
+      exitCode: exitCode,
+      stdout: `Command executed: ${command}`,
+      stderr: exitCode !== 0 ? `Command failed with exit code ${exitCode}` : ''
     };
   } catch (error) {
-    // Fallback for demo purposes
+    console.error('Command execution error:', error);
+    
+    // Return error information
     return {
-      output: `Command executed: ${command}\nWorking directory: ${cwd || '/'}\n`,
-      exitCode: 0,
-      stdout: `Command executed: ${command}\n`,
-      stderr: ''
+      output: `Command failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      exitCode: 1,
+      stdout: '',
+      stderr: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }

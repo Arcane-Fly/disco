@@ -13,6 +13,8 @@ import { filesRouter } from './api/files.js';
 import { terminalRouter } from './api/terminal.js';
 import { gitRouter } from './api/git.js';
 import { healthRouter } from './api/health.js';
+import { computerUseRouter } from './api/computer-use.js';
+import { ragRouter } from './api/rag.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
@@ -99,6 +101,8 @@ app.use('/api/v1/containers', authMiddleware, containersRouter);
 app.use('/api/v1/files', authMiddleware, filesRouter);
 app.use('/api/v1/terminal', authMiddleware, terminalRouter);
 app.use('/api/v1/git', authMiddleware, gitRouter);
+app.use('/api/v1/computer-use', authMiddleware, computerUseRouter);
+app.use('/api/v1/rag', authMiddleware, ragRouter);
 
 // MCP capabilities endpoint
 app.get('/capabilities', (_req, res) => {
