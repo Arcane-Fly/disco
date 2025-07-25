@@ -14,7 +14,7 @@ router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
     const { width = 1920, height = 1080, format = 'png' } = req.body;
     const userId = req.user!.userId;
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -36,7 +36,7 @@ router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
       });
     }
 
-    const screenshot = await takeScreenshot(session.container, { width, height, format });
+    const screenshot = await takeScreenshot(session.container, { width, height, format }, containerId);
 
     res.json({
       status: 'success',
@@ -81,7 +81,7 @@ router.post('/:containerId/click', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -103,7 +103,7 @@ router.post('/:containerId/click', async (req: Request, res: Response) => {
       });
     }
 
-    await simulateClick(session.container, { x, y, button, doubleClick });
+    await simulateClick(session.container, { x, y, button, doubleClick }, containerId);
 
     console.log(`🖱️  Simulated ${doubleClick ? 'double ' : ''}${button} click at (${x}, ${y}) in container ${containerId}`);
 
@@ -150,7 +150,7 @@ router.post('/:containerId/type', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -172,7 +172,7 @@ router.post('/:containerId/type', async (req: Request, res: Response) => {
       });
     }
 
-    await simulateTyping(session.container, { text, delay });
+    await simulateTyping(session.container, { text, delay }, containerId);
 
     console.log(`⌨️  Simulated typing "${text}" in container ${containerId}`);
 
@@ -218,7 +218,7 @@ router.post('/:containerId/key', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -240,7 +240,7 @@ router.post('/:containerId/key', async (req: Request, res: Response) => {
       });
     }
 
-    await simulateKeyPress(session.container, { key, modifiers });
+    await simulateKeyPress(session.container, { key, modifiers }, containerId);
 
     console.log(`⌨️  Simulated key press "${key}" with modifiers [${modifiers.join(', ')}] in container ${containerId}`);
 
@@ -265,49 +265,41 @@ router.post('/:containerId/key', async (req: Request, res: Response) => {
   }
 });
 
-// Helper functions for computer-use operations
+import { browserAutomationManager } from '../lib/browserAutomation.js';
 
-async function takeScreenshot(container: any, options: { width: number; height: number; format: string }): Promise<string> {
+// Helper functions for computer-use operations using real browser automation
+
+async function takeScreenshot(container: any, options: { width: number; height: number; format: string }, containerId: string): Promise<string> {
   try {
-    // Note: WebContainer doesn't have native screenshot capabilities
-    // This would need to be implemented using a headless browser or similar
-    // For now, we'll return a placeholder indicating the feature is available
-    
     console.log(`Taking screenshot with dimensions ${options.width}x${options.height} in format ${options.format}`);
     
-    // In a real implementation, this might:
-    // 1. Launch a headless browser in the container
-    // 2. Navigate to the application URL
-    // 3. Take a screenshot
-    // 4. Return base64 encoded image
+    // Use real browser automation to take screenshot
+    const base64Screenshot = await browserAutomationManager.takeScreenshot(containerId, {
+      width: options.width,
+      height: options.height,
+      format: options.format as 'png' | 'jpeg'
+    });
     
-    // Return a placeholder base64 encoded 1x1 pixel PNG for now
-    const placeholder = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-    
-    return placeholder;
+    return base64Screenshot;
   } catch (error) {
     console.error('Screenshot capture error:', error);
     throw new Error(`Failed to capture screenshot: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-async function simulateClick(container: any, options: { x: number; y: number; button: string; doubleClick: boolean }): Promise<void> {
+async function simulateClick(container: any, options: { x: number; y: number; button: string; doubleClick: boolean }, containerId: string): Promise<void> {
   try {
     const { x, y, button, doubleClick } = options;
     
     console.log(`Simulating ${doubleClick ? 'double ' : ''}${button} click at coordinates (${x}, ${y})`);
     
-    // Note: WebContainer doesn't have native UI automation capabilities
-    // This would need to be implemented using a browser automation library
-    // For now, we'll log the action and consider it successful
-    
-    // In a real implementation, this might:
-    // 1. Use Playwright or Puppeteer to control a browser instance
-    // 2. Execute click commands at the specified coordinates
-    // 3. Handle different button types (left, right, middle)
-    
-    // Simulate some processing time
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Use real browser automation to simulate click
+    await browserAutomationManager.simulateClick(containerId, {
+      x,
+      y,
+      button: button as 'left' | 'right' | 'middle',
+      doubleClick
+    });
     
   } catch (error) {
     console.error('Click simulation error:', error);
@@ -315,24 +307,17 @@ async function simulateClick(container: any, options: { x: number; y: number; bu
   }
 }
 
-async function simulateTyping(container: any, options: { text: string; delay: number }): Promise<void> {
+async function simulateTyping(container: any, options: { text: string; delay: number }, containerId: string): Promise<void> {
   try {
     const { text, delay } = options;
     
     console.log(`Simulating typing: "${text}" with ${delay}ms delay between characters`);
     
-    // Note: WebContainer doesn't have native keyboard simulation
-    // This would need to be implemented using browser automation
-    // For now, we'll simulate the timing and consider it successful
-    
-    // In a real implementation, this might:
-    // 1. Use Playwright or Puppeteer to send keyboard events
-    // 2. Type each character with the specified delay
-    // 3. Handle special characters and unicode
-    
-    // Simulate typing with delay
-    const typingTime = text.length * delay;
-    await new Promise(resolve => setTimeout(resolve, Math.min(typingTime, 2000)));
+    // Use real browser automation to simulate typing
+    await browserAutomationManager.simulateTyping(containerId, {
+      text,
+      delay
+    });
     
   } catch (error) {
     console.error('Typing simulation error:', error);
@@ -340,28 +325,24 @@ async function simulateTyping(container: any, options: { text: string; delay: nu
   }
 }
 
-async function simulateKeyPress(container: any, options: { key: string; modifiers: string[] }): Promise<void> {
+async function simulateKeyPress(container: any, options: { key: string; modifiers: string[] }, containerId: string): Promise<void> {
   try {
     const { key, modifiers } = options;
     
     console.log(`Simulating key press: "${key}" with modifiers: [${modifiers.join(', ')}]`);
     
-    // Note: WebContainer doesn't have native keyboard simulation
-    // This would need to be implemented using browser automation
-    // For now, we'll log the action and consider it successful
-    
-    // In a real implementation, this might:
-    // 1. Use Playwright or Puppeteer to send keyboard events
-    // 2. Handle modifier keys (ctrl, alt, shift, meta)
-    // 3. Support special keys (F1-F12, arrow keys, etc.)
-    
-    // Simulate some processing time
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Use real browser automation to simulate key press
+    await browserAutomationManager.simulateKeyPress(containerId, {
+      key,
+      modifiers
+    });
     
   } catch (error) {
     console.error('Key press simulation error:', error);
     throw new Error(`Failed to simulate key press: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+
 
 export { router as computerUseRouter };

@@ -102,7 +102,7 @@ router.get('/:containerId', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
     
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -158,7 +158,7 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
     
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -213,7 +213,7 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
     
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({

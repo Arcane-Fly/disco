@@ -24,7 +24,7 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -95,7 +95,7 @@ router.post('/:containerId/commit', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -162,7 +162,7 @@ router.post('/:containerId/push', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -220,7 +220,7 @@ router.post('/:containerId/pull', async (req: Request, res: Response) => {
     const { remote = 'origin', branch = 'main', authToken } = req.body;
     const userId = req.user!.userId;
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -276,7 +276,7 @@ router.get('/:containerId/status', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -327,7 +327,7 @@ router.get('/:containerId/log', async (req: Request, res: Response) => {
     const { limit = 10, branch } = req.query;
     const userId = req.user!.userId;
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({

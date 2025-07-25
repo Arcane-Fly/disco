@@ -21,8 +21,10 @@ import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 
-// Import container manager
+// Import container manager, browser automation, and Redis session manager
 import { containerManager } from './lib/containerManager.js';
+import { browserAutomationManager } from './lib/browserAutomation.js';
+import { redisSessionManager } from './lib/redisSession.js';
 
 // Load environment variables
 dotenv.config();
@@ -194,6 +196,14 @@ const gracefulShutdown = async () => {
   // Cleanup container manager
   await containerManager.shutdown();
   console.log('🗃️  Container manager shutdown complete');
+  
+  // Cleanup browser automation manager
+  await browserAutomationManager.shutdown();
+  console.log('🌐 Browser automation manager shutdown complete');
+  
+  // Cleanup Redis session manager
+  await redisSessionManager.shutdown();
+  console.log('📝 Redis session manager shutdown complete');
   
   console.log('✅ Graceful shutdown complete');
   process.exit(0);
