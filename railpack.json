@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "buildAptPackages": ["git", "curl", "build-essential", "libssl-dev", "libffi-dev", "python3-dev"],
+  "packages": {
+    "node": "20.x"
+  },
+  "caches": {
+    "npm-cache": {
+      "directory": "/root/.npm",
+      "type": "shared"
+    },
+    "webcontainer-cache": {
+      "directory": "/root/.webcontainer",
+      "type": "shared"
+    }
+  },
+  "steps": {
+    "install": {
+      "commands": [
+        "npm ci"
+      ],
+      "caches": ["npm-cache"]
+    },
+    "build": {
+      "inputs": [
+        {
+          "step": "install",
+          "include": ["."]
+        }
+      ],
+      "commands": [
+        "npm run build"
+      ]
+    }
+  },
+  "deploy": {
+    "base": {
+      "image": "ghcr.io/railwayapp/railpack-runtime:node-20"
+    },
+    "startCommand": "node dist/server.js",
+    "inputs": [
+      {
+        "step": "build",
+        "include": ["."]
+      }
+    ],
+    "aptPackages": ["git", "curl"]
+  }
+}
