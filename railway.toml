@@ -1,0 +1,23 @@
+[build]
+  dockerfile = "Dockerfile"
+  start = "node dist/server.js"
+
+[deploy]
+  regions = ["us-central1", "europe-west1", "asia-southeast1"]
+  min_instances = 1
+  max_instances = 10
+
+[environment]
+  NODE_ENV = "production"
+
+[addons]
+  redis = true
+
+[scaling]
+  # Scale based on active containers
+  metric = "custom:active_containers"
+  target = 5
+  min_instances = 1
+  max_instances = 10
+  cooldown_period = "5m"
+  scale_in_cooldown = "10m"
