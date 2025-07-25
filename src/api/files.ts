@@ -357,24 +357,44 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
 
 async function listFiles(container: any, path: string): Promise<FileListItem[]> {
   try {
-    // This is a simplified implementation
-    // In a real WebContainer, you would use the fs API
+    // Use real WebContainer fs API
     const fs = container.fs;
     const entries = await fs.readdir(path, { withFileTypes: true });
     
-    return entries.map((entry: any) => ({
-      name: entry.name,
-      type: entry.isDirectory() ? 'directory' : 'file',
-      size: entry.isFile() ? (entry.size || 0) : 0,
-      lastModified: new Date()
-    }));
+    const fileList: FileListItem[] = [];
+    
+    for (const entry of entries) {
+      try {
+        // Get file stats for accurate information
+        const fullPath = path === '/' ? `/${entry.name}` : `${path}/${entry.name}`;
+        let size = 0;
+        
+        if (entry.isFile()) {
+          try {
+            const stats = await fs.stat(fullPath);
+            size = stats.size || 0;
+          } catch {
+            // If stat fails, default to 0
+            size = 0;
+          }
+        }
+        
+        fileList.push({
+          name: entry.name,
+          type: entry.isDirectory() ? 'directory' : 'file',
+          size: size,
+          lastModified: new Date() // WebContainer doesn't provide mtime, use current time
+        });
+      } catch (entryError) {
+        // Skip entries that cause errors but log them
+        console.warn(`Warning: Could not process entry ${entry.name}:`, entryError);
+      }
+    }
+    
+    return fileList;
   } catch (error) {
-    // Fallback for basic file listing
-    return [
-      { name: 'package.json', type: 'file', size: 256, lastModified: new Date() },
-      { name: 'server.js', type: 'file', size: 128, lastModified: new Date() },
-      { name: 'node_modules', type: 'directory', size: 0, lastModified: new Date() }
-    ];
+    console.error('WebContainer fs.readdir failed:', error);
+    throw new Error(`Failed to list directory: ${path}`);
   }
 }
 
@@ -384,25 +404,57 @@ async function readFile(container: any, path: string): Promise<string> {
     const content = await fs.readFile(path, 'utf-8');
     return content;
   } catch (error) {
-    throw new Error(`File not found: ${path}`);
+    console.error('WebContainer fs.readFile failed:', error);
+    throw new Error(`File not found or read error: ${path}`);
   }
 }
 
 async function writeFile(container: any, path: string, content: string, encoding: string = 'utf-8'): Promise<void> {
   try {
     const fs = container.fs;
+    
+    // Ensure parent directory exists
+    const pathParts = path.split('/');
+    pathParts.pop(); // Remove filename
+    if (pathParts.length > 1) {
+      const dirPath = pathParts.join('/');
+      try {
+        await fs.mkdir(dirPath, { recursive: true });
+      } catch (mkdirError) {
+        // Directory might already exist, ignore error
+        console.debug(`Directory creation warning for ${dirPath}:`, mkdirError);
+      }
+    }
+    
     await fs.writeFile(path, content, encoding);
   } catch (error) {
-    throw new Error(`Failed to write file: ${path}`);
+    console.error('WebContainer fs.writeFile failed:', error);
+    throw new Error(`Failed to write file: ${path} - ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 async function deleteFile(container: any, path: string): Promise<void> {
   try {
     const fs = container.fs;
-    await fs.unlink(path);
+    
+    // Check if it's a file or directory first
+    try {
+      const stats = await fs.stat(path);
+      
+      if (stats.isDirectory()) {
+        // For directories, use rmdir (note: WebContainer may require empty directories)
+        await fs.rmdir(path);
+      } else {
+        // For files, use unlink
+        await fs.unlink(path);
+      }
+    } catch (statError) {
+      // If stat fails, try unlink anyway (might be a file)
+      await fs.unlink(path);
+    }
   } catch (error) {
-    throw new Error(`Failed to delete file: ${path}`);
+    console.error('WebContainer fs delete operation failed:', error);
+    throw new Error(`Failed to delete file/directory: ${path} - ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
