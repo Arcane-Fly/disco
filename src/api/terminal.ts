@@ -24,7 +24,7 @@ router.post('/:containerId/execute', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -105,7 +105,7 @@ router.post('/:containerId/stream', async (req: Request, res: Response) => {
       });
     }
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -194,7 +194,7 @@ router.get('/:containerId/history', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -248,7 +248,7 @@ router.post('/:containerId/kill', async (req: Request, res: Response) => {
     const { pid, signal = 'SIGTERM' } = req.body;
     const userId = req.user!.userId;
 
-    const session = containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId);
     
     if (!session) {
       return res.status(404).json({
@@ -355,18 +355,43 @@ async function executeCommand(
     // Spawn the process using WebContainer
     const containerProcess = await container.spawn(cmd, args, spawnOptions);
     
+    // Capture stdout and stderr
+    let stdout = '';
+    let stderr = '';
+    
+    // Listen to output streams if available
+    if (containerProcess.output) {
+      containerProcess.output.on('data', (data: any) => {
+        const output = data.toString();
+        stdout += output;
+        console.log('Command output:', output);
+      });
+    }
+    
+    if (containerProcess.stderr) {
+      containerProcess.stderr.on('data', (data: any) => {
+        const errorOutput = data.toString();
+        stderr += errorOutput;
+        console.log('Command stderr:', errorOutput);
+      });
+    }
+    
     // Wait for the process to complete
     const exitCode = await containerProcess.exit;
     
-    // Note: In a real implementation, we would capture stdout/stderr
-    // WebContainer's spawn API provides streams for this, but for now
-    // we'll return a basic success response
+    // If no output captured via streams, provide basic feedback
+    if (!stdout && exitCode === 0) {
+      stdout = `Command "${command}" executed successfully`;
+    }
+    if (!stderr && exitCode !== 0) {
+      stderr = `Command failed with exit code ${exitCode}`;
+    }
     
     return {
-      output: `Command "${command}" executed successfully`,
+      output: stdout || `Command "${command}" completed`,
       exitCode: exitCode,
-      stdout: `Command executed: ${command}`,
-      stderr: exitCode !== 0 ? `Command failed with exit code ${exitCode}` : ''
+      stdout: stdout,
+      stderr: stderr
     };
   } catch (error) {
     console.error('Command execution error:', error);

@@ -1,6 +1,7 @@
 import { WebContainer } from '@webcontainer/api';
 import { v4 as uuidv4 } from 'uuid';
 import { ContainerSession } from '../types/index.js';
+import { redisSessionManager } from './redisSession.js';
 
 interface ContainerPool {
   ready: WebContainer[];
@@ -65,6 +66,11 @@ class ContainerManager {
 
       this.sessions.set(sessionId, session);
       
+      // Store in Redis if available
+      if (redisSessionManager.isAvailable()) {
+        await redisSessionManager.setSession(sessionId, session);
+      }
+      
       // Initialize container environment
       await this.initializeContainer(session);
       
@@ -78,14 +84,36 @@ class ContainerManager {
   }
 
   /**
-   * Get container session by ID
+   * Get container session by ID (checks Redis first, then in-memory)
    */
-  getSession(sessionId: string): ContainerSession | undefined {
-    const session = this.sessions.get(sessionId);
+  async getSession(sessionId: string): Promise<ContainerSession | undefined> {
+    // First check in-memory cache
+    let session = this.sessions.get(sessionId);
+    
     if (session) {
       session.lastActive = new Date();
+      
+      // Update in Redis if available
+      if (redisSessionManager.isAvailable()) {
+        await redisSessionManager.setSession(sessionId, session);
+      }
+      
+      return session;
     }
-    return session;
+    
+    // If not in memory, check Redis
+    if (redisSessionManager.isAvailable()) {
+      const redisSession = await redisSessionManager.getSession(sessionId);
+      if (redisSession && redisSession.userId) {
+        // Session found in Redis but not in memory - this means the container was lost
+        // We need to recreate the container or mark session as invalid
+        console.log(`🔄 Found session ${sessionId} in Redis but container not in memory`);
+        // For now, return undefined to force session recreation
+        return undefined;
+      }
+    }
+    
+    return undefined;
   }
 
   /**
@@ -110,6 +138,11 @@ class ContainerManager {
       
       // Remove from sessions
       this.sessions.delete(sessionId);
+      
+      // Remove from Redis if available
+      if (redisSessionManager.isAvailable()) {
+        await redisSessionManager.deleteSession(sessionId);
+      }
       
       console.log(`🗑️  Terminated container session: ${sessionId}`);
     } catch (error) {
