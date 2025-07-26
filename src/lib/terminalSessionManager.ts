@@ -165,12 +165,13 @@ class TerminalSessionManager {
   }
 
   /**
-   * Get session history with filtering
+   * Get session history with filtering and search
    */
   async getSessionHistory(
     sessionId: string, 
     limit: number = 50, 
-    search?: string
+    search?: string,
+    commandsOnly: boolean = false
   ): Promise<TerminalHistoryEntry[]> {
     const session = await this.getSession(sessionId);
     if (!session) {
@@ -184,12 +185,124 @@ class TerminalSessionManager {
       const searchLower = search.toLowerCase();
       history = history.filter(entry => 
         entry.command.toLowerCase().includes(searchLower) ||
-        entry.output.toLowerCase().includes(searchLower)
+        (!commandsOnly && entry.output.toLowerCase().includes(searchLower))
       );
     }
 
     // Return most recent entries first
     return history.slice(-limit).reverse();
+  }
+
+  /**
+   * Get command suggestions based on history and patterns
+   */
+  async getCommandSuggestions(
+    sessionId: string,
+    partialCommand: string,
+    limit: number = 10
+  ): Promise<string[]> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      return [];
+    }
+
+    const partialLower = partialCommand.toLowerCase();
+    const suggestions = new Set<string>();
+
+    // Get commands from history that start with the partial command
+    session.history
+      .filter(entry => entry.command.toLowerCase().startsWith(partialLower))
+      .forEach(entry => suggestions.add(entry.command));
+
+    // Add common commands that match
+    const commonCommands = [
+      'ls -la', 'ls -l', 'cd', 'pwd', 'cat', 'echo', 'mkdir', 'rm', 'cp', 'mv',
+      'npm install', 'npm run', 'npm start', 'npm test', 'npm run build',
+      'git status', 'git add', 'git commit', 'git push', 'git pull', 'git log',
+      'docker build', 'docker run', 'docker ps', 'docker stop',
+      'python', 'node', 'yarn', 'pip install'
+    ];
+
+    commonCommands
+      .filter(cmd => cmd.toLowerCase().startsWith(partialLower))
+      .forEach(cmd => suggestions.add(cmd));
+
+    return Array.from(suggestions).slice(0, limit);
+  }
+
+  /**
+   * Get frequently used commands
+   */
+  async getFrequentCommands(sessionId: string, limit: number = 10): Promise<Array<{command: string, count: number}>> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      return [];
+    }
+
+    // Count command frequency
+    const commandCounts = new Map<string, number>();
+    session.history.forEach(entry => {
+      const baseCommand = entry.command.split(' ')[0]; // Get the base command (e.g., 'git' from 'git status')
+      commandCounts.set(baseCommand, (commandCounts.get(baseCommand) || 0) + 1);
+    });
+
+    // Sort by frequency and return top commands
+    return Array.from(commandCounts.entries())
+      .map(([command, count]) => ({ command, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+  }
+
+  /**
+   * Search command history with advanced filters
+   */
+  async searchCommandHistory(
+    sessionId: string,
+    options: {
+      query?: string;
+      exitCode?: number;
+      dateFrom?: Date;
+      dateTo?: Date;
+      cwd?: string;
+      limit?: number;
+    }
+  ): Promise<TerminalHistoryEntry[]> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      return [];
+    }
+
+    let results = session.history;
+
+    // Apply filters
+    if (options.query) {
+      const queryLower = options.query.toLowerCase();
+      results = results.filter(entry => 
+        entry.command.toLowerCase().includes(queryLower) ||
+        entry.output.toLowerCase().includes(queryLower)
+      );
+    }
+
+    if (options.exitCode !== undefined) {
+      results = results.filter(entry => entry.exitCode === options.exitCode);
+    }
+
+    if (options.dateFrom) {
+      results = results.filter(entry => entry.timestamp >= options.dateFrom!);
+    }
+
+    if (options.dateTo) {
+      results = results.filter(entry => entry.timestamp <= options.dateTo!);
+    }
+
+    if (options.cwd) {
+      results = results.filter(entry => entry.cwd === options.cwd);
+    }
+
+    // Sort by timestamp (most recent first) and limit
+    return results
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, options.limit || 50);
   }
 
   /**
