@@ -306,27 +306,104 @@ router.post('/:containerId/kill', async (req: Request, res: Response) => {
 // Helper functions
 
 function isCommandSafe(command: string): boolean {
-  // Basic command validation for security
+  // Enhanced command validation for security
   const dangerousCommands = [
+    // File system damage
     'rm -rf /',
+    'rm -rf .*',
     'dd if=',
     'mkfs',
     'fdisk',
+    'format',
+    
+    // User/system access
     'passwd',
     'su ',
     'sudo su',
-    'curl.*|.*sh',
-    'wget.*|.*sh',
+    'sudo -i',
+    'sudo bash',
+    'sudo sh',
+    
+    // Network/download and execute
+    'curl.*\\|.*sh',
+    'wget.*\\|.*sh',
+    'curl.*\\|.*bash',
+    'wget.*\\|.*bash',
+    'bash <\\(curl',
+    'sh <\\(curl',
+    
+    // Code execution
     'eval',
-    'exec'
+    'exec',
+    'python -c',
+    'node -e',
+    'ruby -e',
+    
+    // Process manipulation
+    'kill -9 1',
+    'killall -9',
+    'pkill -9',
+    
+    // System modification
+    'mount',
+    'umount',
+    'chmod 777 /',
+    'chown root',
+    
+    // Package managers (to prevent unauthorized installs)
+    'apt-get install',
+    'apt install',
+    'yum install',
+    'npm install -g',
+    'pip install',
+    
+    // Kernel/system
+    'modprobe',
+    'insmod',
+    'rmmod',
+    
+    // Redirects to sensitive files
+    '> /etc/',
+    '>> /etc/',
+    '> /bin/',
+    '>> /bin/',
+    '> /usr/',
+    '>> /usr/'
   ];
 
   const lowerCommand = command.toLowerCase().trim();
   
-  return !dangerousCommands.some(dangerous => {
+  // Check against dangerous patterns
+  const isDangerous = dangerousCommands.some(dangerous => {
     const regex = new RegExp(dangerous, 'i');
     return regex.test(lowerCommand);
   });
+  
+  if (isDangerous) {
+    console.warn(`🚫 Blocked potentially dangerous command: ${command}`);
+    return false;
+  }
+  
+  // Additional checks for command injection
+  const injectionPatterns = [
+    /;.*rm/i,
+    /&&.*rm/i,
+    /\|.*rm/i,
+    /`.*rm.*`/i,
+    /\$\(.*rm.*\)/i,
+    /;.*sudo/i,
+    /&&.*sudo/i,
+    /\|.*sudo/i
+  ];
+  
+  const hasInjection = injectionPatterns.some(pattern => pattern.test(command));
+  
+  if (hasInjection) {
+    console.warn(`🚫 Blocked command with potential injection: ${command}`);
+    return false;
+  }
+  
+  return true;
 }
 
 async function executeCommand(
@@ -355,29 +432,47 @@ async function executeCommand(
     // Spawn the process using WebContainer
     const containerProcess = await container.spawn(cmd, args, spawnOptions);
     
-    // Capture stdout and stderr
+    // Capture stdout and stderr using proper stream handling
     let stdout = '';
     let stderr = '';
     
-    // Listen to output streams if available
-    if (containerProcess.output) {
-      containerProcess.output.on('data', (data: any) => {
-        const output = data.toString();
-        stdout += output;
-        console.log('Command output:', output);
-      });
-    }
+    // Create promises to handle output streams
+    const outputPromises: Promise<void>[] = [];
     
-    if (containerProcess.stderr) {
-      containerProcess.stderr.on('data', (data: any) => {
-        const errorOutput = data.toString();
-        stderr += errorOutput;
-        console.log('Command stderr:', errorOutput);
+    // Handle stdout stream
+    if (containerProcess.output?.readable) {
+      const stdoutPromise = new Promise<void>((resolve) => {
+        const reader = containerProcess.output.getReader();
+        const decoder = new TextDecoder();
+        
+        function readStream() {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              resolve();
+              return;
+            }
+            
+            const output = decoder.decode(value, { stream: true });
+            stdout += output;
+            console.log('Command output:', output);
+            
+            readStream(); // Continue reading
+          }).catch((error) => {
+            console.warn('Error reading stdout:', error);
+            resolve();
+          });
+        }
+        
+        readStream();
       });
+      outputPromises.push(stdoutPromise);
     }
     
     // Wait for the process to complete
     const exitCode = await containerProcess.exit;
+    
+    // Wait for all output streams to be read
+    await Promise.all(outputPromises);
     
     // If no output captured via streams, provide basic feedback
     if (!stdout && exitCode === 0) {

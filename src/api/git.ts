@@ -404,11 +404,27 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
     // Execute git clone using WebContainer spawn
     const process = await container.spawn('git', args);
     
+    // Capture output
+    let stdout = '';
+    let stderr = '';
+    
+    // Handle output streams if available
+    if (process.output?.readable) {
+      const reader = process.output.getReader();
+      const decoder = new TextDecoder();
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        stdout += decoder.decode(value, { stream: true });
+      }
+    }
+    
     // Wait for process to complete and capture output
     const exitCode = await process.exit;
     
     if (exitCode !== 0) {
-      throw new Error(`Git clone failed with exit code ${exitCode}`);
+      throw new Error(`Git clone failed with exit code ${exitCode}. Output: ${stderr || stdout}`);
     }
     
     // Get current commit hash after successful clone
@@ -417,10 +433,22 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
       const hashProcess = await container.spawn('git', ['rev-parse', 'HEAD'], {
         cwd: directory !== '.' ? directory : undefined
       });
-      const hashExitCode = await hashProcess.exit;
-      if (hashExitCode === 0) {
-        // Read stdout to get commit hash
-        commitHash = 'cloned-successfully';
+      
+      if (hashProcess.output?.readable) {
+        const reader = hashProcess.output.getReader();
+        const decoder = new TextDecoder();
+        let hashOutput = '';
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          hashOutput += decoder.decode(value, { stream: true });
+        }
+        
+        const hashExitCode = await hashProcess.exit;
+        if (hashExitCode === 0) {
+          commitHash = hashOutput.trim();
+        }
       }
     } catch (hashError) {
       console.warn('Could not get commit hash after clone:', hashError);
@@ -433,7 +461,8 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
         url,
         branch,
         directory,
-        commit: commitHash
+        commit: commitHash,
+        output: stdout
       }
     };
   } catch (error) {

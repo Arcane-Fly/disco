@@ -160,9 +160,9 @@ async function performRAGSearch(container: any, options: RAGSearchOptions): Prom
   try {
     const { query, limit, includeContext } = options;
     
-    console.log(`Performing RAG search for: "${query}"`);
+    console.log(`Performing enhanced RAG search for: "${query}"`);
     
-    // Basic implementation: search for text matches in files
+    // Enhanced implementation with better semantic matching
     // In a production system, this would use:
     // - Vector embeddings for semantic search
     // - Proper indexing (ElasticSearch, Pinecone, etc.)
@@ -171,32 +171,48 @@ async function performRAGSearch(container: any, options: RAGSearchOptions): Prom
     
     const results: RAGSearchResult[] = [];
     
-    // Get list of code files
+    // Get list of code files with improved filtering
     const codeFiles = await findCodeFiles(container);
     
-    // Search in each file
-    for (const file of codeFiles.slice(0, Math.min(50, codeFiles.length))) {
+    // Prioritize file types based on query
+    const prioritizedFiles = prioritizeFilesByQuery(codeFiles, query);
+    
+    // Search in each file with enhanced matching
+    for (const file of prioritizedFiles.slice(0, Math.min(100, prioritizedFiles.length))) {
       try {
         const content = await container.fs.readFile(file, 'utf-8');
         const lines = content.split('\n');
         
-        // Simple text search (in production, would use embeddings)
+        // Enhanced search with multiple strategies
         const queryLower = query.toLowerCase();
+        const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
         
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
           const lineLower = line.toLowerCase();
           
-          // Check for matches
-          if (lineLower.includes(queryLower) || 
-              line.includes(query) ||
-              isSemanticMatch(line, query)) {
-            
+          // Multi-strategy matching
+          const matchStrategies = [
+            // Exact match
+            () => lineLower.includes(queryLower),
+            // Word matches
+            () => queryWords.some(word => lineLower.includes(word)),
+            // Semantic patterns
+            () => isSemanticMatch(line, query),
+            // Code structure matches
+            () => isCodeStructureMatch(line, query),
+            // Variable/function name matches
+            () => isIdentifierMatch(line, query)
+          ];
+          
+          const matches = matchStrategies.filter(strategy => strategy());
+          
+          if (matches.length > 0) {
             const result: RAGSearchResult = {
               file: file,
               snippet: line.trim(),
               line: i + 1,
-              score: calculateRelevanceScore(line, query)
+              score: calculateEnhancedRelevanceScore(line, query, file, matches.length)
             };
             
             // Add context if requested
@@ -209,13 +225,13 @@ async function performRAGSearch(container: any, options: RAGSearchOptions): Prom
             
             results.push(result);
             
-            if (results.length >= limit) {
+            if (results.length >= limit * 2) { // Get more results for better sorting
               break;
             }
           }
         }
         
-        if (results.length >= limit) {
+        if (results.length >= limit * 2) {
           break;
         }
       } catch (fileError) {
@@ -223,15 +239,175 @@ async function performRAGSearch(container: any, options: RAGSearchOptions): Prom
       }
     }
     
-    // Sort by relevance score
-    results.sort((a, b) => b.score - a.score);
+    // Sort by relevance score and deduplicate
+    const uniqueResults = deduplicateResults(results);
+    uniqueResults.sort((a, b) => b.score - a.score);
     
-    return results.slice(0, limit);
+    return uniqueResults.slice(0, limit);
     
   } catch (error) {
     console.error('RAG search error:', error);
     throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+function prioritizeFilesByQuery(files: string[], query: string): string[] {
+  const queryLower = query.toLowerCase();
+  
+  // File type priorities based on query
+  const priorities = new Map<string, number>();
+  
+  for (const file of files) {
+    const ext = file.split('.').pop()?.toLowerCase() || '';
+    const fileName = file.toLowerCase();
+    
+    let priority = 1;
+    
+    // Boost priority based on query content
+    if (queryLower.includes('component') || queryLower.includes('react')) {
+      if (ext === 'jsx' || ext === 'tsx') priority += 3;
+    }
+    
+    if (queryLower.includes('api') || queryLower.includes('endpoint')) {
+      if (fileName.includes('api') || fileName.includes('route')) priority += 3;
+    }
+    
+    if (queryLower.includes('test') || queryLower.includes('spec')) {
+      if (fileName.includes('test') || fileName.includes('spec')) priority += 3;
+    }
+    
+    if (queryLower.includes('config') || queryLower.includes('setting')) {
+      if (fileName.includes('config') || ext === 'json' || ext === 'yml') priority += 3;
+    }
+    
+    // Boost TypeScript/JavaScript files for most queries
+    if (ext === 'ts' || ext === 'js' || ext === 'tsx' || ext === 'jsx') {
+      priority += 1;
+    }
+    
+    priorities.set(file, priority);
+  }
+  
+  // Sort by priority
+  return files.sort((a, b) => (priorities.get(b) || 0) - (priorities.get(a) || 0));
+}
+
+function isCodeStructureMatch(line: string, query: string): boolean {
+  const lineLower = line.toLowerCase();
+  const queryLower = query.toLowerCase();
+  
+  // Enhanced code structure patterns
+  const structurePatterns = [
+    // Function patterns
+    { query: ['function', 'method'], line: /function\s+\w+|const\s+\w+\s*=|=>\s*{|^\s*\w+\s*\(/i },
+    // Class patterns
+    { query: ['class'], line: /class\s+\w+|interface\s+\w+|type\s+\w+/i },
+    // Import/export patterns
+    { query: ['import', 'export'], line: /import\s+|export\s+|from\s+['"`]/i },
+    // Error handling
+    { query: ['error', 'exception', 'catch'], line: /try\s*{|catch\s*\(|throw\s+|Error\(/i },
+    // Async patterns
+    { query: ['async', 'promise', 'await'], line: /async\s+|await\s+|Promise\.|\.then\(|\.catch\(/i },
+    // API patterns
+    { query: ['api', 'request', 'response'], line: /app\.(get|post|put|delete)|router\.|fetch\(|axios\./i }
+  ];
+  
+  for (const pattern of structurePatterns) {
+    if (pattern.query.some(keyword => queryLower.includes(keyword))) {
+      if (pattern.line.test(line)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+function isIdentifierMatch(line: string, query: string): boolean {
+  // Extract identifiers from the query
+  const queryWords = query.split(/\s+/).filter(word => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(word));
+  
+  if (queryWords.length === 0) return false;
+  
+  // Check if any query word appears as an identifier in the line
+  const identifierPattern = /\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g;
+  const lineIdentifiers = line.match(identifierPattern) || [];
+  
+  return queryWords.some(queryWord => 
+    lineIdentifiers.some(identifier => 
+      identifier.toLowerCase().includes(queryWord.toLowerCase()) ||
+      queryWord.toLowerCase().includes(identifier.toLowerCase())
+    )
+  );
+}
+
+function calculateEnhancedRelevanceScore(line: string, query: string, filePath: string, matchCount: number): number {
+  let score = 0;
+  const lineLower = line.toLowerCase();
+  const queryLower = query.toLowerCase();
+  
+  // Base score from match count
+  score += matchCount * 5;
+  
+  // Exact match gets highest score
+  if (lineLower.includes(queryLower)) {
+    score += 15;
+  }
+  
+  // Word matches
+  const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
+  const lineWords = lineLower.split(/\s+/);
+  
+  for (const queryWord of queryWords) {
+    if (lineWords.includes(queryWord)) {
+      score += 8;
+    }
+    // Partial word matches
+    if (lineWords.some(word => word.includes(queryWord) || queryWord.includes(word))) {
+      score += 3;
+    }
+  }
+  
+  // File type bonuses
+  const ext = filePath.split('.').pop()?.toLowerCase() || '';
+  if (['ts', 'js', 'tsx', 'jsx'].includes(ext)) {
+    score += 2;
+  }
+  
+  // Code pattern bonuses
+  if (line.includes('function') || line.includes('class') || line.includes('const') || line.includes('let')) {
+    score += 3;
+  }
+  
+  // Comment penalty (usually less relevant)
+  if (line.trim().startsWith('//') || line.trim().startsWith('/*')) {
+    score -= 5;
+  }
+  
+  // Length penalties for very long/short lines
+  if (line.length > 200) {
+    score -= 3;
+  }
+  if (line.trim().length < 10) {
+    score -= 2;
+  }
+  
+  return Math.max(0, score);
+}
+
+function deduplicateResults(results: RAGSearchResult[]): RAGSearchResult[] {
+  const seen = new Set<string>();
+  const deduplicated: RAGSearchResult[] = [];
+  
+  for (const result of results) {
+    const key = `${result.file}:${result.line}:${result.snippet.trim()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(result);
+    }
+  }
+  
+  return deduplicated;
 }
 
 async function indexCodebase(container: any, options: { paths: string[]; excludePatterns: string[] }) {
