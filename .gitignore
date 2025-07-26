@@ -62,3 +62,9 @@ temp/
 # Test files
 test-results/
 coverage/
+
+# Local data directories
+local_data/
+dev_data/
+app/data/
+data/

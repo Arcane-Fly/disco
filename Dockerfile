@@ -27,6 +27,11 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Create data directory with proper permissions
+RUN mkdir -p /app/data && chown -R appuser:appuser /app/data
+
+# Set ownership for app directory  
 RUN chown -R appuser:appuser /app
 USER appuser
 

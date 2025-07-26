@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  disco:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATA_DIR=app/data
+      # Development environment variables
+      - JWT_SECRET=dev-jwt-secret-change-this
+      - WEBCONTAINER_API_KEY=your-webcontainer-api-key
+      - REDIS_URL=redis://redis:6379
+      - ALLOWED_ORIGINS=http://localhost:3000,https://chat.openai.com
+    volumes:
+      # Mount host directory to container's data directory
+      - ./dev_data:/app/data
+      # Mount source code for development (optional)
+      - ./src:/app/src
+    depends_on:
+      - redis
+    restart: unless-stopped
+    command: npm run dev
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_dev_data:
