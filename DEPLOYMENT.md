@@ -156,9 +156,53 @@ curl https://your-app.up.railway.app/health
 | `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
 | `ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
 | `REDIS_URL` | Yes | Redis connection string (auto-set by Railway) |
+| `DATA_DIR` | No | Data directory path (default: "app/data") |
 | `GITHUB_CLIENT_ID` | No | GitHub OAuth client ID |
 | `GITHUB_CLIENT_SECRET` | No | GitHub OAuth client secret |
 | `VALID_API_KEYS` | No | Comma-separated valid API keys |
+
+### Data Directory Configuration
+
+The server uses a persistent data directory for storing application data. This is configured via the `DATA_DIR` environment variable:
+
+**Default Configuration:**
+- `DATA_DIR="app/data"` 
+- Container path: `/app/data`
+
+**For Docker Deployment:**
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  disco:
+    build: .
+    environment:
+      - DATA_DIR=app/data
+    volumes:
+      - ./local_data:/app/data  # Mount host directory to container
+```
+
+**For Railway Deployment:**
+1. Set the `DATA_DIR` environment variable (optional, defaults to "app/data"):
+   ```bash
+   railway variables set DATA_DIR=app/data
+   ```
+
+2. In Railway's volumes UI, set:
+   - **Mount Path**: `/app/data`
+   - **Size**: Choose appropriate size for your data needs
+
+**Using Different Data Paths:**
+If you want to use a different path:
+```bash
+# For /data mount point
+railway variables set DATA_DIR=data
+
+# For /app/storage mount point  
+railway variables set DATA_DIR=app/storage
+```
+
+The mount path in your container will be `/${DATA_DIR}` (e.g., `/data`, `/app/storage`).
 
 ### Scaling Configuration
 

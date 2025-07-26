@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Import route handlers
 import { authRouter } from './api/auth.js';
@@ -28,6 +30,26 @@ import { redisSessionManager } from './lib/redisSession.js';
 
 // Load environment variables
 dotenv.config();
+
+// Data directory configuration
+const DATA_DIR = process.env.DATA_DIR || 'app/data';
+const dataPath = path.resolve(DATA_DIR);
+
+// Ensure data directory exists
+const ensureDataDirectory = async () => {
+  try {
+    await fs.access(dataPath);
+    console.log(`✅ Data directory exists: ${dataPath}`);
+  } catch {
+    try {
+      await fs.mkdir(dataPath, { recursive: true });
+      console.log(`📁 Created data directory: ${dataPath}`);
+    } catch (error) {
+      console.error(`❌ Failed to create data directory ${dataPath}:`, error);
+      process.exit(1);
+    }
+  }
+};
 
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -214,10 +236,14 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 // Start server - Railway compliance with 0.0.0.0 binding
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, '0.0.0.0', async () => {
+  // Ensure data directory exists before starting
+  await ensureDataDirectory();
+  
   console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📁 Data directory: ${dataPath}`);
   console.log(`🔧 WebContainer integration: ${process.env.WEBCONTAINER_API_KEY ? 'Enabled' : 'Disabled'}`);
 });
 
-export { app, io };
+export { app, io, dataPath };
