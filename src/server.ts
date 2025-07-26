@@ -402,42 +402,58 @@ app.get('/', (req, res) => {
 
     <div class="platform-urls">
         <h3>🌐 Platform Integration URLs</h3>
-        <p>Copy these URLs directly into ChatGPT Custom GPTs, Claude Projects, or other AI platforms:</p>
+        <p>Copy these URLs directly into ChatGPT.com connectors or Claude.ai web interface:</p>
         
         <div>
-            <strong>ChatGPT Custom GPT Actions URL:</strong>
+            <strong>ChatGPT.com Main Interface Connector URL:</strong>
             <div class="platform-url">
                 <span>${domain}/openapi.json</span>
                 <button class="copy-btn" onclick="copyText('${domain}/openapi.json')">Copy</button>
             </div>
+            <small style="color: #64748b; margin-left: 12px;">For ChatGPT Plus/Pro users: Paste in Settings → Connectors → Add Connector</small>
         </div>
 
         <div>
-            <strong>Claude/Anthropic API Base URL:</strong>
+            <strong>Claude.ai Web Interface Connector URL:</strong>
             <div class="platform-url">
                 <span>${domain}/api/v1</span>
                 <button class="copy-btn" onclick="copyText('${domain}/api/v1')">Copy</button>
             </div>
+            <small style="color: #64748b; margin-left: 12px;">For Claude Pro/Team users: Paste in Settings → Integrations → External APIs</small>
         </div>
 
         <div>
-            <strong>MCP JSON-RPC Endpoint:</strong>
+            <strong>MCP Client Direct Connection:</strong>
             <div class="platform-url">
                 <span>${domain}/mcp</span>
                 <button class="copy-btn" onclick="copyText('${domain}/mcp')">Copy</button>
             </div>
+            <small style="color: #64748b; margin-left: 12px;">For MCP-compatible clients (Warp Terminal, VSCode, etc.)</small>
         </div>
 
         <div>
-            <strong>Authentication Endpoint:</strong>
-            <div class="platform-url" id="auth-endpoint">
-                <span>${domain}/api/v1/auth/github</span>
-                <button class="copy-btn" onclick="copyText('${domain}/api/v1/auth/github')">Copy</button>
+            <strong>Full URL with Authentication (Ready to Use):</strong>
+            <div class="platform-url" id="full-auth-url">
+                <span id="full-url-text">${domain}/api/v1?auth=github</span>
+                <button class="copy-btn" onclick="copyText('${domain}/api/v1?auth=github')">Copy</button>
             </div>
+            <small style="color: #64748b; margin-left: 12px;">Complete URL with GitHub OAuth - paste directly into any platform</small>
         </div>
     </div>
 
     <div class="grid">
+        <div class="card">
+            <h3>🤖 ChatGPT Connector Setup</h3>
+            <p>Complete setup guide for ChatGPT.com main interface connectors</p>
+            <a href="/chatgpt-connector" target="_blank">View ChatGPT Setup</a>
+        </div>
+
+        <div class="card">
+            <h3>🧠 Claude.ai Integration Setup</h3>
+            <p>Complete setup guide for Claude.ai web interface external APIs</p>
+            <a href="/claude-connector" target="_blank">View Claude Setup</a>
+        </div>
+
         <div class="card">
             <h3>📚 API Documentation</h3>
             <p>Interactive Swagger UI documentation for all API endpoints</p>
@@ -468,7 +484,25 @@ app.get('/', (req, res) => {
         <p id="config-description">Login with GitHub to get your personalized configuration with authentication tokens:</p>
         
         <div id="authenticated-configs" class="hidden">
-            <h4>For Warp Terminal:</h4>
+            <h4>For ChatGPT.com Main Interface (Connectors):</h4>
+            <div style="background: #eff6ff; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>Step 1:</strong> Copy this URL and paste it in ChatGPT.com → Settings → Connectors → Add New Connector
+            </div>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('chatgpt-connector')">Copy</button>
+                <pre id="chatgpt-connector">${domain}/openapi.json</pre>
+            </div>
+
+            <h4>For Claude.ai Web Interface (External APIs):</h4>
+            <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>Step 1:</strong> Copy this base URL and paste it in Claude.ai → Settings → External APIs
+            </div>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('claude-connector')">Copy</button>
+                <pre id="claude-connector">${domain}/api/v1</pre>
+            </div>
+
+            <h4>For Warp Terminal (MCP Client):</h4>
             <div class="code-block">
                 <button class="copy-btn" onclick="copyToClipboard('warp-config')">Copy</button>
                 <pre id="warp-config">{
@@ -504,18 +538,37 @@ app.get('/', (req, res) => {
 }</pre>
             </div>
 
-            <h4>Environment Variables:</h4>
+            <h4>Environment Variables (for shell/script usage):</h4>
             <div class="code-block">
                 <button class="copy-btn" onclick="copyToClipboard('env-vars')">Copy</button>
-                <pre id="env-vars"># Add to your shell profile
+                <pre id="env-vars"># Add to your shell profile or .env file
 export DISCO_MCP_URL="${domain}"
 export DISCO_MCP_TOKEN="YOUR_JWT_TOKEN_HERE"
-export DISCO_API_BASE="${domain}/api/v1"</pre>
+export DISCO_API_BASE="${domain}/api/v1"
+export DISCO_OPENAPI_URL="${domain}/openapi.json"
+
+# Quick test commands:
+# curl $DISCO_API_BASE/health
+# curl -H "Authorization: Bearer $DISCO_MCP_TOKEN" $DISCO_MCP_URL/mcp</pre>
             </div>
         </div>
 
         <div id="unauthenticated-configs">
-            <h4>Sample Configuration (Login Required for Tokens):</h4>
+            <h4>Platform URLs (Login Required for Authentication Tokens):</h4>
+            
+            <div style="background: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>🌐 ChatGPT.com Connectors:</strong> ${domain}/openapi.json
+            </div>
+            
+            <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>🤖 Claude.ai External APIs:</strong> ${domain}/api/v1
+            </div>
+            
+            <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>⚡ MCP Clients (Warp/VSCode):</strong> ${domain}/mcp
+            </div>
+
+            <h4>Sample MCP Configuration (Login Required for Real Tokens):</h4>
             <div class="code-block">
                 <button class="copy-btn" onclick="copyToClipboard('sample-config')">Copy</button>
                 <pre id="sample-config">{
@@ -609,6 +662,19 @@ export DISCO_API_BASE="${domain}/api/v1"</pre>
                     element.textContent = element.textContent.replace(/YOUR_JWT_TOKEN_HERE/g, currentToken);
                 }
             });
+
+            // Update the full URL with token
+            const fullUrlElement = document.getElementById('full-url-text');
+            if (fullUrlElement && currentToken) {
+                const baseUrl = '${domain}/api/v1';
+                fullUrlElement.textContent = baseUrl + '?token=' + currentToken;
+                
+                // Update the copy button functionality
+                const fullUrlCopyBtn = fullUrlElement.parentElement.querySelector('.copy-btn');
+                if (fullUrlCopyBtn) {
+                    fullUrlCopyBtn.setAttribute('onclick', 'copyText(\\'' + baseUrl + '?token=' + currentToken + '\\')');
+                }
+            }
         }
 
         function logout() {
@@ -713,7 +779,134 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
   });
 });
 
-// MCP configuration endpoint
+// ChatGPT connector configuration endpoint
+/**
+ * @swagger
+ * /chatgpt-connector:
+ *   get:
+ *     tags: [ChatGPT Integration]
+ *     summary: ChatGPT.com connector configuration
+ *     description: Provides the exact URL and configuration needed for ChatGPT.com main interface connectors (not custom GPTs)
+ *     responses:
+ *       200:
+ *         description: ChatGPT connector configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 connector_url:
+ *                   type: string
+ *                   description: URL to paste into ChatGPT.com connectors
+ *                 instructions:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 authentication:
+ *                   type: object
+ */
+app.get('/chatgpt-connector', (_req, res) => {
+  const domain = process.env.NODE_ENV === 'production' 
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+
+  res.json({
+    connector_url: `${domain}/openapi.json`,
+    platform: "ChatGPT.com Main Interface",
+    type: "Connector (not Custom GPT)",
+    instructions: [
+      "1. Open ChatGPT.com (requires ChatGPT Plus/Pro/Team/Enterprise)",
+      "2. Go to Settings → Connectors", 
+      "3. Click 'Add New Connector'",
+      "4. Paste the connector_url above",
+      "5. Follow the authentication flow"
+    ],
+    authentication: {
+      method: "GitHub OAuth",
+      login_url: `${domain}/api/v1/auth/github`,
+      automatic: true,
+      description: "Authentication is handled automatically via GitHub OAuth when you use the connector"
+    },
+    capabilities: [
+      "file:read", "file:write", "file:delete", "file:list",
+      "git:clone", "git:commit", "git:push", "git:pull", 
+      "terminal:execute", "terminal:stream",
+      "computer-use:screenshot", "computer-use:click", "computer-use:type",
+      "rag:search"
+    ],
+    notes: [
+      "This is for ChatGPT.com main interface connectors, NOT for custom GPTs",
+      "Requires ChatGPT Plus, Pro, Team, or Enterprise subscription",
+      "Authentication is handled automatically through the connector flow"
+    ]
+  });
+});
+
+// Claude.ai connector configuration endpoint  
+/**
+ * @swagger
+ * /claude-connector:
+ *   get:
+ *     tags: [Claude Integration]
+ *     summary: Claude.ai web interface connector configuration
+ *     description: Provides the exact URL and configuration needed for Claude.ai web interface external API integration
+ *     responses:
+ *       200:
+ *         description: Claude connector configuration
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 api_base_url:
+ *                   type: string
+ *                   description: Base URL for Claude.ai external API integration
+ *                 instructions:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 authentication:
+ *                   type: object
+ */
+app.get('/claude-connector', (_req, res) => {
+  const domain = process.env.NODE_ENV === 'production' 
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+
+  res.json({
+    api_base_url: `${domain}/api/v1`,
+    openapi_url: `${domain}/openapi.json`,
+    platform: "Claude.ai Web Interface", 
+    type: "External API Integration",
+    instructions: [
+      "1. Open Claude.ai (requires Claude Pro/Team/Enterprise)",
+      "2. Go to Settings → External APIs or Integrations",
+      "3. Click 'Add API' or 'Add Integration'", 
+      "4. Paste the api_base_url above",
+      "5. Use GitHub OAuth for authentication"
+    ],
+    authentication: {
+      method: "GitHub OAuth",
+      login_url: `${domain}/api/v1/auth/github`,
+      bearer_token_endpoint: `${domain}/api/v1/auth/github`,
+      description: "Login via GitHub OAuth to get bearer token for API requests"
+    },
+    capabilities: [
+      "file:read", "file:write", "file:delete", "file:list",
+      "git:clone", "git:commit", "git:push", "git:pull",
+      "terminal:execute", "terminal:stream", 
+      "computer-use:screenshot", "computer-use:click", "computer-use:type",
+      "rag:search"
+    ],
+    notes: [
+      "This is for Claude.ai web interface external API integration",
+      "Requires Claude Pro, Team, or Enterprise subscription",
+      "Bearer token authentication required for API calls"
+    ]
+  });
+});
+
+// MCP configuration endpoint for ChatGPT integration
 app.get('/.well-known/mcp.json', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
