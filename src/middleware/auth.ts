@@ -3,11 +3,9 @@ import jwt from 'jsonwebtoken';
 import { JWTPayload, ErrorCode } from '../types/index.js';
 
 // Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JWTPayload;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: JWTPayload;
   }
 }
 

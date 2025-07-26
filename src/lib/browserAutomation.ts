@@ -1,5 +1,4 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright';
-import { WebContainer } from '@webcontainer/api';
 
 interface BrowserSession {
   browser: Browser;

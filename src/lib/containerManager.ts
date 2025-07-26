@@ -88,7 +88,7 @@ class ContainerManager {
    */
   async getSession(sessionId: string): Promise<ContainerSession | undefined> {
     // First check in-memory cache
-    let session = this.sessions.get(sessionId);
+    const session = this.sessions.get(sessionId);
     
     if (session) {
       session.lastActive = new Date();

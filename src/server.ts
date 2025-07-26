@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
+import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -27,6 +28,7 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { containerManager } from './lib/containerManager.js';
 import { browserAutomationManager } from './lib/browserAutomation.js';
 import { redisSessionManager } from './lib/redisSession.js';
+import { specs } from './lib/openapi.js';
 
 // Load environment variables
 dotenv.config();
@@ -66,7 +68,7 @@ for (const envVar of requiredEnvVars) {
 // CORS Configuration - Railway compliance
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : [];
+  : ['https://chat.openai.com', 'https://chatgpt.com'];
 
 // Never allow '*' in production
 if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
@@ -78,19 +80,25 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      frameAncestors: ["'self'", "https://chat.openai.com"],
+      frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com"],
       connectSrc: ["'self'", "wss:", "ws:"],
     },
   },
 }));
 
 // CORS configuration
-app.use(cors({
+const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+
+// Explicit OPTIONS handler for preflight requests
+app.options('*', cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -115,6 +123,121 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging
 app.use(requestLogger);
+
+// Root discovery endpoint
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'disco',
+    version: '1.0.0',
+    name: 'Disco MCP Server',
+    description: 'MCP (Model Control Plane) server with WebContainer integration for ChatGPT',
+    docs: '/docs',
+    openapi: '/openapi.json',
+    config: '/config',
+    capabilities: '/capabilities',
+    health: '/health',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// OpenAPI documentation endpoints
+app.get('/openapi.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json(specs);
+});
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Disco MCP Server API Documentation',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    docExpansion: 'list',
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+}));
+
+// Configuration endpoint for ChatGPT integration
+app.get('/config', (_req, res) => {
+  const websocketUrl = process.env.WEBSOCKET_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? `wss://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}/socket.io`
+      : 'ws://localhost:3000/socket.io');
+  
+  res.json({
+    websocket: websocketUrl,
+    api_url: process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}/api/v1`
+      : 'http://localhost:3000/api/v1',
+    auth_required: true,
+    rate_limit: {
+      max: 100,
+      window_ms: 60000
+    },
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// ChatGPT plugin manifest
+app.get('/.well-known/ai-plugin.json', (_req, res) => {
+  const domain = process.env.NODE_ENV === 'production' 
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+    
+  res.json({
+    schema_version: 'v1',
+    name_for_human: 'Disco Code Runner',
+    name_for_model: 'disco',
+    description_for_human: 'Full development environment with repository access, terminal operations, and computer use capabilities.',
+    description_for_model: 'Provides complete development environment through WebContainers with file operations, git integration, terminal access, and browser automation for code development and testing.',
+    auth: {
+      type: 'none'
+    },
+    api: {
+      type: 'openapi',
+      url: `${domain}/openapi.json`
+    },
+    logo_url: `${domain}/logo.png`,
+    contact_email: 'support@disco-mcp.dev',
+    legal_info_url: `${domain}/legal`
+  });
+});
+
+// MCP configuration endpoint
+app.get('/.well-known/mcp.json', (_req, res) => {
+  const domain = process.env.NODE_ENV === 'production' 
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+    
+  res.json({
+    version: '1.0',
+    name: 'WebContainer Development',
+    description: 'Secure development environment with repository access',
+    api_url: `${domain}/api/v1`,
+    authentication: {
+      type: 'bearer_token',
+      header: 'Authorization'
+    },
+    capabilities: [
+      'file:read',
+      'file:write',
+      'terminal:execute',
+      'git:clone',
+      'computer-use:screenshot'
+    ],
+    environment: {
+      os: 'linux',
+      node_version: process.version
+    },
+    risks: {
+      data_processing: 'All code execution occurs in browser sandbox',
+      security_model: 'No persistent storage between sessions'
+    }
+  });
+});
 
 // Health check endpoint (no auth required)
 app.use('/health', healthRouter);
