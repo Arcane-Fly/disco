@@ -94,27 +94,92 @@ railway link
 
 ### 4. Configure Environment Variables
 
-Set the required environment variables:
+#### Option A: Manual Variable Setup
+Set the required environment variables individually:
 
 ```bash
-# Required variables
+# Core server configuration
 railway variables set JWT_SECRET=$(openssl rand -base64 32)
 railway variables set WEBCONTAINER_API_KEY=your-webcontainer-api-key
-railway variables set ALLOWED_ORIGINS="https://chat.openai.com"
+railway variables set WEBCONTAINER_CLIENT_ID=your-webcontainer-client-id
+railway variables set ALLOWED_ORIGINS="https://chat.openai.com,https://chatgpt.com"
 
-# Optional variables
+# GitHub integration (optional)
 railway variables set GITHUB_CLIENT_ID=your-github-client-id
 railway variables set GITHUB_CLIENT_SECRET=your-github-client-secret
-railway variables set VALID_API_KEYS="api-key-1,api-key-2"
+railway variables set GITHUB_TOKEN=your-github-token
+
+# AI provider API keys (optional)
+railway variables set OPENAI_API_KEY=your-openai-api-key
+railway variables set ANTHROPIC_API_KEY=your-anthropic-api-key
+railway variables set GEMINI_API_KEY=your-gemini-api-key
 ```
 
-### 5. Add Redis Add-on
+#### Option B: Shared Configuration Setup (Recommended)
+For better variable management across multiple services, use Railway's shared configuration:
 
+```bash
+# Set up shared variables first
+railway variables set --shared JWT_SECRET=$(openssl rand -base64 32)
+railway variables set --shared WEBCONTAINER_API_KEY=your-webcontainer-api-key
+railway variables set --shared WEBCONTAINER_CLIENT_ID=your-webcontainer-client-id
+railway variables set --shared ALLOWED_ORIGINS="https://chat.openai.com,https://chatgpt.com"
+railway variables set --shared OPENAI_API_KEY=your-openai-api-key
+railway variables set --shared ANTHROPIC_API_KEY=your-anthropic-api-key
+railway variables set --shared GEMINI_API_KEY=your-gemini-api-key
+railway variables set --shared GITHUB_CLIENT_ID=your-github-client-id
+railway variables set --shared GITHUB_CLIENT_SECRET=your-github-client-secret
+railway variables set --shared GITHUB_TOKEN=your-github-token
+
+# Then reference them in your service
+railway variables set JWT_SECRET='${{shared.JWT_SECRET}}'
+railway variables set WEBCONTAINER_API_KEY='${{shared.WEBCONTAINER_API_KEY}}'
+railway variables set WEBCONTAINER_CLIENT_ID='${{shared.WEBCONTAINER_CLIENT_ID}}'
+railway variables set ALLOWED_ORIGINS='${{shared.ALLOWED_ORIGINS}}'
+railway variables set OPENAI_API_KEY='${{shared.OPENAI_API_KEY}}'
+railway variables set ANTHROPIC_API_KEY='${{shared.ANTHROPIC_API_KEY}}'
+railway variables set GEMINI_API_KEY='${{shared.GEMINI_API_KEY}}'
+railway variables set GITHUB_CLIENT_ID='${{shared.GITHUB_CLIENT_ID}}'
+railway variables set GITHUB_CLIENT_SECRET='${{shared.GITHUB_CLIENT_SECRET}}'
+railway variables set GITHUB_TOKEN='${{shared.GITHUB_TOKEN}}'
+```
+
+### 5. Add Required Services
+
+#### Postgres Database
+```bash
+railway add postgresql
+```
+
+This automatically sets up the following environment variables:
+- `DATABASE_URL` - Primary connection string
+- `DATABASE_PUBLIC_URL` - Public connection string  
+- `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` - Connection details
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` - Database credentials
+
+#### Redis Cache
 ```bash
 railway add redis
 ```
 
-This will automatically set the `REDIS_URL` environment variable.
+This automatically sets up the following environment variables:
+- `REDIS_HOST`, `REDISHOST` - Redis host
+- `REDIS_PORT`, `REDISPORT` - Redis port
+- `REDIS_USER`, `REDISUSER` - Redis username
+- `REDIS_PASSWORD`, `REDISPASSWORD` - Redis password
+
+#### Verify Add-on Configuration
+After adding services, verify the variables are properly set:
+```bash
+# Check all environment variables
+railway variables
+
+# Test database connection
+railway run -- node -e "console.log('DB URL:', process.env.DATABASE_URL)"
+
+# Test Redis connection  
+railway run -- node -e "console.log('Redis Host:', process.env.REDIS_HOST)"
+```
 
 ### 6. Deploy
 
@@ -181,22 +246,155 @@ curl https://your-app.up.railway.app/health
 
 ### Environment Variables
 
+#### Core Server Configuration
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `PORT` | No | Railway sets this automatically |
 | `NODE_ENV` | No | Set to "production" automatically |
 | `JWT_SECRET` | Yes | Secret for JWT token signing |
-| `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
 | `ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
-| `WEBSOCKET_URL` | No | WebSocket URL (auto-generated for Railway) |
-| `REDIS_URL` | Yes | Redis connection string (auto-set by Railway) |
 | `DATA_DIR` | No | Data directory path (default: "app/data") |
+| `LOG_LEVEL` | No | Logging level (default: "info") |
+
+#### WebContainer Integration
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
+| `WEBCONTAINER_CLIENT_ID` | Yes | StackBlitz WebContainer client ID |
+| `WEBSOCKET_URL` | No | WebSocket URL (auto-generated for Railway) |
+
+#### Database Configuration (Postgres Add-on)
+| Variable | Auto-Set by Railway | Description |
+|----------|---------------------|-------------|
+| `DATABASE_URL` | Yes | Primary Postgres connection string |
+| `DATABASE_PUBLIC_URL` | Yes | Public Postgres connection string |
+| `PGHOST` | Yes | Postgres host |
+| `PGPORT` | Yes | Postgres port |
+| `PGDATABASE` | Yes | Postgres database name |
+| `PGUSER` | Yes | Postgres username |
+| `POSTGRES_DB` | Yes | Postgres database name |
+| `POSTGRES_USER` | Yes | Postgres user |
+| `POSTGRES_PASSWORD` | Yes | Postgres password |
+
+#### Redis Configuration (Redis Add-on)
+| Variable | Auto-Set by Railway | Description |
+|----------|---------------------|-------------|
+| `REDIS_HOST` | Yes | Redis host |
+| `REDIS_PORT` | Yes | Redis port |
+| `REDIS_USER` | Yes | Redis username |
+| `REDIS_PASSWORD` | Yes | Redis password |
+| `REDISHOST` | Yes | Redis host (alternative) |
+| `REDISPORT` | Yes | Redis port (alternative) |
+| `REDISUSER` | Yes | Redis user (alternative) |
+| `REDISPASSWORD` | Yes | Redis password (alternative) |
+
+#### AI Provider API Keys
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | No | OpenAI API key for GPT models |
+| `ANTHROPIC_API_KEY` | No | Anthropic API key for Claude models |
+| `GEMINI_API_KEY` | No | Google Gemini API key |
+| `GOOGLE_API_KEY` | No | Google API key for various services |
+| `PERPLEXITY_API_KEY` | No | Perplexity AI API key |
+| `QWEN_ACCESS_KEY_SECRET` | No | Qwen/Alibaba Cloud API key |
+
+#### GitHub Integration
+| Variable | Required | Description |
+|----------|----------|-------------|
 | `GITHUB_CLIENT_ID` | No | GitHub OAuth client ID |
 | `GITHUB_CLIENT_SECRET` | No | GitHub OAuth client secret |
-| `GITHUB_REDIRECT_URI` | No | GitHub OAuth callback URL |
+| `GITHUB_TOKEN` | No | GitHub personal access token |
+| `GITHUB_USERNAME` | No | GitHub username |
+| `GITHUB_USEREMAIL` | No | GitHub user email |
+| `AUTH_CALLBACK_URL` | No | OAuth callback URL |
+
+#### Container & Rate Limiting
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MAX_CONTAINERS` | No | Maximum number of containers (default: 50) |
+| `CONTAINER_TIMEOUT_MINUTES` | No | Container timeout in minutes (default: 30) |
+| `POOL_SIZE` | No | Connection pool size (default: 5) |
+| `RATE_LIMIT_MAX` | No | Rate limit max requests (default: 100) |
+| `RATE_LIMIT_WINDOW_MS` | No | Rate limit window in ms (default: 60000) |
 | `VALID_API_KEYS` | No | Comma-separated valid API keys |
 
-### Secret Management
+#### Production Configuration
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NPM_CONFIG_PRODUCTION` | No | NPM production mode (default: false) |
+
+### Railway Variable References
+
+Railway uses a variable reference system to automatically populate environment variables from shared configurations and add-on services. In production, these variables are automatically set using the following pattern:
+
+#### Shared Variables (from Railway shared configuration)
+```bash
+ALLOWED_ORIGINS="${{shared.ALLOWED_ORIGINS}}"
+ANTHROPIC_API_KEY="${{shared.ANTHROPIC_API_KEY}}"
+JWT_SECRET="${{shared.JWT_SECRET}}"
+OPENAI_API_KEY="${{shared.OPENAI_API_KEY}}"
+# ... other shared variables
+```
+
+#### Postgres Add-on Variables
+```bash
+DATABASE_URL="${{Postgres.DATABASE_URL}}"
+DATABASE_PUBLIC_URL="${{Postgres.DATABASE_PUBLIC_URL}}"
+PGHOST="${{Postgres.PGHOST}}"
+PGPORT="${{Postgres.PGPORT}}"
+PGUSER="${{Postgres.PGUSER}}"
+POSTGRES_PASSWORD="${{Postgres.POSTGRES_PASSWORD}}"
+# ... other Postgres variables
+```
+
+#### Redis Add-on Variables
+```bash
+REDIS_HOST="${{Redis.REDISHOST}}"
+REDISPASSWORD="${{Redis.REDISPASSWORD}}"
+REDISPORT="${{Redis.REDISPORT}}"
+REDISUSER="${{Redis.REDISUSER}}"
+# ... other Redis variables
+```
+
+This system ensures that:
+1. **Add-on variables** are automatically updated when services are modified
+2. **Shared variables** can be reused across multiple services
+3. **Environment consistency** is maintained across deployments
+4. **Secret rotation** is simplified through centralized management
+
+### Setting Up Railway Variable References
+
+#### 1. Configure Shared Variables
+```bash
+# Set shared variables that can be referenced across services
+railway variables set --shared JWT_SECRET=$(openssl rand -base64 32)
+railway variables set --shared WEBCONTAINER_API_KEY=your-webcontainer-api-key
+railway variables set --shared OPENAI_API_KEY=your-openai-api-key
+railway variables set --shared ANTHROPIC_API_KEY=your-anthropic-api-key
+```
+
+#### 2. Add Database and Redis Services
+```bash
+# Add Postgres database
+railway add postgresql
+
+# Add Redis cache
+railway add redis
+```
+
+#### 3. Reference Variables in Service Configuration
+In your Railway service, set environment variables using references:
+```bash
+# Reference shared variables
+railway variables set JWT_SECRET='${{shared.JWT_SECRET}}'
+railway variables set WEBCONTAINER_API_KEY='${{shared.WEBCONTAINER_API_KEY}}'
+
+# Reference add-on variables  
+railway variables set DATABASE_URL='${{Postgres.DATABASE_URL}}'
+railway variables set REDIS_HOST='${{Redis.REDISHOST}}'
+```
+
+**Note**: When setting variables via CLI, use single quotes to prevent shell interpretation of the `${{}}` syntax.
 
 For production deployments, sensitive variables should be properly managed:
 
