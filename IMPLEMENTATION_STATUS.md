@@ -132,6 +132,9 @@ Overall accuracy: 100.0%
 - ✅ `POST /session` - Create or resume terminal session with persistence
 - ✅ `GET /sessions` - List all active terminal sessions for container
 - ✅ `GET /session/:sessionId/history` - Get command history for specific session
+- ✅ `GET /session/:sessionId/suggestions` - Get command autocomplete suggestions
+- ✅ `GET /session/:sessionId/frequent` - Get frequently used commands
+- ✅ `POST /session/:sessionId/search` - Advanced command history search with filters
 - ✅ `DELETE /session/:sessionId` - Terminate terminal session
 
 ### Computer-Use Operations - `/api/v1/computer-use/:containerId`
@@ -172,6 +175,9 @@ Overall accuracy: 100.0%
 - **Environment Preservation**: Working directory and environment variables maintained
 - **Session Restoration**: Automatic session restoration after disconnections
 - **Memory + Redis Hybrid**: In-memory cache with Redis backup for scalability
+- **Smart Autocomplete**: Intelligent command suggestions based on history and patterns
+- **Advanced Search**: Multi-criteria search (query, exit code, date range, working directory)
+- **Usage Analytics**: Frequent command tracking and usage pattern analysis
 
 ## 🚀 Production Readiness
 

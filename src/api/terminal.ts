@@ -177,9 +177,187 @@ router.get('/:containerId/session/:sessionId/history', async (req: Request, res:
 });
 
 /**
+ * GET /api/v1/terminal/:containerId/session/:sessionId/suggestions
+ * Get command suggestions based on partial input and history
+ */
+router.get('/:containerId/session/:sessionId/suggestions', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const { partial, limit } = req.query;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    const suggestions = await terminalSessionManager.getCommandSuggestions(
+      sessionId,
+      partial as string || '',
+      limit ? parseInt(limit as string) : 10
+    );
+
+    res.json({
+      status: 'success',
+      data: { suggestions }
+    });
+
+  } catch (error) {
+    console.error('Command suggestions error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to get command suggestions'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/terminal/:containerId/session/:sessionId/frequent
+ * Get frequently used commands for a session
+ */
+router.get('/:containerId/session/:sessionId/frequent', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const { limit } = req.query;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    const frequentCommands = await terminalSessionManager.getFrequentCommands(
+      sessionId,
+      limit ? parseInt(limit as string) : 10
+    );
+
+    res.json({
+      status: 'success',
+      data: { commands: frequentCommands }
+    });
+
+  } catch (error) {
+    console.error('Frequent commands error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to get frequent commands'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/v1/terminal/:containerId/session/:sessionId/search
+ * Advanced search through command history with filters
+ */
+router.post('/:containerId/session/:sessionId/search', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const { query, exitCode, dateFrom, dateTo, cwd, limit } = req.body;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    const searchOptions = {
+      query,
+      exitCode,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
+      cwd,
+      limit
+    };
+
+    const results = await terminalSessionManager.searchCommandHistory(sessionId, searchOptions);
+
+    res.json({
+      status: 'success',
+      data: { 
+        results,
+        total: results.length,
+        searchOptions
+      }
+    });
+
+  } catch (error) {
+    console.error('Command history search error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to search command history'
+      }
+    });
+  }
+});
+
+/**
  * DELETE /api/v1/terminal/:containerId/session/:sessionId
  * Terminate a terminal session
  */
+router.delete('/:containerId/session/:sessionId', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    await terminalSessionManager.terminateSession(sessionId);
+
+    res.json({
+      status: 'success',
+      data: { message: 'Terminal session terminated' }
+    });
+
+  } catch (error) {
+    console.error('Terminal session termination error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to terminate terminal session'
+      }
+    });
+  }
+});
 router.delete('/:containerId/session/:sessionId', async (req: Request, res: Response) => {
   try {
     const { containerId, sessionId } = req.params;
