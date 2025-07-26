@@ -229,7 +229,7 @@ app.get('/', (req, res) => {
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px; 
+            max-width: 1000px; 
             margin: 0 auto; 
             padding: 20px;
             background: #f8fafc;
@@ -251,6 +251,58 @@ app.get('/', (req, res) => {
             border-radius: 6px;
             font-size: 0.875rem;
             font-weight: 500;
+        }
+        .auth-section {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .auth-section.authenticated {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        .login-btn, .logout-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #1f2937;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 8px;
+            border: none;
+            cursor: pointer;
+        }
+        .login-btn:hover { background: #374151; }
+        .logout-btn { background: #dc2626; }
+        .logout-btn:hover { background: #b91c1c; }
+        .user-info {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            display: none;
+        }
+        .platform-urls {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        .platform-url {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: monospace;
+            font-size: 0.875rem;
         }
         .grid { 
             display: grid; 
@@ -290,6 +342,7 @@ app.get('/', (req, res) => {
             padding: 24px;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
         }
         .code-block {
             background: #1e293b;
@@ -300,6 +353,7 @@ app.get('/', (req, res) => {
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 0.875rem;
             line-height: 1.5;
+            position: relative;
         }
         .copy-btn {
             background: #64748b;
@@ -309,8 +363,9 @@ app.get('/', (req, res) => {
             border-radius: 4px;
             font-size: 0.75rem;
             cursor: pointer;
-            float: right;
-            margin-top: -8px;
+            position: absolute;
+            top: 8px;
+            right: 8px;
         }
         .copy-btn:hover { background: #475569; }
         .footer {
@@ -320,6 +375,7 @@ app.get('/', (req, res) => {
             color: #64748b;
             font-size: 0.875rem;
         }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -327,6 +383,58 @@ app.get('/', (req, res) => {
         <h1>🎵 Disco MCP Server</h1>
         <p>Model Control Plane server with WebContainer integration</p>
         <div class="status">Running - ${serviceInfo.environment}</div>
+    </div>
+
+    <div class="auth-section" id="auth-section">
+        <div id="login-section">
+            <h3>🔐 Authentication Required</h3>
+            <p>Login with GitHub to get your personalized configuration URLs and tokens</p>
+            <a href="/api/v1/auth/github?redirect_to=${encodeURIComponent('/')}" class="login-btn">
+                Login with GitHub
+            </a>
+        </div>
+        <div id="authenticated-section" class="hidden">
+            <h3>✅ Authenticated</h3>
+            <div class="user-info" id="user-info"></div>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <div class="platform-urls">
+        <h3>🌐 Platform Integration URLs</h3>
+        <p>Copy these URLs directly into ChatGPT Custom GPTs, Claude Projects, or other AI platforms:</p>
+        
+        <div>
+            <strong>ChatGPT Custom GPT Actions URL:</strong>
+            <div class="platform-url">
+                <span>${domain}/openapi.json</span>
+                <button class="copy-btn" onclick="copyText('${domain}/openapi.json')">Copy</button>
+            </div>
+        </div>
+
+        <div>
+            <strong>Claude/Anthropic API Base URL:</strong>
+            <div class="platform-url">
+                <span>${domain}/api/v1</span>
+                <button class="copy-btn" onclick="copyText('${domain}/api/v1')">Copy</button>
+            </div>
+        </div>
+
+        <div>
+            <strong>MCP JSON-RPC Endpoint:</strong>
+            <div class="platform-url">
+                <span>${domain}/mcp</span>
+                <button class="copy-btn" onclick="copyText('${domain}/mcp')">Copy</button>
+            </div>
+        </div>
+
+        <div>
+            <strong>Authentication Endpoint:</strong>
+            <div class="platform-url" id="auth-endpoint">
+                <span>${domain}/api/v1/auth/github</span>
+                <button class="copy-btn" onclick="copyText('${domain}/api/v1/auth/github')">Copy</button>
+            </div>
+        </div>
     </div>
 
     <div class="grid">
@@ -357,56 +465,160 @@ app.get('/', (req, res) => {
 
     <div class="mcp-section">
         <h3>🔗 MCP Client Configuration</h3>
-        <p>Configure your MCP client to connect to this server:</p>
+        <p id="config-description">Login with GitHub to get your personalized configuration with authentication tokens:</p>
         
-        <h4>For Warp Terminal or other MCP clients:</h4>
-        <div class="code-block">
-<button class="copy-btn" onclick="copyToClipboard('mcp-config')">Copy</button>
-<pre id="mcp-config">{
+        <div id="authenticated-configs" class="hidden">
+            <h4>For Warp Terminal:</h4>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('warp-config')">Copy</button>
+                <pre id="warp-config">{
   "servers": {
     "disco": {
-      "url": "${domain}",
+      "url": "${domain}/mcp",
       "transport": "http",
       "auth": {
         "type": "bearer",
-        "endpoint": "/api/v1/auth/login"
+        "token": "YOUR_JWT_TOKEN_HERE"
       }
     }
   }
 }</pre>
-        </div>
+            </div>
 
-        <h4>For local development:</h4>
-        <div class="code-block">
-<button class="copy-btn" onclick="copyToClipboard('local-config')">Copy</button>
-<pre id="local-config"># Clone and run locally
-git clone https://github.com/Arcane-Fly/disco.git
-cd disco
-npm install
-npm run build
-npm start
+            <h4>For VSCode/IDE MCP Extension:</h4>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('vscode-config')">Copy</button>
+                <pre id="vscode-config">{
+  "mcpServers": {
+    "disco": {
+      "command": "curl",
+      "args": [
+        "-X", "POST",
+        "-H", "Content-Type: application/json",
+        "-H", "Authorization: Bearer YOUR_JWT_TOKEN_HERE",
+        "-d", "@-",
+        "${domain}/mcp"
+      ]
+    }
+  }
+}</pre>
+            </div>
 
-# Then configure client to use:
-# "command": ["node", "/path/to/disco/dist/server.js"]
-# or 
-# "url": "http://localhost:3000"</pre>
-        </div>
-
-        <h4>Environment Variables for Remote Connection:</h4>
-        <div class="code-block">
-<button class="copy-btn" onclick="copyToClipboard('env-config')">Copy</button>
-<pre id="env-config"># Add to your shell profile or MCP client config
+            <h4>Environment Variables:</h4>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('env-vars')">Copy</button>
+                <pre id="env-vars"># Add to your shell profile
 export DISCO_MCP_URL="${domain}"
-export DISCO_MCP_TOKEN="your-jwt-token-here"</pre>
+export DISCO_MCP_TOKEN="YOUR_JWT_TOKEN_HERE"
+export DISCO_API_BASE="${domain}/api/v1"</pre>
+            </div>
+        </div>
+
+        <div id="unauthenticated-configs">
+            <h4>Sample Configuration (Login Required for Tokens):</h4>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyToClipboard('sample-config')">Copy</button>
+                <pre id="sample-config">{
+  "servers": {
+    "disco": {
+      "url": "${domain}/mcp",
+      "transport": "http",
+      "auth": {
+        "type": "bearer",
+        "token": "Login with GitHub to get your token"
+      }
+    }
+  }
+}</pre>
+            </div>
         </div>
     </div>
 
     <div class="footer">
-        <p>Built with ❤️ for seamless ChatGPT integration</p>
+        <p>Built with ❤️ for seamless ChatGPT and Claude integration</p>
         <p>Version ${serviceInfo.version} • ${serviceInfo.timestamp}</p>
     </div>
 
     <script>
+        let currentToken = null;
+        let currentUser = null;
+
+        // Check for authentication token in URL fragment
+        function checkAuth() {
+            const hash = window.location.hash;
+            if (hash.includes('token=')) {
+                const params = new URLSearchParams(hash.substring(1));
+                currentToken = params.get('token');
+                currentUser = params.get('user');
+                
+                if (currentToken) {
+                    localStorage.setItem('disco_token', currentToken);
+                    localStorage.setItem('disco_user', currentUser || '');
+                    window.location.hash = ''; // Clear URL
+                }
+            } else {
+                // Check localStorage
+                currentToken = localStorage.getItem('disco_token');
+                currentUser = localStorage.getItem('disco_user');
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            const authSection = document.getElementById('auth-section');
+            const loginSection = document.getElementById('login-section');
+            const authenticatedSection = document.getElementById('authenticated-section');
+            const userInfo = document.getElementById('user-info');
+            const authenticatedConfigs = document.getElementById('authenticated-configs');
+            const unauthenticatedConfigs = document.getElementById('unauthenticated-configs');
+
+            if (currentToken) {
+                // Update auth section
+                authSection.classList.add('authenticated');
+                loginSection.classList.add('hidden');
+                authenticatedSection.classList.remove('hidden');
+                
+                // Show user info
+                userInfo.innerHTML = \`<strong>Logged in as:</strong> \${currentUser || 'Unknown'}\`;
+                userInfo.style.display = 'block';
+
+                // Show authenticated configs
+                authenticatedConfigs.classList.remove('hidden');
+                unauthenticatedConfigs.classList.add('hidden');
+
+                // Update token placeholders
+                updateTokenPlaceholders();
+            } else {
+                // Show login UI
+                authSection.classList.remove('authenticated');
+                loginSection.classList.remove('hidden');
+                authenticatedSection.classList.add('hidden');
+                authenticatedConfigs.classList.add('hidden');
+                unauthenticatedConfigs.classList.remove('hidden');
+            }
+        }
+
+        function updateTokenPlaceholders() {
+            if (!currentToken) return;
+
+            const elements = ['warp-config', 'vscode-config', 'env-vars'];
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = element.textContent.replace(/YOUR_JWT_TOKEN_HERE/g, currentToken);
+                }
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('disco_token');
+            localStorage.removeItem('disco_user');
+            currentToken = null;
+            currentUser = null;
+            updateUI();
+        }
+
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);
             const text = element.textContent;
@@ -417,6 +629,17 @@ export DISCO_MCP_TOKEN="your-jwt-token-here"</pre>
                 setTimeout(() => { btn.textContent = originalText; }, 2000);
             });
         }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Find the button that was clicked and update it
+                event.target.textContent = 'Copied!';
+                setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', checkAuth);
     </script>
 </body>
 </html>`;
@@ -780,7 +1003,7 @@ app.get('/mcp-setup', (_req, res) => {
               transport: 'http',
               auth: {
                 type: 'bearer',
-                endpoint: `${domain}/api/v1/auth/login`
+                endpoint: `${domain}/api/v1/auth/github`
               }
             }
           }
@@ -829,18 +1052,24 @@ app.get('/mcp-setup', (_req, res) => {
       }
     },
     authentication: {
-      description: 'Most MCP operations require authentication',
-      login_endpoint: `${domain}/api/v1/auth/login`,
-      login_example: {
+      description: 'Authentication via GitHub OAuth or API key',
+      github_oauth_endpoint: `${domain}/api/v1/auth/github`,
+      legacy_login_endpoint: `${domain}/api/v1/auth/login`,
+      oauth_example: {
+        description: 'Login with GitHub OAuth',
+        url: `${domain}/api/v1/auth/github`,
+        method: 'GET',
+        response: 'Redirects to GitHub OAuth, returns with JWT token'
+      },
+      api_key_example: {
         method: 'POST',
         url: `${domain}/api/v1/auth/login`,
         body: {
-          username: 'your-username',
-          password: 'your-password'
+          apiKey: 'your-api-key'
         },
         response: {
           token: 'jwt-token-here',
-          expires_in: 3600
+          expires: 1640995200000
         }
       }
     },
@@ -858,8 +1087,8 @@ app.get('/mcp-setup', (_req, res) => {
         },
         {
           issue: 'Authentication failed',
-          solution: 'Obtain valid JWT token from login endpoint',
-          fix: `curl -X POST ${domain}/api/v1/auth/login -d '{"username":"user","password":"pass"}'`
+          solution: 'Use GitHub OAuth or obtain valid API key',
+          fix: `Visit ${domain}/api/v1/auth/github for OAuth or POST to ${domain}/api/v1/auth/login with API key`
         }
       ]
     }
