@@ -1,17 +1,229 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
-import { TerminalCommand, TerminalResponse, ErrorCode } from '../types/index.js';
+import { TerminalCommand, TerminalResponse, TerminalSessionRequest, ErrorCode } from '../types/index.js';
+import { terminalSessionManager } from '../lib/terminalSessionManager.js';
 
 const router = Router();
 
 /**
+ * POST /api/v1/terminal/:containerId/session
+ * Create a new terminal session or resume an existing one
+ */
+router.post('/:containerId/session', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const { sessionId, cwd, env }: TerminalSessionRequest = req.body;
+    const userId = req.user!.userId;
+
+    // Verify container exists and user has access
+    const containerSession = await containerManager.getSession(containerId);
+    if (!containerSession) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Container not found'
+        }
+      });
+    }
+
+    if (containerSession.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied to this container'
+        }
+      });
+    }
+
+    // Create or resume terminal session
+    const terminalSession = await terminalSessionManager.createOrResumeSession({
+      containerId,
+      sessionId,
+      cwd,
+      env
+    });
+
+    // Set userId on the terminal session
+    const session = await terminalSessionManager.getSession(terminalSession.sessionId);
+    if (session) {
+      session.userId = userId;
+      await terminalSessionManager.updateEnvironment(terminalSession.sessionId, session.env);
+    }
+
+    res.json({
+      status: 'success',
+      data: terminalSession
+    });
+
+  } catch (error) {
+    console.error('Terminal session creation error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to create terminal session'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/terminal/:containerId/sessions
+ * List all active terminal sessions for a container
+ */
+router.get('/:containerId/sessions', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const userId = req.user!.userId;
+
+    // Verify container exists and user has access
+    const containerSession = await containerManager.getSession(containerId);
+    if (!containerSession) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Container not found'
+        }
+      });
+    }
+
+    if (containerSession.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied to this container'
+        }
+      });
+    }
+
+    const sessions = await terminalSessionManager.getContainerSessions(containerId);
+    
+    // Filter to only return sessions owned by this user
+    const userSessions = sessions.filter(session => session.userId === userId);
+
+    res.json({
+      status: 'success',
+      data: {
+        sessions: userSessions.map(session => ({
+          id: session.id,
+          createdAt: session.createdAt,
+          lastActive: session.lastActive,
+          cwd: session.cwd,
+          status: session.status,
+          historyCount: session.history.length
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Terminal sessions list error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to list terminal sessions'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/terminal/:containerId/session/:sessionId/history
+ * Get command history for a terminal session
+ */
+router.get('/:containerId/session/:sessionId/history', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const { limit, search } = req.query;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    const history = await terminalSessionManager.getSessionHistory(
+      sessionId,
+      limit ? parseInt(limit as string) : 50,
+      search as string
+    );
+
+    res.json({
+      status: 'success',
+      data: { history }
+    });
+
+  } catch (error) {
+    console.error('Terminal history error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to get terminal history'
+      }
+    });
+  }
+});
+
+/**
+ * DELETE /api/v1/terminal/:containerId/session/:sessionId
+ * Terminate a terminal session
+ */
+router.delete('/:containerId/session/:sessionId', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    await terminalSessionManager.terminateSession(sessionId);
+
+    res.json({
+      status: 'success',
+      data: { message: 'Terminal session terminated' }
+    });
+
+  } catch (error) {
+    console.error('Terminal session termination error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to terminate terminal session'
+      }
+    });
+  }
+});
+
+/**
  * POST /api/v1/terminal/:containerId/execute
- * Execute a command in the container
+ * Execute a command in the container with session support
  */
 router.post('/:containerId/execute', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
-    const { command, cwd, env }: TerminalCommand = req.body;
+    const { command, cwd, env, sessionId }: TerminalCommand = req.body;
     const userId = req.user!.userId;
 
     if (!command || typeof command !== 'string') {
@@ -24,9 +236,9 @@ router.post('/:containerId/execute', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
+    const containerSession = await containerManager.getSession(containerId);
     
-    if (!session) {
+    if (!containerSession) {
       return res.status(404).json({
         status: 'error',
         error: {
@@ -36,7 +248,7 @@ router.post('/:containerId/execute', async (req: Request, res: Response) => {
       });
     }
 
-    if (session.userId !== userId) {
+    if (containerSession.userId !== userId) {
       return res.status(403).json({
         status: 'error',
         error: {
@@ -57,20 +269,79 @@ router.post('/:containerId/execute', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`💻 Executing command: "${command}" in container ${containerId}`);
+    // Get or create terminal session
+    let terminalSession;
+    if (sessionId) {
+      terminalSession = await terminalSessionManager.getSession(sessionId);
+      if (!terminalSession || terminalSession.containerId !== containerId || terminalSession.userId !== userId) {
+        return res.status(404).json({
+          status: 'error',
+          error: {
+            code: ErrorCode.CONTAINER_NOT_FOUND,
+            message: 'Terminal session not found or access denied'
+          }
+        });
+      }
+    } else {
+      // Create a temporary session for this command
+      const sessionResponse = await terminalSessionManager.createOrResumeSession({
+        containerId,
+        cwd,
+        env
+      });
+      terminalSession = await terminalSessionManager.getSession(sessionResponse.sessionId);
+      if (terminalSession) {
+        terminalSession.userId = userId;
+      }
+    }
+
+    // Use session cwd and env if not provided in command
+    const effectiveCwd = cwd || terminalSession?.cwd || '/tmp';
+    const effectiveEnv = { 
+      ...(terminalSession?.env || {}), 
+      ...(env || {}) 
+    };
+
+    // Update session working directory if it changed
+    if (terminalSession && cwd && cwd !== terminalSession.cwd) {
+      await terminalSessionManager.updateWorkingDirectory(terminalSession.id, cwd);
+    }
+
+    // Update session environment if provided
+    if (terminalSession && env) {
+      await terminalSessionManager.updateEnvironment(terminalSession.id, env);
+    }
+
+    console.log(`💻 Executing command: "${command}" in container ${containerId}${terminalSession ? ` (session: ${terminalSession.id})` : ''}`);
 
     const startTime = Date.now();
-    const result = await executeCommand(session.container, command, cwd, env);
+    const result = await executeCommand(containerSession.container, command, effectiveCwd, effectiveEnv);
     const duration = Date.now() - startTime;
+
+    // Save command to terminal session history
+    if (terminalSession) {
+      await terminalSessionManager.addCommandToHistory(
+        terminalSession.id,
+        command,
+        result.output,
+        result.exitCode,
+        duration
+      );
+    }
 
     const response: TerminalResponse = {
       ...result,
       duration
     };
 
+    // Include session ID in response if using a session
+    const responseData = terminalSession 
+      ? { ...response, sessionId: terminalSession.id }
+      : response;
+
     res.json({
       status: 'success',
-      data: response
+      data: responseData
     });
 
   } catch (error) {
