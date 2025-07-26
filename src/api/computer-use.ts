@@ -1,17 +1,24 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
 import { ErrorCode } from '../types/index.js';
+import { enhancedBrowserManager, BrowserSessionConfig } from '../lib/enhanced-browser.js';
 
 const router = Router();
 
 /**
- * POST /api/v1/computer-use/:containerId/screenshot
- * Take a screenshot of the container environment
+ * POST /api/v1/computer-use/:containerId/browser/create
+ * Create a new enhanced browser session with advanced capabilities
  */
-router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
+router.post('/:containerId/browser/create', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
-    const { width = 1920, height = 1080, format = 'png' } = req.body;
+    const { 
+      viewport = { width: 1920, height: 1080 },
+      headless = true,
+      recordVideo = false,
+      enableNetworkLogging = false,
+      userAgent
+    } = req.body;
     const userId = req.user!.userId;
 
     const session = await containerManager.getSession(containerId);
@@ -36,7 +43,149 @@ router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
       });
     }
 
-    const screenshot = await takeScreenshot(session.container, { width, height, format }, containerId);
+    const config: Partial<BrowserSessionConfig> = {
+      viewport,
+      headless,
+      recordVideo,
+      enableNetworkLogging,
+      userAgent
+    };
+
+    const browserSessionId = await enhancedBrowserManager.createSession(containerId, config);
+
+    console.log(`🌐 Created enhanced browser session ${browserSessionId} for container ${containerId}`);
+
+    res.json({
+      status: 'success',
+      data: {
+        browserSessionId,
+        containerId,
+        config,
+        createdAt: new Date().toISOString(),
+        features: {
+          multiSession: true,
+          visualRegression: true,
+          advancedAutomation: true,
+          networkLogging: enableNetworkLogging,
+          videoRecording: recordVideo
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Enhanced browser session creation error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.EXECUTION_ERROR,
+        message: 'Failed to create enhanced browser session'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/v1/computer-use/:containerId/browser/:sessionId/page
+ * Create a new page in browser session
+ */
+router.post('/:containerId/browser/:sessionId/page', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const { url } = req.body;
+    const userId = req.user!.userId;
+
+    const session = await containerManager.getSession(containerId);
+    
+    if (!session || session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied'
+        }
+      });
+    }
+
+    const pageId = await enhancedBrowserManager.createPage(sessionId, url);
+
+    res.json({
+      status: 'success',
+      data: {
+        pageId,
+        sessionId,
+        url: url || 'about:blank',
+        createdAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Page creation error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.EXECUTION_ERROR,
+        message: 'Failed to create page'
+      }
+    });
+  }
+});
+/**
+ * POST /api/v1/computer-use/:containerId/screenshot
+ * Take an enhanced screenshot with advanced options
+ */
+router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const { 
+      sessionId,
+      pageId,
+      width = 1920, 
+      height = 1080, 
+      format = 'png',
+      quality = 80,
+      fullPage = false,
+      element // CSS selector for element screenshot
+    } = req.body;
+    const userId = req.user!.userId;
+
+    const session = await containerManager.getSession(containerId);
+    
+    if (!session) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Container not found'
+        }
+      });
+    }
+
+    if (session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied to this container'
+        }
+      });
+    }
+
+    let screenshot: string;
+    
+    if (sessionId && pageId) {
+      // Use enhanced browser manager for advanced screenshots
+      screenshot = await enhancedBrowserManager.takeEnhancedScreenshot(sessionId, pageId, {
+        width,
+        height,
+        format: format as 'png' | 'jpeg',
+        quality,
+        fullPage,
+        element
+      });
+    } else {
+      // Fallback to legacy screenshot method
+      screenshot = await takeScreenshot(session.container, { width, height, format }, containerId);
+    }
 
     res.json({
       status: 'success',
@@ -45,17 +194,20 @@ router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
         width: width,
         height: height,
         format: format,
-        timestamp: new Date().toISOString()
+        fullPage,
+        element,
+        timestamp: new Date().toISOString(),
+        enhanced: !!(sessionId && pageId)
       }
     });
 
   } catch (error) {
-    console.error('Screenshot error:', error);
+    console.error('Enhanced screenshot error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to take screenshot'
+        message: 'Failed to take enhanced screenshot'
       }
     });
   }
@@ -193,6 +345,186 @@ router.post('/:containerId/type', async (req: Request, res: Response) => {
       error: {
         code: ErrorCode.EXECUTION_ERROR,
         message: 'Failed to simulate typing'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/v1/computer-use/:containerId/visual-regression
+ * Perform visual regression testing
+ */
+router.post('/:containerId/visual-regression', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const { 
+      sessionId,
+      pageId,
+      testName,
+      threshold = 0.95,
+      createBaseline = false
+    } = req.body;
+    const userId = req.user!.userId;
+
+    if (!sessionId || !pageId || !testName) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'sessionId, pageId, and testName are required'
+        }
+      });
+    }
+
+    const session = await containerManager.getSession(containerId);
+    
+    if (!session || session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied'
+        }
+      });
+    }
+
+    const result = await enhancedBrowserManager.performVisualRegression(sessionId, pageId, testName, {
+      threshold,
+      createBaseline
+    });
+
+    console.log(`👁️ Visual regression test "${testName}": ${result.passed ? 'PASSED' : 'FAILED'} (${(result.similarity * 100).toFixed(2)}% similarity)`);
+
+    res.json({
+      status: 'success',
+      data: {
+        testName,
+        result,
+        containerId,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Visual regression testing error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.EXECUTION_ERROR,
+        message: 'Failed to perform visual regression testing'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/v1/computer-use/:containerId/ui-automation
+ * Perform advanced UI automation sequence
+ */
+router.post('/:containerId/ui-automation', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const { 
+      sessionId,
+      pageId,
+      actions
+    } = req.body;
+    const userId = req.user!.userId;
+
+    if (!sessionId || !pageId || !actions || !Array.isArray(actions)) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'sessionId, pageId, and actions array are required'
+        }
+      });
+    }
+
+    const session = await containerManager.getSession(containerId);
+    
+    if (!session || session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied'
+        }
+      });
+    }
+
+    const results = await enhancedBrowserManager.performUIAutomation(sessionId, pageId, actions);
+
+    const successCount = results.filter(r => r.success).length;
+    console.log(`🤖 UI automation completed: ${successCount}/${results.length} actions successful`);
+
+    res.json({
+      status: 'success',
+      data: {
+        actions: results,
+        summary: {
+          total: results.length,
+          successful: successCount,
+          failed: results.length - successCount
+        },
+        containerId,
+        completedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('UI automation error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.EXECUTION_ERROR,
+        message: 'Failed to perform UI automation'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/computer-use/:containerId/browser/sessions
+ * List all browser sessions for container
+ */
+router.get('/:containerId/browser/sessions', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const userId = req.user!.userId;
+
+    const session = await containerManager.getSession(containerId);
+    
+    if (!session || session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied'
+        }
+      });
+    }
+
+    const allSessions = await enhancedBrowserManager.getAllSessions();
+    const containerSessions = allSessions.filter(s => s.containerId === containerId);
+
+    res.json({
+      status: 'success',
+      data: {
+        sessions: containerSessions,
+        totalSessions: containerSessions.length,
+        containerId,
+        retrievedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Session listing error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.EXECUTION_ERROR,
+        message: 'Failed to list browser sessions'
       }
     });
   }

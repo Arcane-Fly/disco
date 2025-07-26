@@ -22,6 +22,9 @@
   "author": "Arcane-Fly",
   "license": "MIT",
   "dependencies": {
+    "@babel/parser": "^7.28.0",
+    "@babel/traverse": "^7.28.0",
+    "@babel/types": "^7.28.2",
     "@stackblitz/sdk": "^1.9.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
@@ -60,7 +63,7 @@
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.1",
     "tsx": "^4.6.2",
-    "typescript": "^5.3.2"
+    "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=20.0.0",

@@ -1,17 +1,25 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
 import { ErrorCode } from '../types/index.js';
+import { enhancedRAG, EnhancedRAGSearchResult, RAGSearchOptions } from '../lib/enhanced-rag.js';
 
 const router = Router();
 
 /**
  * POST /api/v1/rag/:containerId/search
- * Search for relevant code snippets using natural language
+ * Enhanced search for relevant code snippets using natural language with AST analysis
  */
 router.post('/:containerId/search', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
-    const { query, limit = 10, includeContext = true } = req.body;
+    const { 
+      query, 
+      limit = 10, 
+      includeContext = true, 
+      useAST = true, 
+      semanticSearch = true,
+      includeCodeSuggestions = true 
+    } = req.body;
     const userId = req.user!.userId;
 
     if (!query || typeof query !== 'string') {
@@ -46,13 +54,18 @@ router.post('/:containerId/search', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`🔍 RAG search query: "${query}" in container ${containerId}`);
+    console.log(`🧠 Enhanced RAG search query: "${query}" in container ${containerId}`);
 
-    const results = await performRAGSearch(session.container, {
+    const searchOptions: RAGSearchOptions = {
       query,
       limit,
-      includeContext
-    });
+      includeContext,
+      useAST,
+      semanticSearch,
+      includeCodeSuggestions
+    };
+
+    const results = await enhancedRAG.performEnhancedSearch(session.container, searchOptions);
 
     res.json({
       status: 'success',
@@ -61,17 +74,22 @@ router.post('/:containerId/search', async (req: Request, res: Response) => {
         results: results,
         totalResults: results.length,
         searchTime: Date.now(),
-        containerId: containerId
+        containerId: containerId,
+        features: {
+          astAnalysis: useAST,
+          semanticSearch: semanticSearch,
+          codeSuggestions: includeCodeSuggestions
+        }
       }
     });
 
   } catch (error) {
-    console.error('RAG search error:', error);
+    console.error('Enhanced RAG search error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to perform search'
+        message: 'Failed to perform enhanced search'
       }
     });
   }
@@ -79,7 +97,7 @@ router.post('/:containerId/search', async (req: Request, res: Response) => {
 
 /**
  * POST /api/v1/rag/:containerId/index
- * Index the codebase for search
+ * Index the codebase for search with enhanced AST analysis
  */
 router.post('/:containerId/index', async (req: Request, res: Response) => {
   try {
@@ -109,9 +127,9 @@ router.post('/:containerId/index', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`📚 Indexing codebase in container ${containerId}`);
+    console.log(`🧠 Enhanced indexing codebase in container ${containerId}`);
 
-    const indexStats = await indexCodebase(session.container, {
+    const indexStats = await enhancedRAG.indexCodebaseWithAST(session.container, {
       paths,
       excludePatterns
     });
@@ -121,439 +139,439 @@ router.post('/:containerId/index', async (req: Request, res: Response) => {
       data: {
         ...indexStats,
         containerId: containerId,
-        indexedAt: new Date().toISOString()
+        indexedAt: new Date().toISOString(),
+        features: {
+          astAnalysis: true,
+          semanticSearch: true,
+          codeSuggestions: true
+        }
       }
     });
 
   } catch (error) {
-    console.error('Codebase indexing error:', error);
+    console.error('Enhanced codebase indexing error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to index codebase'
+        message: 'Failed to index codebase with enhanced features'
       }
     });
   }
 });
 
-// Helper functions for RAG operations
+/**
+ * POST /api/v1/rag/:containerId/analyze
+ * AI-powered code analysis and suggestions
+ */
+router.post('/:containerId/analyze', async (req: Request, res: Response) => {
+  try {
+    const { containerId } = req.params;
+    const { 
+      filePath, 
+      analysisType = 'comprehensive', 
+      includeRefactoring = true,
+      includeOptimization = true,
+      includeDocumentation = true
+    } = req.body;
+    const userId = req.user!.userId;
 
-interface RAGSearchOptions {
-  query: string;
-  limit: number;
-  includeContext: boolean;
+    if (!filePath || typeof filePath !== 'string') {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'File path is required for analysis'
+        }
+      });
+    }
+
+    const session = await containerManager.getSession(containerId);
+    
+    if (!session) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Container not found'
+        }
+      });
+    }
+
+    if (session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied to this container'
+        }
+      });
+    }
+
+    console.log(`🔬 AI-powered code analysis for: ${filePath} in container ${containerId}`);
+
+    const analysis = await performAICodeAnalysis(session.container, {
+      filePath,
+      analysisType,
+      includeRefactoring,
+      includeOptimization,
+      includeDocumentation
+    });
+
+    res.json({
+      status: 'success',
+      data: {
+        filePath: filePath,
+        analysis: analysis,
+        containerId: containerId,
+        analyzedAt: new Date().toISOString(),
+        features: {
+          refactoringSuggestions: includeRefactoring,
+          optimizationHints: includeOptimization,
+          documentationSuggestions: includeDocumentation
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('AI code analysis error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.EXECUTION_ERROR,
+        message: 'Failed to perform AI code analysis'
+      }
+    });
+  }
+});
+
+// Helper functions for enhanced RAG operations
+
+// AI Code Analysis function
+interface CodeAnalysisOptions {
+  filePath: string;
+  analysisType: string;
+  includeRefactoring: boolean;
+  includeOptimization: boolean;
+  includeDocumentation: boolean;
 }
 
-interface RAGSearchResult {
-  file: string;
-  snippet: string;
-  line: number;
-  score: number;
-  context?: {
-    before: string[];
-    after: string[];
+interface CodeAnalysisResult {
+  complexity: {
+    score: number;
+    rating: string;
+    issues: string[];
   };
+  refactoring?: {
+    suggestions: string[];
+    priority: 'low' | 'medium' | 'high';
+  };
+  optimization?: {
+    hints: string[];
+    performanceImpact: 'low' | 'medium' | 'high';
+  };
+  documentation?: {
+    missing: string[];
+    suggestions: string[];
+  };
+  codeSmells: string[];
+  securityIssues: string[];
 }
 
-async function performRAGSearch(container: any, options: RAGSearchOptions): Promise<RAGSearchResult[]> {
+async function performAICodeAnalysis(container: any, options: CodeAnalysisOptions): Promise<CodeAnalysisResult> {
   try {
-    const { query, limit, includeContext } = options;
+    const { filePath, analysisType, includeRefactoring, includeOptimization, includeDocumentation } = options;
     
-    console.log(`Performing enhanced RAG search for: "${query}"`);
+    console.log(`Performing AI code analysis on: ${filePath}`);
     
-    // Enhanced implementation with better semantic matching
-    // In a production system, this would use:
-    // - Vector embeddings for semantic search
-    // - Proper indexing (ElasticSearch, Pinecone, etc.)
-    // - Code parsing and AST analysis
-    // - Context-aware chunking
+    // Read the file content
+    const content = await container.fs.readFile(filePath, 'utf-8');
+    const lines = content.split('\n');
     
-    const results: RAGSearchResult[] = [];
+    // Basic analysis
+    const analysis: CodeAnalysisResult = {
+      complexity: analyzeComplexity(content),
+      codeSmells: detectCodeSmells(content),
+      securityIssues: detectSecurityIssues(content)
+    };
     
-    // Get list of code files with improved filtering
-    const codeFiles = await findCodeFiles(container);
-    
-    // Prioritize file types based on query
-    const prioritizedFiles = prioritizeFilesByQuery(codeFiles, query);
-    
-    // Search in each file with enhanced matching
-    for (const file of prioritizedFiles.slice(0, Math.min(100, prioritizedFiles.length))) {
-      try {
-        const content = await container.fs.readFile(file, 'utf-8');
-        const lines = content.split('\n');
-        
-        // Enhanced search with multiple strategies
-        const queryLower = query.toLowerCase();
-        const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
-        
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          const lineLower = line.toLowerCase();
-          
-          // Multi-strategy matching
-          const matchStrategies = [
-            // Exact match
-            () => lineLower.includes(queryLower),
-            // Word matches
-            () => queryWords.some(word => lineLower.includes(word)),
-            // Semantic patterns
-            () => isSemanticMatch(line, query),
-            // Code structure matches
-            () => isCodeStructureMatch(line, query),
-            // Variable/function name matches
-            () => isIdentifierMatch(line, query)
-          ];
-          
-          const matches = matchStrategies.filter(strategy => strategy());
-          
-          if (matches.length > 0) {
-            const result: RAGSearchResult = {
-              file: file,
-              snippet: line.trim(),
-              line: i + 1,
-              score: calculateEnhancedRelevanceScore(line, query, file, matches.length)
-            };
-            
-            // Add context if requested
-            if (includeContext) {
-              result.context = {
-                before: lines.slice(Math.max(0, i - 3), i).map((l: string) => l.trim()),
-                after: lines.slice(i + 1, Math.min(lines.length, i + 4)).map((l: string) => l.trim())
-              };
-            }
-            
-            results.push(result);
-            
-            if (results.length >= limit * 2) { // Get more results for better sorting
-              break;
-            }
-          }
-        }
-        
-        if (results.length >= limit * 2) {
-          break;
-        }
-      } catch (fileError) {
-        console.warn(`Could not search in file ${file}:`, fileError);
-      }
+    // Optional advanced features
+    if (includeRefactoring) {
+      analysis.refactoring = generateRefactoringSuggestions(content, filePath);
     }
     
-    // Sort by relevance score and deduplicate
-    const uniqueResults = deduplicateResults(results);
-    uniqueResults.sort((a, b) => b.score - a.score);
+    if (includeOptimization) {
+      analysis.optimization = generateOptimizationHints(content, filePath);
+    }
     
-    return uniqueResults.slice(0, limit);
+    if (includeDocumentation) {
+      analysis.documentation = generateDocumentationSuggestions(content, filePath);
+    }
+    
+    return analysis;
     
   } catch (error) {
-    console.error('RAG search error:', error);
-    throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('AI code analysis error:', error);
+    throw new Error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-function prioritizeFilesByQuery(files: string[], query: string): string[] {
-  const queryLower = query.toLowerCase();
+function analyzeComplexity(content: string): { score: number; rating: string; issues: string[] } {
+  let complexity = 0;
+  const issues: string[] = [];
+  const lines = content.split('\n');
   
-  // File type priorities based on query
-  const priorities = new Map<string, number>();
-  
-  for (const file of files) {
-    const ext = file.split('.').pop()?.toLowerCase() || '';
-    const fileName = file.toLowerCase();
+  // Count complexity indicators
+  for (const line of lines) {
+    const trimmed = line.trim();
     
-    let priority = 1;
-    
-    // Boost priority based on query content
-    if (queryLower.includes('component') || queryLower.includes('react')) {
-      if (ext === 'jsx' || ext === 'tsx') priority += 3;
+    // Control structures
+    if (/\b(if|while|for|switch|catch)\b/.test(trimmed)) {
+      complexity += 1;
     }
     
-    if (queryLower.includes('api') || queryLower.includes('endpoint')) {
-      if (fileName.includes('api') || fileName.includes('route')) priority += 3;
+    // Nested functions
+    if (/function\s*\(|=>\s*{/.test(trimmed)) {
+      complexity += 1;
     }
     
-    if (queryLower.includes('test') || queryLower.includes('spec')) {
-      if (fileName.includes('test') || fileName.includes('spec')) priority += 3;
+    // Long lines (potential complexity)
+    if (line.length > 120) {
+      complexity += 0.5;
+      issues.push(`Line ${lines.indexOf(line) + 1}: Very long line (${line.length} chars)`);
     }
-    
-    if (queryLower.includes('config') || queryLower.includes('setting')) {
-      if (fileName.includes('config') || ext === 'json' || ext === 'yml') priority += 3;
-    }
-    
-    // Boost TypeScript/JavaScript files for most queries
-    if (ext === 'ts' || ext === 'js' || ext === 'tsx' || ext === 'jsx') {
-      priority += 1;
-    }
-    
-    priorities.set(file, priority);
   }
   
-  // Sort by priority
-  return files.sort((a, b) => (priorities.get(b) || 0) - (priorities.get(a) || 0));
+  // Calculate rating
+  let rating = 'low';
+  if (complexity > 10) rating = 'medium';
+  if (complexity > 20) rating = 'high';
+  if (complexity > 30) rating = 'very high';
+  
+  return { score: Math.round(complexity), rating, issues };
 }
 
-function isCodeStructureMatch(line: string, query: string): boolean {
-  const lineLower = line.toLowerCase();
-  const queryLower = query.toLowerCase();
+function detectCodeSmells(content: string): string[] {
+  const smells: string[] = [];
+  const lines = content.split('\n');
   
-  // Enhanced code structure patterns
-  const structurePatterns = [
-    // Function patterns
-    { query: ['function', 'method'], line: /function\s+\w+|const\s+\w+\s*=|=>\s*{|^\s*\w+\s*\(/i },
-    // Class patterns
-    { query: ['class'], line: /class\s+\w+|interface\s+\w+|type\s+\w+/i },
-    // Import/export patterns
-    { query: ['import', 'export'], line: /import\s+|export\s+|from\s+['"`]/i },
-    // Error handling
-    { query: ['error', 'exception', 'catch'], line: /try\s*{|catch\s*\(|throw\s+|Error\(/i },
-    // Async patterns
-    { query: ['async', 'promise', 'await'], line: /async\s+|await\s+|Promise\.|\.then\(|\.catch\(/i },
-    // API patterns
-    { query: ['api', 'request', 'response'], line: /app\.(get|post|put|delete)|router\.|fetch\(|axios\./i }
-  ];
+  // Detect common code smells
+  let functionCount = 0;
+  let longMethods = 0;
   
-  for (const pattern of structurePatterns) {
-    if (pattern.query.some(keyword => queryLower.includes(keyword))) {
-      if (pattern.line.test(line)) {
-        return true;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Long methods
+    if (/function\s+\w+|const\s+\w+\s*=.*=>/.test(line)) {
+      functionCount++;
+      let methodLength = 0;
+      for (let j = i; j < lines.length && j < i + 50; j++) {
+        methodLength++;
+        if (lines[j].includes('}')) break;
+      }
+      if (methodLength > 30) {
+        longMethods++;
+        smells.push(`Long method detected starting at line ${i + 1} (${methodLength} lines)`);
+      }
+    }
+    
+    // Magic numbers
+    if (/\b\d{3,}\b/.test(line) && !line.includes('//') && !line.includes('const')) {
+      smells.push(`Magic number on line ${i + 1}: Consider using named constants`);
+    }
+    
+    // Duplicate code patterns
+    if (line.trim().length > 20) {
+      const duplicates = lines.filter(l => l.trim() === line.trim()).length;
+      if (duplicates > 2) {
+        smells.push(`Duplicate code pattern: "${line.trim()}" appears ${duplicates} times`);
       }
     }
   }
   
-  return false;
-}
-
-function isIdentifierMatch(line: string, query: string): boolean {
-  // Extract identifiers from the query
-  const queryWords = query.split(/\s+/).filter(word => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(word));
-  
-  if (queryWords.length === 0) return false;
-  
-  // Check if any query word appears as an identifier in the line
-  const identifierPattern = /\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g;
-  const lineIdentifiers = line.match(identifierPattern) || [];
-  
-  return queryWords.some(queryWord => 
-    lineIdentifiers.some(identifier => 
-      identifier.toLowerCase().includes(queryWord.toLowerCase()) ||
-      queryWord.toLowerCase().includes(identifier.toLowerCase())
-    )
-  );
-}
-
-function calculateEnhancedRelevanceScore(line: string, query: string, filePath: string, matchCount: number): number {
-  let score = 0;
-  const lineLower = line.toLowerCase();
-  const queryLower = query.toLowerCase();
-  
-  // Base score from match count
-  score += matchCount * 5;
-  
-  // Exact match gets highest score
-  if (lineLower.includes(queryLower)) {
-    score += 15;
+  // Too many functions in one file
+  if (functionCount > 15) {
+    smells.push(`Large class/file: ${functionCount} functions detected (consider splitting)`);
   }
   
-  // Word matches
-  const queryWords = queryLower.split(/\s+/).filter(word => word.length > 2);
-  const lineWords = lineLower.split(/\s+/);
+  return [...new Set(smells)]; // Remove duplicates
+}
+
+function detectSecurityIssues(content: string): string[] {
+  const issues: string[] = [];
+  const lines = content.split('\n');
   
-  for (const queryWord of queryWords) {
-    if (lineWords.includes(queryWord)) {
-      score += 8;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].toLowerCase();
+    
+    // SQL Injection risks
+    if (line.includes('select ') && line.includes('+')) {
+      issues.push(`Line ${i + 1}: Potential SQL injection risk - avoid string concatenation in queries`);
     }
-    // Partial word matches
-    if (lineWords.some(word => word.includes(queryWord) || queryWord.includes(word))) {
-      score += 3;
+    
+    // XSS risks
+    if (line.includes('innerhtml') && !line.includes('sanitize')) {
+      issues.push(`Line ${i + 1}: Potential XSS risk - sanitize content before setting innerHTML`);
+    }
+    
+    // Eval usage
+    if (line.includes('eval(')) {
+      issues.push(`Line ${i + 1}: Security risk - avoid using eval()`);
+    }
+    
+    // Hardcoded secrets
+    if (/password\s*=\s*['"]/.test(line) || /apikey\s*=\s*['"]/.test(line)) {
+      issues.push(`Line ${i + 1}: Potential hardcoded secret - use environment variables`);
+    }
+    
+    // Unsafe file operations
+    if (line.includes('fs.readfile') && line.includes('..')) {
+      issues.push(`Line ${i + 1}: Path traversal risk - validate file paths`);
     }
   }
   
-  // File type bonuses
-  const ext = filePath.split('.').pop()?.toLowerCase() || '';
-  if (['ts', 'js', 'tsx', 'jsx'].includes(ext)) {
-    score += 2;
-  }
-  
-  // Code pattern bonuses
-  if (line.includes('function') || line.includes('class') || line.includes('const') || line.includes('let')) {
-    score += 3;
-  }
-  
-  // Comment penalty (usually less relevant)
-  if (line.trim().startsWith('//') || line.trim().startsWith('/*')) {
-    score -= 5;
-  }
-  
-  // Length penalties for very long/short lines
-  if (line.length > 200) {
-    score -= 3;
-  }
-  if (line.trim().length < 10) {
-    score -= 2;
-  }
-  
-  return Math.max(0, score);
+  return issues;
 }
 
-function deduplicateResults(results: RAGSearchResult[]): RAGSearchResult[] {
-  const seen = new Set<string>();
-  const deduplicated: RAGSearchResult[] = [];
+function generateRefactoringSuggestions(content: string, filePath: string): { suggestions: string[]; priority: 'low' | 'medium' | 'high' } {
+  const suggestions: string[] = [];
+  const lines = content.split('\n');
+  let priority: 'low' | 'medium' | 'high' = 'low';
   
-  for (const result of results) {
-    const key = `${result.file}:${result.line}:${result.snippet.trim()}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduplicated.push(result);
+  // Analyze for refactoring opportunities
+  let nestedDepth = 0;
+  let maxNesting = 0;
+  
+  for (const line of lines) {
+    // Track nesting depth
+    nestedDepth += (line.match(/{/g) || []).length;
+    nestedDepth -= (line.match(/}/g) || []).length;
+    maxNesting = Math.max(maxNesting, nestedDepth);
+    
+    // Arrow function simplification
+    if (line.includes('=> {') && line.includes('return ') && !line.includes(';')) {
+      suggestions.push('Consider using arrow function shorthand for simple returns');
+    }
+    
+    // Object destructuring opportunities
+    if (line.includes('.') && line.includes('const ')) {
+      suggestions.push('Consider using object destructuring for cleaner property access');
     }
   }
   
-  return deduplicated;
+  if (maxNesting > 4) {
+    suggestions.push('Consider extracting nested logic into separate functions');
+    priority = 'high';
+  }
+  
+  // File extension specific suggestions
+  if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
+    if (!content.includes('interface') && content.includes('function')) {
+      suggestions.push('Consider adding TypeScript interfaces for better type safety');
+    }
+  }
+  
+  if (suggestions.length > 5) {
+    priority = 'medium';
+  }
+  
+  return { suggestions, priority };
 }
 
-async function indexCodebase(container: any, options: { paths: string[]; excludePatterns: string[] }) {
-  try {
-    const { paths, excludePatterns } = options;
+function generateOptimizationHints(content: string, filePath: string): { hints: string[]; performanceImpact: 'low' | 'medium' | 'high' } {
+  const hints: string[] = [];
+  let performanceImpact: 'low' | 'medium' | 'high' = 'low';
+  
+  // Performance analysis
+  if (content.includes('for (') && content.includes('for (')) {
+    hints.push('Consider using forEach, map, or filter for better readability and performance');
+  }
+  
+  if (content.includes('querySelector') && content.includes('querySelectorAll')) {
+    hints.push('Cache DOM queries to avoid repeated lookups');
+    performanceImpact = 'medium';
+  }
+  
+  if (content.includes('JSON.parse') && content.includes('JSON.stringify')) {
+    hints.push('Consider caching parsed JSON objects if used repeatedly');
+  }
+  
+  // React-specific optimizations
+  if (filePath.endsWith('.tsx') || filePath.endsWith('.jsx')) {
+    if (content.includes('useState') && !content.includes('useCallback')) {
+      hints.push('Consider using useCallback for event handlers in React components');
+    }
     
-    console.log(`Indexing codebase at paths:`, paths);
+    if (content.includes('map(') && !content.includes('key=')) {
+      hints.push('Always provide keys when rendering lists in React');
+      performanceImpact = 'high';
+    }
+  }
+  
+  // Bundle size considerations
+  if (content.includes('import * as ')) {
+    hints.push('Use named imports instead of wildcard imports to improve tree shaking');
+  }
+  
+  return { hints, performanceImpact };
+}
+
+function generateDocumentationSuggestions(content: string, filePath: string): { missing: string[]; suggestions: string[] } {
+  const missing: string[] = [];
+  const suggestions: string[] = [];
+  const lines = content.split('\n');
+  
+  // Check for missing documentation
+  let functionCount = 0;
+  let documentedFunctions = 0;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     
-    let totalFiles = 0;
-    let indexedFiles = 0;
-    let totalLines = 0;
-    
-    for (const path of paths) {
-      const files = await findCodeFiles(container, path, excludePatterns);
-      totalFiles += files.length;
+    // Function declarations
+    if (/function\s+\w+|const\s+\w+\s*=.*=>/.test(line)) {
+      functionCount++;
       
-      for (const file of files) {
-        try {
-          const content = await container.fs.readFile(file, 'utf-8');
-          const lines = content.split('\n');
-          
-          totalLines += lines.length;
-          indexedFiles++;
-          
-          // In a production system, this would:
-          // - Parse code using AST
-          // - Generate embeddings for semantic search
-          // - Store in vector database
-          // - Index functions, classes, variables
-          
-        } catch (fileError) {
-          console.warn(`Could not index file ${file}:`, fileError);
-        }
+      // Check if previous lines contain documentation
+      const prevLines = lines.slice(Math.max(0, i - 5), i);
+      const hasDocumentation = prevLines.some(l => l.includes('/**') || l.includes('//'));
+      
+      if (!hasDocumentation) {
+        const functionName = line.match(/function\s+(\w+)|const\s+(\w+)\s*=/)?.[1] || 'function';
+        missing.push(`Function '${functionName}' at line ${i + 1} lacks documentation`);
+      } else {
+        documentedFunctions++;
       }
     }
     
-    return {
-      totalFiles,
-      indexedFiles,
-      totalLines,
-      indexedPaths: paths,
-      excludePatterns
-    };
-    
-  } catch (error) {
-    console.error('Indexing error:', error);
-    throw new Error(`Indexing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-async function findCodeFiles(container: any, rootPath: string = '.', excludePatterns: string[] = []): Promise<string[]> {
-  const codeFiles: string[] = [];
-  const codeExtensions = ['.js', '.ts', '.jsx', '.tsx', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.rb', '.php', '.swift', '.kt'];
-  
-  try {
-    const findFiles = async (currentPath: string) => {
-      try {
-        const entries = await container.fs.readdir(currentPath, { withFileTypes: true });
-        
-        for (const entry of entries) {
-          const fullPath = `${currentPath}/${entry.name}`;
-          
-          // Skip excluded patterns
-          if (excludePatterns.some(pattern => fullPath.includes(pattern))) {
-            continue;
-          }
-          
-          if (entry.isDirectory()) {
-            // Recursively search subdirectories
-            await findFiles(fullPath);
-          } else if (entry.isFile()) {
-            // Check if it's a code file
-            const hasCodeExtension = codeExtensions.some(ext => entry.name.endsWith(ext));
-            if (hasCodeExtension) {
-              codeFiles.push(fullPath);
-            }
-          }
-        }
-      } catch (dirError) {
-        console.warn(`Could not read directory ${currentPath}:`, dirError);
+    // Class declarations
+    if (/class\s+\w+/.test(line)) {
+      const prevLines = lines.slice(Math.max(0, i - 3), i);
+      const hasDocumentation = prevLines.some(l => l.includes('/**'));
+      
+      if (!hasDocumentation) {
+        const className = line.match(/class\s+(\w+)/)?.[1] || 'class';
+        missing.push(`Class '${className}' at line ${i + 1} needs documentation`);
       }
-    };
-    
-    await findFiles(rootPath);
-    
-  } catch (error) {
-    console.warn('Error finding code files:', error);
-  }
-  
-  return codeFiles;
-}
-
-function isSemanticMatch(line: string, query: string): boolean {
-  // Basic semantic matching (in production, would use embeddings)
-  const lineLower = line.toLowerCase();
-  const queryLower = query.toLowerCase();
-  
-  // Check for function/method patterns
-  if (queryLower.includes('function') && (lineLower.includes('function') || lineLower.includes('=>'))) {
-    return true;
-  }
-  
-  // Check for class patterns
-  if (queryLower.includes('class') && lineLower.includes('class ')) {
-    return true;
-  }
-  
-  // Check for import patterns
-  if (queryLower.includes('import') && lineLower.includes('import')) {
-    return true;
-  }
-  
-  return false;
-}
-
-function calculateRelevanceScore(line: string, query: string): number {
-  let score = 0;
-  const lineLower = line.toLowerCase();
-  const queryLower = query.toLowerCase();
-  
-  // Exact match gets highest score
-  if (lineLower.includes(queryLower)) {
-    score += 10;
-  }
-  
-  // Word matches
-  const queryWords = queryLower.split(/\s+/);
-  const lineWords = lineLower.split(/\s+/);
-  
-  for (const queryWord of queryWords) {
-    if (lineWords.includes(queryWord)) {
-      score += 5;
     }
   }
   
-  // Bonus for code patterns
-  if (line.includes('function') || line.includes('class') || line.includes('const') || line.includes('let')) {
-    score += 2;
+  // Generate suggestions
+  if (functionCount > 0 && documentedFunctions / functionCount < 0.5) {
+    suggestions.push('Consider adding JSDoc comments for better code documentation');
+    suggestions.push('Document function parameters and return values');
   }
   
-  // Penalty for very long lines (likely not relevant snippets)
-  if (line.length > 200) {
-    score -= 2;
+  if (!content.includes('README') && filePath.includes('src')) {
+    suggestions.push('Consider adding a README file for this module');
   }
   
-  return Math.max(0, score);
+  if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
+    suggestions.push('Use TypeScript types as inline documentation');
+  }
+  
+  return { missing, suggestions };
 }
 
 export { router as ragRouter };
