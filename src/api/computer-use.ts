@@ -431,12 +431,19 @@ router.post('/:containerId/ui-automation', async (req: Request, res: Response) =
     } = req.body;
     const userId = req.user!.userId;
 
-    if (!sessionId || !pageId || !actions || !Array.isArray(actions)) {
+    if (
+      !sessionId || 
+      !pageId || 
+      !actions || 
+      !Array.isArray(actions) || 
+      actions.length === 0 || 
+      !actions.every(action => action && typeof action.type === 'string' && typeof action.payload === 'object')
+    ) {
       return res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'sessionId, pageId, and actions array are required'
+          message: 'sessionId, pageId, and a non-empty actions array with valid action objects are required'
         }
       });
     }
