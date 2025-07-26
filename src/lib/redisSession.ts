@@ -279,6 +279,84 @@ class RedisSessionManager {
   }
 
   /**
+   * Generic set method for any key-value storage
+   */
+  async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    if (!this.connected || !this.client) return;
+    
+    try {
+      if (ttlSeconds) {
+        await this.client.setEx(key, ttlSeconds, value);
+      } else {
+        await this.client.set(key, value);
+      }
+    } catch (error) {
+      console.error('Error setting Redis key:', error);
+    }
+  }
+
+  /**
+   * Generic get method for any key
+   */
+  async get(key: string): Promise<string | null> {
+    if (!this.connected || !this.client) return null;
+    
+    try {
+      return await this.client.get(key);
+    } catch (error) {
+      console.error('Error getting Redis key:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Add member to a set
+   */
+  async sAdd(key: string, member: string): Promise<void> {
+    if (!this.connected || !this.client) return;
+    
+    try {
+      await this.client.sAdd(key, member);
+    } catch (error) {
+      console.error('Error adding to Redis set:', error);
+    }
+  }
+
+  /**
+   * Get all members of a set
+   */
+  async sMembers(key: string): Promise<string[]> {
+    if (!this.connected || !this.client) return [];
+    
+    try {
+      return await this.client.sMembers(key);
+    } catch (error) {
+      console.error('Error getting Redis set members:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Remove member from a set
+   */
+  async sRem(key: string, member: string): Promise<void> {
+    if (!this.connected || !this.client) return;
+    
+    try {
+      await this.client.sRem(key, member);
+    } catch (error) {
+      console.error('Error removing from Redis set:', error);
+    }
+  }
+
+  /**
+   * Check if Redis is connected
+   */
+  isConnected(): boolean {
+    return this.connected;
+  }
+
+  /**
    * Close Redis connection
    */
   async shutdown(): Promise<void> {

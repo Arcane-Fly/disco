@@ -49,6 +49,7 @@ export interface TerminalCommand {
   command: string;
   cwd?: string;
   env?: Record<string, string>;
+  sessionId?: string; // Add support for terminal sessions
 }
 
 export interface TerminalResponse {
@@ -57,6 +58,45 @@ export interface TerminalResponse {
   stdout: string;
   stderr: string;
   duration: number;
+}
+
+// Terminal Session types for persistence
+export interface TerminalSession {
+  id: string;
+  containerId: string;
+  userId: string;
+  createdAt: Date;
+  lastActive: Date;
+  cwd: string;
+  env: Record<string, string>;
+  history: TerminalHistoryEntry[];
+  status: 'active' | 'suspended' | 'terminated';
+  processIds: number[];
+}
+
+export interface TerminalHistoryEntry {
+  id: string;
+  command: string;
+  timestamp: Date;
+  output: string;
+  exitCode: number;
+  duration: number;
+  cwd: string;
+}
+
+export interface TerminalSessionRequest {
+  containerId: string;
+  sessionId?: string; // If provided, resume existing session
+  cwd?: string;
+  env?: Record<string, string>;
+}
+
+export interface TerminalSessionResponse {
+  sessionId: string;
+  status: 'created' | 'resumed' | 'restored';
+  cwd: string;
+  env: Record<string, string>;
+  history: TerminalHistoryEntry[];
 }
 
 // Git operation types

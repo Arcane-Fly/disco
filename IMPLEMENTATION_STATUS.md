@@ -123,10 +123,16 @@ Overall accuracy: 100.0%
 - ✅ `GET /log` - Get commit history (Real container.spawn git log)
 
 ### Terminal Operations - `/api/v1/terminal/:containerId`
-- ✅ `POST /execute` - Execute command (Real container.spawn with security)
+- ✅ `POST /execute` - Execute command (Real container.spawn with security + session support)
 - ✅ `POST /stream` - Stream command output (Real container.spawn with SSE)
 - ✅ `GET /history` - Command history
 - ✅ `POST /kill` - Kill running process
+
+### Terminal Session Management - `/api/v1/terminal/:containerId`
+- ✅ `POST /session` - Create or resume terminal session with persistence
+- ✅ `GET /sessions` - List all active terminal sessions for container
+- ✅ `GET /session/:sessionId/history` - Get command history for specific session
+- ✅ `DELETE /session/:sessionId` - Terminate terminal session
 
 ### Computer-Use Operations - `/api/v1/computer-use/:containerId`
 - ✅ `POST /screenshot` - Take screenshot (Real Playwright browser automation)
@@ -158,6 +164,14 @@ Overall accuracy: 100.0%
 - **Context Extraction**: Before/after line context for results
 - **Relevance Scoring**: Advanced scoring algorithm with multiple factors
 - **Deduplication**: Intelligent result deduplication
+
+### Terminal Session Management
+- **Session Persistence**: Terminal sessions survive server restarts via Redis storage
+- **Multi-Terminal Support**: Multiple concurrent terminal sessions per container
+- **Command History**: Persistent command history with search and filtering
+- **Environment Preservation**: Working directory and environment variables maintained
+- **Session Restoration**: Automatic session restoration after disconnections
+- **Memory + Redis Hybrid**: In-memory cache with Redis backup for scalability
 
 ## 🚀 Production Readiness
 
