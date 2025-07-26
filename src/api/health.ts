@@ -4,8 +4,94 @@ import { containerManager } from '../lib/containerManager.js';
 const router = Router();
 
 /**
- * GET /health
- * Health check endpoint for Railway and monitoring
+ * @swagger
+ * /health:
+ *   get:
+ *     tags: [Health]
+ *     summary: Basic health check
+ *     description: Returns the current health status of the MCP server including system metrics and service status
+ *     responses:
+ *       200:
+ *         description: Server is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/HealthStatus'
+ *                 - type: object
+ *                   properties:
+ *                     memory:
+ *                       type: object
+ *                       properties:
+ *                         used:
+ *                           type: number
+ *                           description: Used heap memory in MB
+ *                         total:
+ *                           type: number
+ *                           description: Total heap memory in MB
+ *                         external:
+ *                           type: number
+ *                           description: External memory in MB
+ *                         rss:
+ *                           type: number
+ *                           description: Resident Set Size in MB
+ *                     containers:
+ *                       type: object
+ *                       properties:
+ *                         active:
+ *                           type: number
+ *                           description: Number of active containers
+ *                         max:
+ *                           type: number
+ *                           description: Maximum allowed containers
+ *                         pool_ready:
+ *                           type: number
+ *                           description: Containers ready in pool
+ *                         pool_initializing:
+ *                           type: number
+ *                           description: Containers currently initializing
+ *                     services:
+ *                       type: object
+ *                       properties:
+ *                         webcontainer:
+ *                           type: string
+ *                           enum: [enabled, disabled]
+ *                         redis:
+ *                           type: string
+ *                           enum: [enabled, disabled]
+ *                         github:
+ *                           type: string
+ *                           enum: [enabled, disabled]
+ *             examples:
+ *               healthy:
+ *                 summary: Healthy server response
+ *                 value:
+ *                   status: healthy
+ *                   timestamp: "2024-01-26T10:30:00.000Z"
+ *                   uptime: 3600
+ *                   version: "1.0.0"
+ *                   node_version: "v20.10.0"
+ *                   environment: "production"
+ *                   memory:
+ *                     used: 128
+ *                     total: 256
+ *                     external: 32
+ *                     rss: 180
+ *                   containers:
+ *                     active: 5
+ *                     max: 50
+ *                     pool_ready: 3
+ *                     pool_initializing: 0
+ *                   services:
+ *                     webcontainer: enabled
+ *                     redis: enabled
+ *                     github: enabled
+ *       503:
+ *         description: Server is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/', async (_req: Request, res: Response) => {
   try {
