@@ -3,12 +3,8 @@ import _traverse, { NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
 import * as ts from 'typescript';
 
-// Use dynamic import for babel traverse
-let traverse: typeof _traverse;
-(async () => {
-  const module = await import('@babel/traverse');
-  traverse = module.default || module;
-})();
+// Handle traverse default export
+const traverse = (_traverse as any).default || _traverse;
 
 export interface CodeElement {
   type: 'function' | 'class' | 'interface' | 'variable' | 'import' | 'export';
