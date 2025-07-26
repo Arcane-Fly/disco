@@ -96,6 +96,7 @@ const router = Router();
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const stats = containerManager.getStats();
+    const envInfo = containerManager.getEnvironmentInfo();
     const uptime = process.uptime();
     const memoryUsage = process.memoryUsage();
     
@@ -116,10 +117,14 @@ router.get('/', async (_req: Request, res: Response) => {
         active: stats.activeSessions,
         max: stats.maxContainers,
         pool_ready: stats.poolReady,
-        pool_initializing: stats.poolInitializing
+        pool_initializing: stats.poolInitializing,
+        environment: envInfo.environment,
+        webcontainer_supported: envInfo.webContainerSupported,
+        webcontainer_loaded: envInfo.webContainerLoaded,
+        functionality_available: envInfo.containerFunctionalityAvailable
       },
       services: {
-        webcontainer: process.env.WEBCONTAINER_API_KEY ? 'enabled' : 'disabled',
+        webcontainer: envInfo.containerFunctionalityAvailable ? 'enabled' : 'disabled',
         redis: process.env.REDIS_URL ? 'enabled' : 'disabled',
         github: process.env.GITHUB_CLIENT_ID ? 'enabled' : 'disabled'
       }
@@ -154,14 +159,18 @@ router.get('/', async (_req: Request, res: Response) => {
  */
 router.get('/ready', async (_req: Request, res: Response) => {
   try {
+    const envInfo = containerManager.getEnvironmentInfo();
+    
     // Check if essential services are available
     const checks = {
       server: true,
-      webcontainer: !!process.env.WEBCONTAINER_API_KEY,
+      environment: envInfo.environment,
+      webcontainer_supported: envInfo.webContainerSupported,
       jwt: !!process.env.JWT_SECRET
     };
 
-    const allReady = Object.values(checks).every(check => check === true);
+    // In server environment, WebContainer not being available is expected and OK
+    const allReady = checks.server && checks.jwt;
 
     if (allReady) {
       res.json({

@@ -1,11 +1,25 @@
-import { WebContainer } from '@webcontainer/api';
 import { v4 as uuidv4 } from 'uuid';
 import { ContainerSession } from '../types/index.js';
 import { redisSessionManager } from './redisSession.js';
 
+// Environment detection
+const isServerEnvironment = typeof window === 'undefined';
+const isBrowserEnvironment = typeof window !== 'undefined';
+
+// Dynamic import for WebContainer to prevent server-side issues
+let WebContainer: any = null;
+if (isBrowserEnvironment) {
+  // Only import WebContainer in browser environments
+  import('@webcontainer/api').then(module => {
+    WebContainer = module.WebContainer;
+  }).catch(error => {
+    console.warn('Failed to load WebContainer API:', error);
+  });
+}
+
 interface ContainerPool {
-  ready: WebContainer[];
-  initializing: Promise<WebContainer>[];
+  ready: any[]; // Changed from WebContainer[] to any[] for flexibility
+  initializing: Promise<any>[];
 }
 
 class ContainerManager {
@@ -28,10 +42,13 @@ class ContainerManager {
     // Start cleanup interval (check every 5 minutes)
     this.cleanupInterval = setInterval(() => this.cleanupInactive(), 5 * 60 * 1000);
     
-    // Pre-warm container pool
-    this.preWarmPool();
-    
-    console.log('🏗️  Container Manager initialized');
+    // Only pre-warm container pool in browser environments
+    if (isBrowserEnvironment) {
+      this.preWarmPool();
+      console.log('🏗️  Container Manager initialized with WebContainer support');
+    } else {
+      console.log('🏗️  Container Manager initialized (server mode - WebContainer disabled)');
+    }
   }
 
   /**
@@ -39,6 +56,15 @@ class ContainerManager {
    */
   async createSession(userId: string): Promise<ContainerSession> {
     try {
+      // Check if WebContainer is available
+      if (isServerEnvironment) {
+        throw new Error('Container sessions not available in server environment. Use client-side WebContainer integration.');
+      }
+
+      if (!WebContainer) {
+        throw new Error('WebContainer API not loaded. Ensure you are in a browser environment.');
+      }
+
       // Check if user has reached container limit
       const userContainers = this.getUserContainers(userId);
       if (userContainers.length >= 3) { // Max 3 containers per user
@@ -155,7 +181,11 @@ class ContainerManager {
   /**
    * Get or create a WebContainer from pool
    */
-  private async getOrCreateContainer(): Promise<WebContainer> {
+  private async getOrCreateContainer(): Promise<any> {
+    if (isServerEnvironment || !WebContainer) {
+      throw new Error('WebContainer not available in server environment');
+    }
+
     // Try to get from ready pool
     if (this.pool.ready.length > 0) {
       const container = this.pool.ready.pop()!;
@@ -177,7 +207,11 @@ class ContainerManager {
   /**
    * Create a new WebContainer instance
    */
-  private async createWebContainer(): Promise<WebContainer> {
+  private async createWebContainer(): Promise<any> {
+    if (isServerEnvironment || !WebContainer) {
+      throw new Error('WebContainer not available in server environment');
+    }
+
     try {
       const container = await WebContainer.boot();
       console.log('✅ WebContainer created successfully');
@@ -251,6 +285,11 @@ console.log('Current directory:', process.cwd());
    * Pre-warm container pool
    */
   private async preWarmPool(): Promise<void> {
+    if (isServerEnvironment || !WebContainer) {
+      console.log('📝 Container pre-warming skipped in server environment');
+      return;
+    }
+
     console.log(`🔥 Pre-warming container pool with ${this.poolSize} containers...`);
     
     for (let i = 0; i < this.poolSize; i++) {
@@ -314,6 +353,8 @@ console.log('Current directory:', process.cwd());
       maxContainers: this.maxContainers,
       poolReady: this.pool.ready.length,
       poolInitializing: this.pool.initializing.length,
+      webContainerAvailable: isBrowserEnvironment && !!WebContainer,
+      environment: isServerEnvironment ? 'server' : 'browser',
       sessionsByUser: {} as Record<string, number>
     };
 
@@ -323,6 +364,25 @@ console.log('Current directory:', process.cwd());
     }
 
     return stats;
+  }
+
+  /**
+   * Check if container functionality is available
+   */
+  isContainerAvailable(): boolean {
+    return isBrowserEnvironment && !!WebContainer;
+  }
+
+  /**
+   * Get environment info
+   */
+  getEnvironmentInfo() {
+    return {
+      environment: isServerEnvironment ? 'server' : 'browser',
+      webContainerSupported: !isServerEnvironment,
+      webContainerLoaded: !!WebContainer,
+      containerFunctionalityAvailable: this.isContainerAvailable()
+    };
   }
 
   /**

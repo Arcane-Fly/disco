@@ -57,11 +57,21 @@ const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 // Validate required environment variables
-const requiredEnvVars = ['WEBCONTAINER_API_KEY', 'JWT_SECRET'];
+const requiredEnvVars = ['JWT_SECRET'];
+// WebContainer API key is only required in browser environments where containers are supported
+const optionalEnvVars = ['WEBCONTAINER_API_KEY'];
+
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     console.error(`❌ Missing required environment variable: ${envVar}`);
     process.exit(1);
+  }
+}
+
+// Log optional environment variables status
+for (const envVar of optionalEnvVars) {
+  if (!process.env[envVar]) {
+    console.log(`⚠️  Optional environment variable not set: ${envVar} (WebContainer features will be disabled)`);
   }
 }
 
