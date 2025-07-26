@@ -1,4 +1,4 @@
-import { chromium, Browser, BrowserContext, Page, ElementHandle } from 'playwright';
+import { chromium, Browser, BrowserContext, Page } from 'playwright';
 
 export interface BrowserSession {
   id: string;
@@ -222,7 +222,7 @@ export class EnhancedBrowserAutomationManager {
     const baselineKey = `${testName}_baseline`;
     
     // Get or create baseline
-    let baselineBuffer = this.baselineScreenshots.get(baselineKey);
+    const baselineBuffer = this.baselineScreenshots.get(baselineKey);
     
     if (!baselineBuffer || createBaseline) {
       console.log(`📸 Creating new baseline for ${testName}`);
@@ -361,20 +361,22 @@ export class EnhancedBrowserAutomationManager {
             results.push({ action: 'type', success: true, text: action.text });
             break;
             
-          case 'wait':
+          case 'wait': {
             const timeout = action.timeout || 1000;
             await page.waitForTimeout(timeout);
             results.push({ action: 'wait', success: true, duration: timeout });
             break;
+          }
             
-          case 'screenshot':
+          case 'screenshot': {
             const screenshot = await this.takeEnhancedScreenshot(sessionId, pageId, {
               format: 'png'
             });
             results.push({ action: 'screenshot', success: true, data: screenshot });
             break;
+          }
             
-          case 'scroll':
+          case 'scroll': {
             const direction = action.scrollDirection || 'down';
             const amount = action.scrollAmount || 500;
             
@@ -388,6 +390,7 @@ export class EnhancedBrowserAutomationManager {
             await page.mouse.wheel(scrollOptions[direction].x, scrollOptions[direction].y);
             results.push({ action: 'scroll', success: true, direction, amount });
             break;
+          }
             
           default:
             throw new Error(`Unknown action type: ${action.type}`);

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
 import { ErrorCode } from '../types/index.js';
-import { enhancedRAG, EnhancedRAGSearchResult, RAGSearchOptions } from '../lib/enhanced-rag.js';
+import { enhancedRAG, RAGSearchOptions } from '../lib/enhanced-rag.js';
 
 const router = Router();
 
@@ -280,13 +280,12 @@ interface CodeAnalysisResult {
 
 async function performAICodeAnalysis(container: any, options: CodeAnalysisOptions): Promise<CodeAnalysisResult> {
   try {
-    const { filePath, analysisType, includeRefactoring, includeOptimization, includeDocumentation } = options;
+    const { filePath, includeRefactoring, includeOptimization, includeDocumentation } = options;
     
     console.log(`Performing AI code analysis on: ${filePath}`);
     
     // Read the file content
     const content = await container.fs.readFile(filePath, 'utf-8');
-    const lines = content.split('\n');
     
     // Basic analysis
     const analysis: CodeAnalysisResult = {
@@ -357,7 +356,6 @@ function detectCodeSmells(content: string): string[] {
   
   // Detect common code smells
   let functionCount = 0;
-  let longMethods = 0;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -371,7 +369,6 @@ function detectCodeSmells(content: string): string[] {
         if (lines[j].includes('}')) break;
       }
       if (methodLength > 30) {
-        longMethods++;
         smells.push(`Long method detected starting at line ${i + 1} (${methodLength} lines)`);
       }
     }

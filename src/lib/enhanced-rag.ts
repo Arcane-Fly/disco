@@ -1,7 +1,6 @@
 import { parse } from '@babel/parser';
-import _traverse, { NodePath } from '@babel/traverse';
+import _traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import * as ts from 'typescript';
 
 // Handle traverse default export
 const traverse = (_traverse as any).default || _traverse;
@@ -139,8 +138,6 @@ export class EnhancedRAGService {
   
   private async parseJavaScriptFile(filePath: string, content: string): Promise<CodeElement[]> {
     const elements: CodeElement[] = [];
-    const extension = filePath.split('.').pop()?.toLowerCase();
-    const isTypeScript = ['ts', 'tsx'].includes(extension || '');
     
     try {
       const ast = parse(content, {
@@ -322,7 +319,6 @@ export class EnhancedRAGService {
   
   private async performASTSearch(options: RAGSearchOptions): Promise<EnhancedRAGSearchResult[]> {
     const results: EnhancedRAGSearchResult[] = [];
-    const queryLower = options.query.toLowerCase();
     
     for (const [file, elements] of this.codeIndex) {
       for (const element of elements) {
@@ -355,7 +351,6 @@ export class EnhancedRAGService {
   private async performEnhancedTextSearch(container: any, options: RAGSearchOptions): Promise<EnhancedRAGSearchResult[]> {
     // Enhanced version of the existing text search with improved scoring
     const results: EnhancedRAGSearchResult[] = [];
-    const queryLower = options.query.toLowerCase();
     
     for (const [file, content] of this.fileContents) {
       const lines = content.split('\n');
@@ -363,7 +358,6 @@ export class EnhancedRAGService {
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        const lineLower = line.toLowerCase();
         
         if (this.isLineRelevant(line, options.query)) {
           const relevantElements = elements.filter(el => Math.abs(el.line - (i + 1)) <= 5);
