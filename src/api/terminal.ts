@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { WebContainer } from '@webcontainer/api';
 import { containerManager } from '../lib/containerManager.js';
 import { TerminalCommand, TerminalResponse, TerminalSessionRequest, ErrorCode } from '../types/index.js';
 import { terminalSessionManager } from '../lib/terminalSessionManager.js';
@@ -662,41 +663,6 @@ router.delete('/:containerId/session/:sessionId', async (req: Request, res: Resp
     });
   }
 });
-router.delete('/:containerId/session/:sessionId', async (req: Request, res: Response) => {
-  try {
-    const { containerId, sessionId } = req.params;
-    const userId = req.user!.userId;
-
-    // Verify session exists and user has access
-    const session = await terminalSessionManager.getSession(sessionId);
-    if (!session || session.containerId !== containerId || session.userId !== userId) {
-      return res.status(404).json({
-        status: 'error',
-        error: {
-          code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Terminal session not found or access denied'
-        }
-      });
-    }
-
-    await terminalSessionManager.terminateSession(sessionId);
-
-    res.json({
-      status: 'success',
-      data: { message: 'Terminal session terminated' }
-    });
-
-  } catch (error) {
-    console.error('Terminal session termination error:', error);
-    res.status(500).json({
-      status: 'error',
-      error: {
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to terminate terminal session'
-      }
-    });
-  }
-});
 
 /**
  * POST /api/v1/terminal/:containerId/execute
@@ -905,7 +871,7 @@ router.post('/:containerId/stream', async (req: Request, res: Response) => {
     const startTime = Date.now();
     
     try {
-      await executeCommandStreaming(session.container, command, cwd, env, (data: any) => {
+      await executeCommandStreaming(session.container, command, cwd, env, (data: {type: string; data?: string; exitCode?: number; error?: string}) => {
         res.write(`data: ${JSON.stringify(data)}\n\n`);
       });
       
@@ -969,8 +935,22 @@ router.get('/:containerId/history', async (req: Request, res: Response) => {
       });
     }
 
-    // Get command history (this would be stored in the container or database)
-    const history = await getCommandHistory(session.container);
+    // Get command history - try to get from most recent session first
+    let history: string[] = [];
+    try {
+      // Get the most recent session for this container
+      const sessions = await terminalSessionManager.getContainerSessions(containerId);
+      const userSessions = sessions.filter(s => s.userId === userId);
+      if (userSessions.length > 0) {
+        const recentSession = userSessions[0]; // Already sorted by most recent
+        history = await getCommandHistory(session.container, recentSession.id);
+      } else {
+        history = await getCommandHistory(session.container);
+      }
+    } catch (error) {
+      console.error('Error getting command history:', error);
+      history = await getCommandHistory(session.container);
+    }
 
     res.json({
       status: 'success',
@@ -1160,7 +1140,7 @@ function isCommandSafe(command: string): boolean {
 }
 
 async function executeCommand(
-  container: any, 
+  container: WebContainer, 
   command: string, 
   cwd?: string, 
   env?: Record<string, string>
@@ -1172,12 +1152,20 @@ async function executeCommand(
     const args = parts.slice(1);
     
     // Set up spawn options
-    const spawnOptions: any = {};
+    const spawnOptions: {
+      cwd?: string;
+      env?: Record<string, string>;
+    } = {};
     if (cwd) {
       spawnOptions.cwd = cwd;
     }
     if (env) {
-      spawnOptions.env = { ...process.env, ...env };
+      spawnOptions.env = { 
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(([_, value]) => value !== undefined)
+        ) as Record<string, string>,
+        ...env 
+      };
     }
     
     console.log(`Executing command: ${cmd} with args:`, args);
@@ -1193,10 +1181,9 @@ async function executeCommand(
     const outputPromises: Promise<void>[] = [];
     
     // Handle stdout stream
-    if (containerProcess.output?.readable) {
+    if (containerProcess.output) {
       const stdoutPromise = new Promise<void>((resolve) => {
         const reader = containerProcess.output.getReader();
-        const decoder = new TextDecoder();
         
         function readStream() {
           reader.read().then(({ done, value }) => {
@@ -1205,9 +1192,8 @@ async function executeCommand(
               return;
             }
             
-            const output = decoder.decode(value, { stream: true });
-            stdout += output;
-            console.log('Command output:', output);
+            stdout += value;
+            console.log('Command output:', value);
             
             readStream(); // Continue reading
           }).catch((error) => {
@@ -1255,39 +1241,78 @@ async function executeCommand(
 }
 
 async function executeCommandStreaming(
-  _container: any,
+  container: WebContainer,
   command: string,
   cwd?: string,
-  _env?: Record<string, string>,
-  onData?: (data: any) => void
+  env?: Record<string, string>,
+  onData?: (data: {type: string; data?: string; exitCode?: number; error?: string}) => void
 ): Promise<void> {
-  try {
-    // Mock streaming implementation
-    const chunks = [
-      'Starting command execution...\n',
-      `Running: ${command}\n`,
-      `Working directory: ${cwd || '/'}\n`,
-      'Command completed successfully.\n'
-    ];
-
-    for (let i = 0; i < chunks.length; i++) {
-      if (onData) {
-        onData({
-          type: 'stdout',
-          data: chunks[i]
-        });
+  // Read stream chunks and send them immediately
+  async function readStream(reader: ReadableStreamDefaultReader<string>, onData: (data: {type: string; data?: string; exitCode?: number; error?: string}) => void): Promise<void> {
+    try {
+      const { done, value } = await reader.read();
+      if (done) {
+        return;
       }
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 500));
+      onData({
+        type: 'stdout',
+        data: value
+      });
+      
+      // Continue reading
+      await readStream(reader, onData);
+    } catch (error) {
+      console.warn('Error reading stdout stream:', error);
     }
+  }
+
+  try {
+    // Parse command and arguments
+    const parts = command.trim().split(/\s+/);
+    const cmd = parts[0];
+    const args = parts.slice(1);
+    
+    // Set up spawn options
+    const spawnOptions: {
+      cwd?: string;
+      env?: Record<string, string>;
+    } = {};
+    if (cwd) {
+      spawnOptions.cwd = cwd;
+    }
+    if (env) {
+      spawnOptions.env = { 
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(([_, value]) => value !== undefined)
+        ) as Record<string, string>,
+        ...env 
+      };
+    }
+    
+    console.log(`Streaming command: ${cmd} with args:`, args);
+    
+    // Spawn the process using WebContainer
+    const containerProcess = await container.spawn(cmd, args, spawnOptions);
+    
+    // Handle stdout stream with real-time streaming
+    if (containerProcess.output && onData) {
+      const reader = containerProcess.output.getReader();
+      
+      // Start reading the stream
+      readStream(reader, onData).catch(console.error);
+    }
+    
+    // Wait for the process to complete and send exit code
+    const exitCode = await containerProcess.exit;
     
     if (onData) {
       onData({
         type: 'exit',
-        exitCode: 0
+        exitCode: exitCode
       });
     }
+    
   } catch (error) {
     if (onData) {
       onData({
@@ -1298,20 +1323,68 @@ async function executeCommandStreaming(
   }
 }
 
-async function getCommandHistory(_container: any): Promise<string[]> {
-  // Mock command history - in production, this would be stored
+async function getCommandHistory(container: WebContainer, sessionId?: string): Promise<string[]> {
+  // If we have a session ID, get history from terminal session manager
+  if (sessionId) {
+    try {
+      const history = await terminalSessionManager.getSessionHistory(sessionId, 50);
+      return history.map(entry => entry.command);
+    } catch (error) {
+      console.error('Failed to get session history:', error);
+    }
+  }
+
+  // If no session or session history fails, try to get bash history from container
+  try {
+    const historyResult = await executeCommand(container, 'history', undefined, undefined);
+    if (historyResult.exitCode === 0) {
+      // Parse history output - format is usually "  123  command"
+      const historyLines = historyResult.output.split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          // Remove line numbers and leading whitespace
+          const match = line.match(/^\s*\d+\s+(.+)$/);
+          return match ? match[1] : line.trim();
+        })
+        .filter(cmd => cmd.length > 0);
+      
+      return historyLines.slice(-50); // Return last 50 commands
+    }
+  } catch (error) {
+    console.error('Failed to get bash history from container:', error);
+  }
+
+  // Fallback to common commands
   return [
-    'npm install',
-    'npm start',
     'ls -la',
+    'pwd',
     'git status',
-    'node server.js'
+    'npm install',
+    'npm start'
   ];
 }
 
-async function killProcess(_container: any, pid: number, signal: string): Promise<void> {
-  // Mock process killing - in production, this would use WebContainer's process API
-  console.log(`Mock: Killing process ${pid} with signal ${signal}`);
+async function killProcess(container: WebContainer, pid: number, signal: string): Promise<void> {
+  try {
+    // Use the kill command to send signal to process
+    const killCommand = `kill -${signal} ${pid}`;
+    const result = await executeCommand(container, killCommand, undefined, undefined);
+    
+    if (result.exitCode !== 0) {
+      // If kill failed, try to get process info to provide better error
+      const psResult = await executeCommand(container, `ps -p ${pid}`, undefined, undefined);
+      if (psResult.exitCode !== 0) {
+        throw new Error(`Process ${pid} not found`);
+      } else {
+        throw new Error(`Failed to kill process ${pid}: ${result.stderr}`);
+      }
+    }
+    
+    console.log(`Successfully sent signal ${signal} to process ${pid}`);
+  } catch (error) {
+    console.error(`Failed to kill process ${pid}:`, error);
+    throw error;
+  }
 }
 
 export { router as terminalRouter };
