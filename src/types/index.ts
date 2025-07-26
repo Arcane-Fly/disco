@@ -72,6 +72,7 @@ export interface TerminalSession {
   history: TerminalHistoryEntry[];
   status: 'active' | 'suspended' | 'terminated';
   processIds: number[];
+  recording?: TerminalRecording; // Optional recording for session playback
 }
 
 export interface TerminalHistoryEntry {
@@ -82,6 +83,32 @@ export interface TerminalHistoryEntry {
   exitCode: number;
   duration: number;
   cwd: string;
+}
+
+export interface TerminalRecording {
+  id: string;
+  sessionId: string;
+  startTime: Date;
+  endTime?: Date;
+  events: TerminalEvent[];
+  metadata: {
+    totalCommands: number;
+    totalDuration: number;
+    finalStatus: 'completed' | 'interrupted';
+  };
+}
+
+export interface TerminalEvent {
+  timestamp: Date;
+  type: 'command' | 'output' | 'cwd_change' | 'env_change';
+  data: {
+    command?: string;
+    output?: string;
+    cwd?: string;
+    env?: Record<string, string>;
+    exitCode?: number;
+    duration?: number;
+  };
 }
 
 export interface TerminalSessionRequest {

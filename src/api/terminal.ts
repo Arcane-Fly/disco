@@ -320,6 +320,310 @@ router.post('/:containerId/session/:sessionId/search', async (req: Request, res:
 });
 
 /**
+ * POST /api/v1/terminal/:containerId/session/:sessionId/record/start
+ * Start recording a terminal session
+ */
+router.post('/:containerId/session/:sessionId/record/start', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    if (session.recording) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'Session is already being recorded'
+        }
+      });
+    }
+
+    const recordingId = await terminalSessionManager.startRecording(sessionId);
+
+    res.json({
+      status: 'success',
+      data: { 
+        recordingId,
+        message: 'Recording started',
+        sessionId
+      }
+    });
+
+  } catch (error) {
+    console.error('Start recording error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to start recording'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/v1/terminal/:containerId/session/:sessionId/record/stop
+ * Stop recording a terminal session
+ */
+router.post('/:containerId/session/:sessionId/record/stop', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    const recording = await terminalSessionManager.stopRecording(sessionId);
+    
+    if (!recording) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'No active recording found for this session'
+        }
+      });
+    }
+
+    res.json({
+      status: 'success',
+      data: { 
+        recording: {
+          id: recording.id,
+          startTime: recording.startTime,
+          endTime: recording.endTime,
+          metadata: recording.metadata,
+          eventCount: recording.events.length
+        },
+        message: 'Recording stopped'
+      }
+    });
+
+  } catch (error) {
+    console.error('Stop recording error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to stop recording'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/terminal/:containerId/session/:sessionId/recordings
+ * Get all recordings for a terminal session
+ */
+router.get('/:containerId/session/:sessionId/recordings', async (req: Request, res: Response) => {
+  try {
+    const { containerId, sessionId } = req.params;
+    const userId = req.user!.userId;
+
+    // Verify session exists and user has access
+    const session = await terminalSessionManager.getSession(sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Terminal session not found or access denied'
+        }
+      });
+    }
+
+    const recordings = await terminalSessionManager.getSessionRecordings(sessionId);
+
+    res.json({
+      status: 'success',
+      data: { 
+        recordings: recordings.map(rec => ({
+          id: rec.id,
+          startTime: rec.startTime,
+          endTime: rec.endTime,
+          metadata: rec.metadata,
+          eventCount: rec.events.length
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Get recordings error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to get recordings'
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/terminal/:containerId/recording/:recordingId
+ * Get a specific recording
+ */
+router.get('/:containerId/recording/:recordingId', async (req: Request, res: Response) => {
+  try {
+    const { containerId, recordingId } = req.params;
+    const userId = req.user!.userId;
+
+    const recording = await terminalSessionManager.getRecording(recordingId);
+    
+    if (!recording) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Recording not found'
+        }
+      });
+    }
+
+    // Verify user has access to the session
+    const session = await terminalSessionManager.getSession(recording.sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied to this recording'
+        }
+      });
+    }
+
+    res.json({
+      status: 'success',
+      data: { recording }
+    });
+
+  } catch (error) {
+    console.error('Get recording error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to get recording'
+      }
+    });
+  }
+});
+
+/**
+ * POST /api/v1/terminal/:containerId/recording/:recordingId/replay
+ * Start replaying a recording with Server-Sent Events
+ */
+router.post('/:containerId/recording/:recordingId/replay', async (req: Request, res: Response) => {
+  try {
+    const { containerId, recordingId } = req.params;
+    const { speed = 1, skipCommands = false, skipOutput = false } = req.body;
+    const userId = req.user!.userId;
+
+    const recording = await terminalSessionManager.getRecording(recordingId);
+    
+    if (!recording) {
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.CONTAINER_NOT_FOUND,
+          message: 'Recording not found'
+        }
+      });
+    }
+
+    // Verify user has access to the session
+    const session = await terminalSessionManager.getSession(recording.sessionId);
+    if (!session || session.containerId !== containerId || session.userId !== userId) {
+      return res.status(403).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Access denied to this recording'
+        }
+      });
+    }
+
+    // Set up Server-Sent Events
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    // Start the replay
+    const replayIterable = await terminalSessionManager.replayRecording(recordingId, {
+      speed,
+      skipCommands,
+      skipOutput
+    });
+
+    // Send initial message
+    res.write(`data: ${JSON.stringify({ 
+      type: 'replay_start', 
+      metadata: recording.metadata,
+      recordingId 
+    })}\n\n`);
+
+    // Stream events
+    try {
+      for await (const event of replayIterable) {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'replay_event', 
+          event 
+        })}\n\n`);
+      }
+      
+      // Send completion message
+      res.write(`data: ${JSON.stringify({ 
+        type: 'replay_complete' 
+      })}\n\n`);
+    } catch (replayError) {
+      console.error('Replay error:', replayError);
+      res.write(`data: ${JSON.stringify({ 
+        type: 'replay_error', 
+        message: 'Replay interrupted' 
+      })}\n\n`);
+    }
+
+    res.end();
+
+  } catch (error) {
+    console.error('Replay recording error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'Failed to replay recording'
+        }
+      });
+    }
+  }
+});
+
+/**
  * DELETE /api/v1/terminal/:containerId/session/:sessionId
  * Terminate a terminal session
  */

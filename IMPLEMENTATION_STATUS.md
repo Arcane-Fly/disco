@@ -135,6 +135,11 @@ Overall accuracy: 100.0%
 - ✅ `GET /session/:sessionId/suggestions` - Get command autocomplete suggestions
 - ✅ `GET /session/:sessionId/frequent` - Get frequently used commands
 - ✅ `POST /session/:sessionId/search` - Advanced command history search with filters
+- ✅ `POST /session/:sessionId/record/start` - Start recording terminal session
+- ✅ `POST /session/:sessionId/record/stop` - Stop recording terminal session
+- ✅ `GET /session/:sessionId/recordings` - List all recordings for session
+- ✅ `GET /recording/:recordingId` - Get specific recording data
+- ✅ `POST /recording/:recordingId/replay` - Stream recording playback via SSE
 - ✅ `DELETE /session/:sessionId` - Terminate terminal session
 
 ### Computer-Use Operations - `/api/v1/computer-use/:containerId`
@@ -178,6 +183,9 @@ Overall accuracy: 100.0%
 - **Smart Autocomplete**: Intelligent command suggestions based on history and patterns
 - **Advanced Search**: Multi-criteria search (query, exit code, date range, working directory)
 - **Usage Analytics**: Frequent command tracking and usage pattern analysis
+- **Session Recording**: Full terminal session recording with event-based capture
+- **Playback Engine**: Configurable speed playback with Server-Sent Events streaming
+- **Recording Management**: Persistent storage and metadata tracking for session recordings
 
 ## 🚀 Production Readiness
 
