@@ -406,16 +406,20 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
     
     // Capture output
     let stdout = '';
-    let stderr = '';
+    const stderr = '';
     
     // Handle output streams if available
     if (process.output?.readable) {
       const reader = process.output.getReader();
       const decoder = new TextDecoder();
       
-      while (true) {
+      let reading = true;
+      while (reading) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          reading = false;
+          break;
+        }
         stdout += decoder.decode(value, { stream: true });
       }
     }
@@ -439,9 +443,13 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
         const decoder = new TextDecoder();
         let hashOutput = '';
         
-        while (true) {
+        let reading = true;
+        while (reading) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            reading = false;
+            break;
+          }
           hashOutput += decoder.decode(value, { stream: true });
         }
         
