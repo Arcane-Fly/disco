@@ -125,6 +125,55 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 
 // Root discovery endpoint
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     tags: [Discovery]
+ *     summary: Service discovery endpoint
+ *     description: Returns basic service information and available endpoints for ChatGPT integration
+ *     responses:
+ *       200:
+ *         description: Service information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 service:
+ *                   type: string
+ *                   example: disco
+ *                 version:
+ *                   type: string
+ *                   example: "1.0.0"
+ *                 name:
+ *                   type: string
+ *                   example: "Disco MCP Server"
+ *                 description:
+ *                   type: string
+ *                   example: "MCP (Model Control Plane) server with WebContainer integration for ChatGPT"
+ *                 docs:
+ *                   type: string
+ *                   example: "/docs"
+ *                 openapi:
+ *                   type: string
+ *                   example: "/openapi.json"
+ *                 config:
+ *                   type: string
+ *                   example: "/config"
+ *                 capabilities:
+ *                   type: string
+ *                   example: "/capabilities"
+ *                 health:
+ *                   type: string
+ *                   example: "/health"
+ *                 environment:
+ *                   type: string
+ *                   example: "production"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ */
 app.get('/', (_req, res) => {
   res.json({
     service: 'disco',
@@ -252,6 +301,42 @@ app.use('/api/v1/computer-use', authMiddleware, computerUseRouter);
 app.use('/api/v1/rag', authMiddleware, ragRouter);
 
 // MCP capabilities endpoint
+/**
+ * @swagger
+ * /capabilities:
+ *   get:
+ *     tags: [Discovery]
+ *     summary: MCP capabilities
+ *     description: Returns the list of supported MCP capabilities and environment information
+ *     responses:
+ *       200:
+ *         description: MCP capabilities
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 version:
+ *                   type: string
+ *                   example: "1.0"
+ *                 capabilities:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["file:read", "file:write", "git:clone", "terminal:execute"]
+ *                 environment:
+ *                   type: object
+ *                   properties:
+ *                     os:
+ *                       type: string
+ *                       example: "linux"
+ *                     node_version:
+ *                       type: string
+ *                       example: "v20.10.0"
+ *                     npm_version:
+ *                       type: string
+ *                       example: "9.6.7"
+ */
 app.get('/capabilities', (_req, res) => {
   res.json({
     version: "1.0",

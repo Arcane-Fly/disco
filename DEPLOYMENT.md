@@ -127,7 +127,40 @@ The deployment will:
 2. Build the TypeScript code
 3. Start the server on Railway's assigned port
 
-### 7. Verify Deployment
+### 7. Configure OAuth Callback URL (Optional)
+
+If using GitHub OAuth integration, you need to register the callback URL:
+
+```bash
+# Get your Railway domain
+RAILWAY_DOMAIN=$(railway variables get RAILWAY_PUBLIC_DOMAIN 2>/dev/null || echo "your-app.up.railway.app")
+
+# Set the GitHub redirect URI
+railway variables set GITHUB_REDIRECT_URI="https://${RAILWAY_DOMAIN}/oauth/github/callback"
+
+# Auto-configure GitHub OAuth callback (requires GitHub CLI)
+if command -v gh &> /dev/null; then
+  echo "Configuring GitHub OAuth callback URL..."
+  gh api -X PATCH \
+    /apps/{YOUR_GITHUB_APP_ID}/callback_urls \
+    -f add="https://${RAILWAY_DOMAIN}/oauth/github/callback"
+else
+  echo "GitHub CLI not found. Manually add callback URL to your GitHub App:"
+  echo "  https://${RAILWAY_DOMAIN}/oauth/github/callback"
+fi
+```
+
+### 8. Configure WebSocket URL
+
+Set the WebSocket URL for ChatGPT integration:
+
+```bash
+# Auto-configure WebSocket URL
+RAILWAY_DOMAIN=$(railway variables get RAILWAY_PUBLIC_DOMAIN 2>/dev/null || echo "your-app.up.railway.app")
+railway variables set WEBSOCKET_URL="wss://${RAILWAY_DOMAIN}/socket.io"
+```
+
+### 9. Verify Deployment
 
 Check the deployment status:
 ```bash
@@ -155,11 +188,77 @@ curl https://your-app.up.railway.app/health
 | `JWT_SECRET` | Yes | Secret for JWT token signing |
 | `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
 | `ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
+| `WEBSOCKET_URL` | No | WebSocket URL (auto-generated for Railway) |
 | `REDIS_URL` | Yes | Redis connection string (auto-set by Railway) |
 | `DATA_DIR` | No | Data directory path (default: "app/data") |
 | `GITHUB_CLIENT_ID` | No | GitHub OAuth client ID |
 | `GITHUB_CLIENT_SECRET` | No | GitHub OAuth client secret |
+| `GITHUB_REDIRECT_URI` | No | GitHub OAuth callback URL |
 | `VALID_API_KEYS` | No | Comma-separated valid API keys |
+
+### Secret Management
+
+For production deployments, sensitive variables should be properly managed:
+
+#### Railway Environment Variables
+```bash
+# Generate and set secure JWT secret
+railway variables set JWT_SECRET=$(openssl rand -base64 32)
+
+# Set API keys
+railway variables set WEBCONTAINER_API_KEY=your-stackblitz-key
+railway variables set VALID_API_KEYS=$(openssl rand -hex 16),$(openssl rand -hex 16)
+```
+
+#### GitHub Environment Secrets
+To sync secrets to GitHub environments for CI/CD:
+
+```bash
+# Install GitHub CLI if not available
+brew install gh  # macOS
+# or
+sudo apt install gh  # Ubuntu
+
+# Login and sync secrets
+gh auth login
+
+# Sync to production environment
+gh secret set WEBCONTAINER_API_KEY --body "$WEBCONTAINER_API_KEY" --env production
+gh secret set JWT_SECRET --body "$(openssl rand -base64 32)" --env production
+gh secret set ALLOWED_ORIGINS --body "https://chat.openai.com,https://chatgpt.com" --env production
+
+# Sync to staging environment (if applicable)
+gh secret set WEBCONTAINER_API_KEY --body "$WEBCONTAINER_API_KEY" --env staging
+gh secret set JWT_SECRET --body "$(openssl rand -base64 32)" --env staging
+```
+
+#### Secret Rotation Schedule
+- **JWT_SECRET**: Rotate monthly
+- **API_KEYS**: Rotate quarterly
+- **GITHUB_CLIENT_SECRET**: Rotate annually or on compromise
+- **WEBCONTAINER_API_KEY**: Rotate when StackBlitz requires
+
+### ChatGPT Integration Verification
+
+After deployment, verify ChatGPT compliance:
+
+```bash
+# Test discovery endpoints
+curl https://your-app.up.railway.app/
+curl https://your-app.up.railway.app/config
+curl https://your-app.up.railway.app/.well-known/ai-plugin.json
+curl https://your-app.up.railway.app/.well-known/mcp.json
+
+# Test OpenAPI documentation
+curl https://your-app.up.railway.app/openapi.json
+# Open in browser: https://your-app.up.railway.app/docs
+
+# Test CORS headers
+curl -H "Origin: https://chat.openai.com" \
+     -H "Access-Control-Request-Method: POST" \
+     -H "Access-Control-Request-Headers: authorization" \
+     -X OPTIONS https://your-app.up.railway.app/api/v1/auth/login
+```
 
 ### Data Directory Configuration
 
