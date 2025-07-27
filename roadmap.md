@@ -192,10 +192,14 @@ All critical implementation gaps have been addressed and core functionality is p
   - Interactive command execution with native terminal integration
   - Impact: Seamless development workflow integration with VS Code
 
-- [ ] **IntelliJ/WebStorm Plugin Development**
-  - Basic plugin structure
-  - Core MCP integration
-  - Terminal and file operations
+- [x] **IntelliJ/WebStorm Plugin Development**
+  - Basic plugin structure with Maven + Kotlin setup
+  - Complete plugin manifest with all IDE extensions
+  - HTTP API client with full Disco MCP integration
+  - Configuration system with persistent settings
+  - Application and project services architecture
+  - Comprehensive README and documentation
+  - Status: Core foundation complete, UI components in progress
   
 - [ ] **Real-time Collaboration Features**
   - WebSocket-based real-time sync
@@ -276,6 +280,8 @@ All critical implementation gaps have been addressed and core functionality is p
 | Enhanced Browser | 4 endpoints | ✅ 4 | ✅ 4 | ✅ 4 | ✅ 4 |
 | Visual Regression | 1 endpoint | ✅ 1 | ✅ 1 | ✅ 1 | ✅ 1 |
 | UI Automation | 1 endpoint | ✅ 1 | ✅ 1 | ✅ 1 | ✅ 1 |
+| VS Code Extension | Complete IDE | ✅ 1 | ✅ 1 | ✅ 1 | ✅ 1 |
+| IntelliJ Plugin | Core Foundation | ✅ 1 | 🚧 0.6 | 🚧 0.5 | ❌ 0 |
 
 ## Risk Assessment
 
@@ -311,11 +317,11 @@ All previously identified high-priority risks have been successfully mitigated.
 4. **Day 10-12**: ✅ Implement multi-browser session management
 5. **Day 13-14**: ✅ Performance optimization and testing
 
-### Week 3-4: 🚧 Developer Experience (In Progress)
+### Week 3-4: 🚧 Developer Experience (In Progress → Major Progress)
 1. **Day 15-17**: ✅ VS Code extension development complete
 2. **Day 18-20**: ✅ Implement terminal session persistence
-3. **Day 21-23**: Begin IntelliJ/WebStorm plugin development
-4. **Day 24-26**: Implement real-time collaboration features
+3. **Day 21-23**: 🚧 IntelliJ/WebStorm plugin development (Core foundation complete)
+4. **Day 24-26**: Begin real-time collaboration features
 5. **Day 27-28**: Integration testing and documentation
 
 ### Week 5-6: 🔮 Enterprise Features (Planned)
