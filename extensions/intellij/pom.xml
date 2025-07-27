@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.disco.mcp</groupId>
+    <artifactId>disco-mcp-plugin</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>Disco MCP Plugin</name>
+    <description>IntelliJ/WebStorm plugin for Disco Model Control Plane server integration</description>
+    <url>https://github.com/Arcane-Fly/disco</url>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <intellij.version>2023.1</intellij.version>
+        <kotlin.version>1.8.10</kotlin.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>jetbrains-releases</id>
+            <name>JetBrains Releases</name>
+            <url>https://www.jetbrains.com/intellij-repository/releases</url>
+        </repository>
+        <repository>
+            <id>jetbrains-snapshots</id>
+            <name>JetBrains Snapshots</name>
+            <url>https://www.jetbrains.com/intellij-repository/snapshots</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.jetbrains.intellij.idea</groupId>
+            <artifactId>idea-IC</artifactId>
+            <version>${intellij.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.11.0</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.jetbrains.intellij</groupId>
+                <artifactId>intellij-maven-plugin</artifactId>
+                <version>1.15.0</version>
+                <configuration>
+                    <version>${intellij.version}</version>
+                    <type>IC</type>
+                    <pluginName>disco-mcp-plugin</pluginName>
+                    <sandboxDirectory>${project.basedir}/idea-sandbox</sandboxDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-build-searchable-options</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>buildSearchableOptions</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
