@@ -1,0 +1,49 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.8.22'
+    id 'org.jetbrains.intellij' version '1.15.0'
+}
+
+group = 'io.disco.mcp'
+version = '1.0.0'
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+    implementation "com.squareup.okhttp3:okhttp:4.11.0"
+    implementation "com.google.code.gson:gson:2.10.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+}
+
+intellij {
+    version = '2023.1.5'
+    type = 'IC'
+    downloadSources = true
+    instrumentCode = false
+    
+    plugins = []
+}
+
+patchPluginXml {
+    sinceBuild = '231'
+    untilBuild = '241.*'
+}
+
+buildPlugin {
+    archiveBaseName = 'disco-mcp-plugin'
+}
+
+runIde {
+    ideDir = file("${buildDir}/idea-IC-2023.1.5")
+}
+
+kotlin {
+    jvmToolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
