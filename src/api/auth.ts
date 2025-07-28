@@ -5,6 +5,64 @@ import { AuthRequest, AuthResponse, ErrorCode } from '../types/index.js';
 const router = Router();
 
 /**
+ * GET /api/v1/auth
+ * Authentication status and configuration endpoint
+ * Returns current auth status and available authentication methods
+ */
+router.get('/', (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const hasValidToken = authHeader && authHeader.startsWith('Bearer ');
+  
+  // Check if OAuth is properly configured
+  const githubOAuthConfigured = !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
+  
+  const responseData: any = {
+    authenticated: false,
+    authentication_required: true,
+    available_methods: [
+      ...(githubOAuthConfigured ? ['github_oauth'] : []),
+      'api_key'
+    ],
+    github_oauth: {
+      available: githubOAuthConfigured,
+      login_url: githubOAuthConfigured ? '/api/v1/auth/github' : null,
+      callback_url: githubOAuthConfigured ? '/api/v1/auth/github/callback' : null
+    },
+    api_key_auth: {
+      available: true,
+      login_url: '/api/v1/auth/login'
+    },
+    token_verification: {
+      url: '/api/v1/auth/verify'
+    },
+    token_refresh: {
+      url: '/api/v1/auth/refresh'
+    }
+  };
+
+  // If they have a token, check if it's valid
+  if (hasValidToken) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      responseData.authenticated = true;
+      responseData.user_id = decoded.userId;
+      responseData.provider = decoded.provider || 'unknown';
+      responseData.token_expires_at = decoded.exp * 1000;
+    } catch (error) {
+      // Token is invalid, but don't fail the request
+      responseData.authenticated = false;
+      responseData.token_status = 'invalid_or_expired';
+    }
+  }
+
+  res.json({
+    status: 'success',
+    data: responseData
+  });
+});
+
+/**
  * POST /api/v1/auth/refresh
  * Refresh JWT token
  */
@@ -147,14 +205,21 @@ router.get('/verify', async (req: Request, res: Response) => {
  */
 router.get('/github', (req: Request, res: Response) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
-  const callbackUrl = process.env.AUTH_CALLBACK_URL;
+  const callbackUrl = process.env.AUTH_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/v1/auth/github/callback`;
   
-  if (!clientId) {
+  if (!clientId || !process.env.GITHUB_CLIENT_SECRET) {
     return res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'GitHub OAuth not configured'
+        message: 'GitHub OAuth not configured',
+        details: {
+          missing_env_vars: [
+            ...(!clientId ? ['GITHUB_CLIENT_ID'] : []),
+            ...(!process.env.GITHUB_CLIENT_SECRET ? ['GITHUB_CLIENT_SECRET'] : [])
+          ],
+          setup_instructions: 'Configure GitHub OAuth app and set environment variables'
+        }
       }
     });
   }
@@ -166,10 +231,11 @@ router.get('/github', (req: Request, res: Response) => {
 
   const githubUrl = `https://github.com/login/oauth/authorize?` +
     `client_id=${clientId}&` +
-    `redirect_uri=${encodeURIComponent(callbackUrl || '')}&` +
+    `redirect_uri=${encodeURIComponent(callbackUrl)}&` +
     `scope=user:email&` +
     `state=${state}`;
 
+  console.log(`🔐 Initiating GitHub OAuth flow for redirect: ${req.query.redirect_to || req.headers.referer || '/'}`);
   res.redirect(githubUrl);
 });
 
