@@ -119,7 +119,7 @@ app.use(helmet({
       connectSrc: ["'self'", "wss:", "ws:"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Needed for Swagger UI
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts
-      styleSrcElem: ["'self'", "https://fonts.googleapis.com"], // Allow Google Fonts stylesheets
+      styleSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts stylesheets and inline styles
       imgSrc: ["'self'", "data:", "https:"],
       fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"] // Allow Google Fonts assets
     },
