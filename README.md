@@ -101,7 +101,37 @@ See [API.md](./API.md) for complete API documentation.
 - **Container Isolation**: Each user gets isolated environments
 - **Command Filtering**: Dangerous commands blocked
 
-## 📊 Monitoring
+## 📊 Monitoring & Validation
+
+### Railway Configuration Validation
+
+The project includes a comprehensive Railway Configuration Validation Agent that automatically checks:
+
+- **Railway Configuration**: Validates `railpack.json`, deployment settings, and build configuration
+- **Environment Variables**: Ensures all required variables are documented and properly configured
+- **Authentication & Security**: Validates GitHub OAuth setup, CORS configuration, and security headers
+- **Domain Configuration**: Confirms callback URLs and allowed origins for production deployment
+
+#### Running Validation Locally
+
+```bash
+# Run all validations
+npm run railway:check-all
+
+# Individual validation checks
+npm run railway:validate        # Railway configuration
+npm run railway:validate-env    # Environment variables
+npm run railway:validate-auth   # Authentication & CORS
+
+# Generate comprehensive report
+npm run railway:report
+```
+
+#### Automated Validation
+
+- **GitHub Actions**: Validation runs automatically on pushes and pull requests
+- **CI/CD Integration**: Deployment blocked if critical validation errors are found
+- **PR Comments**: Validation results automatically posted to pull requests
 
 ### Health Endpoints
 
@@ -109,6 +139,12 @@ See [API.md](./API.md) for complete API documentation.
 - `GET /health/ready` - Readiness probe
 - `GET /health/live` - Liveness probe
 - `GET /health/metrics` - Detailed metrics
+
+### Documentation Health
+
+- **Link Validation**: All documentation links automatically checked weekly
+- **Broken Link Reports**: GitHub Actions generate reports for broken links
+- **Documentation Registry**: Centralized link management in `docs/references/`
 
 ### Logging
 
