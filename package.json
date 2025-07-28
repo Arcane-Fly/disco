@@ -10,7 +10,14 @@
     "dev": "nodemon --exec tsx src/server.ts",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "railway:validate": "node scripts/railway-validation/validator.cjs",
+    "railway:validate-env": "node scripts/railway-validation/env-validator.cjs",
+    "railway:validate-auth": "node scripts/railway-validation/auth-validator.cjs",
+    "railway:report": "node scripts/railway-validation/generate-report.cjs",
+    "railway:check-all": "npm run railway:validate && npm run railway:validate-env && npm run railway:validate-auth",
+    "docs:check-links": "npx linkinator docs/ --recurse --timeout 10000",
+    "setup:dev": "./scripts/setup-dev-environment.sh"
   },
   "keywords": [
     "mcp",

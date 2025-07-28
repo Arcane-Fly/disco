@@ -1,0 +1,126 @@
+name: Documentation Link Health Check
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Weekly Monday check at 9 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    paths:
+      - '*.md'
+      - 'docs/**/*.md'
+      - 'specifications/**/*.md'
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install link checker
+        run: npm install -g linkinator
+        
+      - name: Create docs directory if not exists
+        run: mkdir -p docs
+        
+      - name: Check documentation links
+        run: |
+          echo "# Link Health Check Report" > link-health-report.md
+          echo "" >> link-health-report.md
+          echo "**Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> link-health-report.md
+          echo "" >> link-health-report.md
+          
+          # Check all markdown files
+          echo "## Checking all documentation links..." >> link-health-report.md
+          linkinator . --recurse --markdown --timeout 10000 \
+            --skip "node_modules/**" \
+            --skip ".git/**" \
+            --skip "dist/**" \
+            --format json > link-results.json || true
+          
+          # Parse results and add to report
+          if [ -f link-results.json ]; then
+            echo "" >> link-health-report.md
+            echo "## Summary" >> link-health-report.md
+            echo "" >> link-health-report.md
+            
+            # Count total links and broken links
+            total_links=$(cat link-results.json | grep -o '"state":"' | wc -l)
+            broken_links=$(cat link-results.json | grep -o '"state":"BROKEN"' | wc -l)
+            
+            echo "- **Total Links Checked:** $total_links" >> link-health-report.md
+            echo "- **Broken Links:** $broken_links" >> link-health-report.md
+            echo "" >> link-health-report.md
+            
+            if [ "$broken_links" -gt "0" ]; then
+              echo "## ❌ Broken Links" >> link-health-report.md
+              echo "" >> link-health-report.md
+              cat link-results.json | jq -r '.[] | select(.state == "BROKEN") | "- [" + .url + "](" + .url + ") - " + .status' >> link-health-report.md
+              echo "" >> link-health-report.md
+            else
+              echo "## ✅ All Links Working" >> link-health-report.md
+              echo "" >> link-health-report.md
+              echo "All documentation links are working correctly!" >> link-health-report.md
+              echo "" >> link-health-report.md
+            fi
+          fi
+          
+      - name: Upload link health report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: link-health-report
+          path: link-health-report.md
+          
+      - name: Comment on broken links (if any)
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read the report
+            let report = '';
+            try {
+              report = fs.readFileSync('link-health-report.md', 'utf8');
+            } catch (error) {
+              console.log('No report file found');
+              return;
+            }
+            
+            // Only comment if there are broken links
+            if (report.includes('❌ Broken Links')) {
+              // Find the most recent commit
+              const commits = await github.rest.repos.listCommits({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 1
+              });
+              
+              if (commits.data.length > 0) {
+                await github.rest.repos.createCommitComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: commits.data[0].sha,
+                  body: `## 🔗 Link Health Check\n\n${report}`
+                });
+              }
+            }
+            
+      - name: Fail job if broken links found
+        run: |
+          if grep -q "❌ Broken Links" link-health-report.md; then
+            echo "❌ Broken links detected in documentation"
+            exit 1
+          else
+            echo "✅ All links are working correctly"
+          fi
