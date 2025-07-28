@@ -118,9 +118,10 @@ app.use(helmet({
       frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com"],
       connectSrc: ["'self'", "wss:", "ws:"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Needed for Swagger UI
-      styleSrc: ["'self'", "'unsafe-inline'"], // Needed for Swagger UI
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts
+      styleSrcElem: ["'self'", "https://fonts.googleapis.com"], // Allow Google Fonts stylesheets
       imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https:", "data:"]
+      fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"] // Allow Google Fonts assets
     },
   },
   crossOriginEmbedderPolicy: false, // Allow embedding for ChatGPT/Claude integration
