@@ -248,11 +248,19 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     const { code, state } = req.query;
 
     if (!code) {
+      // Check if this is a browser request (not an API request)
+      const isBrowserRequest = req.headers.accept?.includes('text/html');
+      
+      if (isBrowserRequest) {
+        // Redirect to a helpful page for browser users
+        return res.redirect('/auth/callback');
+      }
+      
       return res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Missing authorization code'
+          message: 'Missing authorization code. This endpoint is for OAuth callbacks only.'
         }
       });
     }
@@ -335,7 +343,8 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       }
     }
 
-    // Redirect to the original page with token in URL fragment
+    // Always redirect to frontend with token in URL fragment for OAuth flow
+    // The main page JavaScript will handle extracting and storing the token
     res.redirect(`${redirectTo}#token=${token}&user=${encodeURIComponent(userData.login)}`);
 
   } catch (error) {

@@ -819,6 +819,182 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
   res.send(html);
 });
 
+// Frontend OAuth callback route
+/**
+ * @swagger
+ * /auth/callback:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Frontend OAuth callback handler
+ *     description: Handles OAuth callback with proper user interface instead of raw JSON
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *         description: OAuth authorization code from GitHub
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *         description: OAuth state parameter for security
+ *       - in: query
+ *         name: error
+ *         schema:
+ *           type: string
+ *         description: OAuth error if authentication failed
+ *     responses:
+ *       200:
+ *         description: HTML page that handles OAuth callback
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ */
+app.get('/auth/callback', (req, res) => {
+  const { code, state, error } = req.query;
+  const domain = process.env.NODE_ENV === 'production' 
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+
+  // If accessed directly without OAuth parameters, show helpful message
+  if (!code && !error) {
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Callback - Disco MCP Server</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .info { color: #0ea5e9; }
+        .home-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .home-btn:hover { background: #2563eb; }
+        .login-btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 24px;
+            background: #1f2937;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .login-btn:hover { background: #374151; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 OAuth Callback</h1>
+        <h2 class="info">ℹ️ Direct Access Detected</h2>
+        <p>This page is designed to handle OAuth authentication callbacks from GitHub. 
+        It looks like you've accessed this page directly.</p>
+        
+        <p>To authenticate with GitHub:</p>
+        <a href="/api/v1/auth/github?redirect_to=${encodeURIComponent('/')}" class="login-btn">
+            Login with GitHub
+        </a>
+        
+        <p>Or return to the main page:</p>
+        <a href="/" class="home-btn">Return to Home</a>
+    </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+    return;
+  }
+
+  // This page should not normally be reached with OAuth parameters, 
+  // since the OAuth flow goes through the API callback.
+  // But if it does happen, show a helpful message.
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Callback - Disco MCP Server</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .warning { color: #f59e0b; }
+        .error { color: #dc2626; }
+        .home-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .home-btn:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 OAuth Callback</h1>
+        
+        ${error ? `
+            <h2 class="error">❌ Authentication Error</h2>
+            <p>OAuth authentication failed: ${error}</p>
+            <p>Please try logging in again.</p>
+        ` : `
+            <h2 class="warning">⚠️ Unexpected OAuth Callback</h2>
+            <p>This page received OAuth parameters but the normal authentication flow 
+            goes through a different endpoint. This might indicate a configuration issue.</p>
+            <p>Please try the login process again.</p>
+        `}
+        
+        <a href="/" class="home-btn">Return to Home</a>
+    </div>
+</body>
+</html>`;
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
 // OpenAPI documentation endpoints
 app.get('/openapi.json', (_req, res) => {
   res.setHeader('Content-Type', 'application/json');
