@@ -17,24 +17,16 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <intellij.version>2023.1.5</intellij.version>
-        <kotlin.version>1.8.22</kotlin.version>
-        <kotlin-coroutines.version>1.7.3</kotlin-coroutines.version>
+        <intellij.version>2023.1</intellij.version>
+        <kotlin.version>1.8.10</kotlin.version>
+        <kotlin-coroutines.version>1.6.4</kotlin-coroutines.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>jetbrains</id>
-            <name>JetBrains Repository</name>
-            <url>https://cache-redirector.jetbrains.com/intellij-dependencies</url>
-        </repository>
-    </repositories>
 
     <pluginRepositories>
         <pluginRepository>
-            <id>jetbrains</id>
-            <name>JetBrains Repository</name>
-            <url>https://cache-redirector.jetbrains.com/plugins.jetbrains.com/maven</url>
+            <id>jetbrains-plugins</id>
+            <name>JetBrains Plugins</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -60,8 +52,11 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>${kotlin-coroutines.version}</version>
+            <version>1.6.4</version>
         </dependency>
+        
+        <!-- IntelliJ Platform SDK Dependencies -->
+        <!-- These are provided by the IntelliJ Maven plugin -->
     </dependencies>
 
     <build>
@@ -85,9 +80,9 @@
             <plugin>
                 <groupId>org.jetbrains.intellij</groupId>
                 <artifactId>intellij-maven-plugin</artifactId>
-                <version>1.15.0</version>
+                <version>1.13.3</version>
                 <configuration>
-                    <version>${intellij.version}</version>
+                    <version>2023.1.1</version>
                     <type>IC</type>
                     <pluginName>disco-mcp-plugin</pluginName>
                     <sandboxDirectory>${project.basedir}/idea-sandbox</sandboxDirectory>
