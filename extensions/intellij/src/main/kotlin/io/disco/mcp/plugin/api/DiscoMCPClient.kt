@@ -34,7 +34,7 @@ class DiscoMCPClient(
     /**
      * Test connection to MCP server
      */
-    suspend fun connect(): Boolean {
+    fun connect(): Boolean {
         return try {
             val response = get("/auth/validate")
             connected = response.isSuccessful
@@ -60,7 +60,7 @@ class DiscoMCPClient(
     /**
      * List all containers
      */
-    suspend fun listContainers(): List<Container> {
+    fun listContainers(): List<Container> {
         val response = get("/containers")
         if (!response.isSuccessful) {
             throw IOException("Failed to list containers: ${response.code}")
@@ -78,7 +78,7 @@ class DiscoMCPClient(
     /**
      * Create a new container
      */
-    suspend fun createContainer(name: String): Container {
+    fun createContainer(name: String): Container {
         val requestBody = mapOf("name" to name)
         val response = post("/containers", requestBody)
         
@@ -93,7 +93,7 @@ class DiscoMCPClient(
     /**
      * Delete a container
      */
-    suspend fun deleteContainer(containerId: String): Boolean {
+    fun deleteContainer(containerId: String): Boolean {
         val response = delete("/containers/$containerId")
         return response.isSuccessful
     }
@@ -101,7 +101,7 @@ class DiscoMCPClient(
     /**
      * Execute command in container
      */
-    suspend fun executeCommand(containerId: String, command: String, workingDirectory: String? = null): CommandResult {
+    fun executeCommand(containerId: String, command: String, workingDirectory: String? = null): CommandResult {
         val requestBody = mutableMapOf<String, Any>("command" to command)
         workingDirectory?.let { requestBody["workingDirectory"] = it }
         
@@ -118,7 +118,7 @@ class DiscoMCPClient(
     /**
      * List files in container directory
      */
-    suspend fun listFiles(containerId: String, path: String = "/"): List<FileItem> {
+    fun listFiles(containerId: String, path: String = "/"): List<FileItem> {
         val response = get("/files/$containerId?path=$path")
         
         if (!response.isSuccessful) {
@@ -137,7 +137,7 @@ class DiscoMCPClient(
     /**
      * Read file content from container
      */
-    suspend fun readFile(containerId: String, path: String): String {
+    fun readFile(containerId: String, path: String): String {
         val response = get("/files/$containerId/content?path=$path")
         
         if (!response.isSuccessful) {
@@ -152,7 +152,7 @@ class DiscoMCPClient(
     /**
      * Write file content to container
      */
-    suspend fun writeFile(containerId: String, path: String, content: String): Boolean {
+    fun writeFile(containerId: String, path: String, content: String): Boolean {
         val requestBody = mapOf(
             "path" to path,
             "content" to content
@@ -165,7 +165,7 @@ class DiscoMCPClient(
     /**
      * Delete file from container
      */
-    suspend fun deleteFile(containerId: String, path: String): Boolean {
+    fun deleteFile(containerId: String, path: String): Boolean {
         val response = delete("/files/$containerId?path=$path")
         return response.isSuccessful
     }
@@ -173,7 +173,7 @@ class DiscoMCPClient(
     /**
      * Get git status for container
      */
-    suspend fun getGitStatus(containerId: String): GitStatus {
+    fun getGitStatus(containerId: String): GitStatus {
         val response = get("/git/$containerId/status")
         
         if (!response.isSuccessful) {
@@ -186,7 +186,7 @@ class DiscoMCPClient(
     
     // Private HTTP methods
     
-    private suspend fun get(path: String): Response {
+    private fun get(path: String): Response {
         val request = Request.Builder()
             .url("$serverUrl$API_BASE$path")
             .header("Authorization", "Bearer $apiKey")
@@ -195,7 +195,7 @@ class DiscoMCPClient(
         return client.newCall(request).execute()
     }
     
-    private suspend fun post(path: String, body: Any): Response {
+    private fun post(path: String, body: Any): Response {
         val json = gson.toJson(body)
         val requestBody = json.toRequestBody(jsonMediaType)
         
@@ -208,7 +208,7 @@ class DiscoMCPClient(
         return client.newCall(request).execute()
     }
     
-    private suspend fun delete(path: String): Response {
+    private fun delete(path: String): Response {
         val request = Request.Builder()
             .url("$serverUrl$API_BASE$path")
             .header("Authorization", "Bearer $apiKey")

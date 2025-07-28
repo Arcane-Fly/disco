@@ -58,7 +58,7 @@ class DiscoApplicationService : PersistentStateComponent<DiscoSettings> {
     /**
      * Connect to MCP server
      */
-    suspend fun connect(): Result<Unit> {
+    fun connect(): Result<Unit> {
         return try {
             val mcpClient = getClient()
             mcpClient.connect()
