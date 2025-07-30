@@ -241,7 +241,7 @@ router.get('/github', (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/auth/github/callback
- * Handle GitHub OAuth callback
+ * Handle GitHub OAuth callback with enhanced PKCE support
  */
 router.get('/github/callback', async (req: Request, res: Response) => {
   try {
@@ -311,41 +311,71 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       });
     }
 
-    // Create JWT token
-    const userId = `github:${userData.login}`;
-    const token = jwt.sign(
-      { 
-        userId,
-        username: userData.login,
-        name: userData.name,
-        email: userData.email,
-        avatar: userData.avatar_url,
-        provider: 'github'
-      },
-      process.env.JWT_SECRET!,
-      { 
-        expiresIn: '24h',
-        issuer: 'mcp-server',
-        audience: 'chatgpt'
-      }
-    );
-
-    console.log(`🔐 GitHub user authenticated: ${userData.login}`);
-
-    // Parse state to get redirect URL
+    // Parse state to get redirect URL and PKCE data
     let redirectTo = '/';
+    let codeChallenge = '';
+    let codeChallengeMethod = 'S256';
+    let clientId = 'disco-mcp-client';
+    
     if (state) {
       try {
         const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
         redirectTo = stateData.redirectTo || '/';
+        codeChallenge = stateData.codeChallenge || '';
+        codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
+        clientId = stateData.clientId || 'disco-mcp-client';
       } catch (e) {
         console.warn('Failed to parse OAuth state:', e);
       }
     }
 
-    // Always redirect to frontend with token in URL fragment for OAuth flow
-    // The main page JavaScript will handle extracting and storing the token
-    res.redirect(`${redirectTo}#token=${token}&user=${encodeURIComponent(userData.login)}`);
+    // For MCP OAuth 2.1 compliance, generate an authorization code
+    // and store the user data for later token exchange
+    const { generateAuthorizationCode, storeAuthCodeData } = await import('../lib/oauthState.js');
+    
+    const authCode = generateAuthorizationCode();
+    const userId = `github:${userData.login}`;
+    const scope = 'mcp:tools mcp:resources';
+    
+    // Store authorization data for PKCE token exchange
+    if (codeChallenge) {
+      storeAuthCodeData(authCode, {
+        userId,
+        scope,
+        codeChallenge,
+        codeChallengeMethod,
+        clientId
+      });
+      
+      console.log(`🔐 GitHub user authenticated with PKCE: ${userData.login}, code stored`);
+      
+      // For MCP OAuth 2.1 compliance, redirect to callback with authorization code
+      res.redirect(`/auth/callback?code=${authCode}&state=${state || ''}`);
+    } else {
+      // Fallback: Create JWT token directly (backward compatibility)
+      const token = jwt.sign(
+        { 
+          userId,
+          username: userData.login,
+          name: userData.name,
+          email: userData.email,
+          avatar: userData.avatar_url,
+          provider: 'github'
+        },
+        process.env.JWT_SECRET!,
+        { 
+          expiresIn: '24h',
+          issuer: 'mcp-server',
+          audience: 'chatgpt'
+        }
+      );
+
+      console.log(`🔐 GitHub user authenticated (direct token): ${userData.login}`);
+      
+      // Always redirect to frontend with token in URL fragment for OAuth flow
+      // The main page JavaScript will handle extracting and storing the token
+      res.redirect(`${redirectTo}#token=${token}&user=${encodeURIComponent(userData.login)}`);
+    }
 
   } catch (error) {
     console.error('GitHub OAuth callback error:', error);
