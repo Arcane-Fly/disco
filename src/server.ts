@@ -1434,6 +1434,194 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
     });
   }
 });
+
+// OAuth Registration Endpoint (for MCP client registration)
+/**
+ * @swagger
+ * /oauth/register:
+ *   post:
+ *     tags: [OAuth Registration]
+ *     summary: OAuth client registration
+ *     description: Dynamic client registration for MCP OAuth 2.1 compliance
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               client_name:
+ *                 type: string
+ *                 example: "MCP Client"
+ *               redirect_uris:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["http://localhost:3000/callback"]
+ *               scope:
+ *                 type: string
+ *                 example: "mcp:tools mcp:resources"
+ *     responses:
+ *       201:
+ *         description: Client registered successfully
+ *       400:
+ *         description: Invalid request
+ */
+app.post('/oauth/register', express.json(), async (req, res) => {
+  try {
+    const { client_name, redirect_uris, scope } = req.body;
+    
+    if (!client_name || !redirect_uris || !Array.isArray(redirect_uris)) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing required fields: client_name, redirect_uris'
+      });
+    }
+    
+    // Generate client credentials
+    const crypto = await import('crypto');
+    const clientId = `disco_${crypto.randomBytes(16).toString('hex')}`;
+    const clientSecret = crypto.randomBytes(32).toString('hex');
+    
+    // In production, store these in a database
+    console.log(`📝 OAuth client registered: ${client_name} (${clientId})`);
+    
+    res.status(201).json({
+      client_id: clientId,
+      client_secret: clientSecret,
+      client_name,
+      redirect_uris,
+      scope: scope || 'mcp:tools mcp:resources',
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+      token_endpoint_auth_method: 'client_secret_basic'
+    });
+    
+  } catch (error) {
+    console.error('OAuth registration error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Client registration failed'
+    });
+  }
+});
+
+// OAuth Token Introspection Endpoint
+/**
+ * @swagger
+ * /oauth/introspect:
+ *   post:
+ *     tags: [OAuth Token]
+ *     summary: OAuth token introspection
+ *     description: RFC 7662 compliant token introspection for MCP OAuth 2.1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: "Access token to introspect"
+ *               token_type_hint:
+ *                 type: string
+ *                 example: "access_token"
+ *             required: ["token"]
+ *     responses:
+ *       200:
+ *         description: Token introspection response
+ */
+app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    const { token, token_type_hint } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing token parameter'
+      });
+    }
+    
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      
+      res.json({
+        active: true,
+        scope: decoded.scope,
+        client_id: decoded.aud,
+        username: decoded.sub,
+        exp: decoded.exp,
+        iat: decoded.iat,
+        sub: decoded.sub,
+        aud: decoded.aud,
+        iss: decoded.iss,
+        token_type: 'Bearer'
+      });
+      
+    } catch (jwtError) {
+      res.json({
+        active: false
+      });
+    }
+    
+  } catch (error) {
+    console.error('OAuth introspection error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Token introspection failed'
+    });
+  }
+});
+
+// OAuth Token Revocation Endpoint
+/**
+ * @swagger
+ * /oauth/revoke:
+ *   post:
+ *     tags: [OAuth Token]
+ *     summary: OAuth token revocation
+ *     description: RFC 7009 compliant token revocation for MCP OAuth 2.1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: "Token to revoke"
+ *               token_type_hint:
+ *                 type: string
+ *                 example: "access_token"
+ *             required: ["token"]
+ *     responses:
+ *       200:
+ *         description: Token revoked successfully
+ */
+app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    const { token, token_type_hint } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing token parameter'
+      });
+    }
+    
+    // In production, add token to revocation list/blacklist
+    console.log(`🗑️ Token revocation requested: ${token.substring(0, 20)}...`);
+    
+    // Always return 200 for security (don't reveal token validity)
+    res.status(200).send();
+    
+  } catch (error) {
+    console.error('OAuth revocation error:', error);
+    res.status(200).send(); // Still return 200 for security
+  }
+});
 /**
  * @swagger
  * /chatgpt-connector:
