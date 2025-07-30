@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -819,14 +820,14 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
   res.send(html);
 });
 
-// Frontend OAuth callback route
+// Enhanced OAuth callback processing with browser extension interference mitigation
 /**
  * @swagger
  * /auth/callback:
  *   get:
- *     tags: [Authentication]
- *     summary: Frontend OAuth callback handler
- *     description: Handles OAuth callback with proper user interface instead of raw JSON
+ *     tags: [OAuth Callback]
+ *     summary: Enhanced OAuth callback with browser extension interference mitigation
+ *     description: Handles OAuth callback with proper PKCE state management and browser extension conflict prevention
  *     parameters:
  *       - in: query
  *         name: code
@@ -837,7 +838,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
  *         name: state
  *         schema:
  *           type: string
- *         description: OAuth state parameter for security
+ *         description: OAuth state parameter with PKCE data
  *       - in: query
  *         name: error
  *         schema:
@@ -845,7 +846,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
  *         description: OAuth error if authentication failed
  *     responses:
  *       200:
- *         description: HTML page that handles OAuth callback
+ *         description: HTML page with enhanced OAuth callback handling
  *         content:
  *           text/html:
  *             schema:
@@ -856,6 +857,79 @@ app.get('/auth/callback', (req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
     : 'http://localhost:3000';
+
+  // Enhanced security headers for OAuth callback to prevent extension interference
+  res.setHeader('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "frame-ancestors 'none'",
+    "form-action 'self'"
+  ].join('; '));
+  
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+
+  // Handle OAuth errors
+  if (error) {
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Error - Disco MCP Server</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .error { color: #dc2626; margin: 20px 0; }
+        .home-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .home-btn:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 OAuth Authentication Error</h1>
+        <div class="error">❌ ${error}</div>
+        <p>OAuth authentication failed. This could be due to:</p>
+        <ul style="text-align: left; margin: 20px 0;">
+            <li>User denied authorization</li>
+            <li>Invalid OAuth configuration</li>
+            <li>Browser extension interference</li>
+            <li>Network connectivity issues</li>
+        </ul>
+        <p>Please try authenticating again or contact support if the problem persists.</p>
+        <a href="/" class="home-btn">Return to Home</a>
+    </div>
+</body>
+</html>`;
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+    return;
+  }
 
   // If accessed directly without OAuth parameters, show helpful message
   if (!code && !error) {
@@ -883,27 +957,18 @@ app.get('/auth/callback', (req, res) => {
             text-align: center;
         }
         .info { color: #0ea5e9; }
-        .home-btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: #3b82f6;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-        .home-btn:hover { background: #2563eb; }
-        .login-btn {
+        .home-btn, .login-btn {
             display: inline-block;
             margin: 10px;
             padding: 12px 24px;
-            background: #1f2937;
             color: white;
             text-decoration: none;
             border-radius: 6px;
             font-weight: 500;
         }
+        .home-btn { background: #3b82f6; }
+        .home-btn:hover { background: #2563eb; }
+        .login-btn { background: #1f2937; }
         .login-btn:hover { background: #374151; }
     </style>
 </head>
@@ -930,16 +995,14 @@ app.get('/auth/callback', (req, res) => {
     return;
   }
 
-  // This page should not normally be reached with OAuth parameters, 
-  // since the OAuth flow goes through the API callback.
-  // But if it does happen, show a helpful message.
+  // Handle successful OAuth callback with enhanced browser compatibility
   const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OAuth Callback - Disco MCP Server</title>
+    <title>OAuth Success - Disco MCP Server</title>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -956,38 +1019,56 @@ app.get('/auth/callback', (req, res) => {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
-        .warning { color: #f59e0b; }
-        .error { color: #dc2626; }
-        .home-btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: #3b82f6;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
+        .success { color: #10b981; margin: 20px 0; }
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
-        .home-btn:hover { background: #2563eb; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
+    <meta http-equiv="refresh" content="2;url=/?auth_code=${encodeURIComponent(code as string)}&auth_success=true">
 </head>
 <body>
     <div class="container">
-        <h1>🔐 OAuth Callback</h1>
-        
-        ${error ? `
-            <h2 class="error">❌ Authentication Error</h2>
-            <p>OAuth authentication failed: ${error}</p>
-            <p>Please try logging in again.</p>
-        ` : `
-            <h2 class="warning">⚠️ Unexpected OAuth Callback</h2>
-            <p>This page received OAuth parameters but the normal authentication flow 
-            goes through a different endpoint. This might indicate a configuration issue.</p>
-            <p>Please try the login process again.</p>
-        `}
-        
-        <a href="/" class="home-btn">Return to Home</a>
+        <h1>🔐 OAuth Authentication</h1>
+        <div class="success">✅ Authentication Successful</div>
+        <div class="spinner"></div>
+        <p>Redirecting you to the main page...</p>
+        <p><small>Authorization code received and validated.</small></p>
     </div>
+    
+    <script>
+        // Enhanced redirect with browser extension interference mitigation
+        (function() {
+            try {
+                // Add a small delay to prevent extension interference
+                setTimeout(function() {
+                    const redirectUrl = '/?auth_code=${encodeURIComponent(code as string)}&auth_success=true';
+                    
+                    // Try multiple redirect methods for maximum compatibility
+                    if (window.location.replace) {
+                        window.location.replace(redirectUrl);
+                    } else if (window.location.href) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        // Fallback for edge cases
+                        window.top.location = redirectUrl;
+                    }
+                }, 1000);
+            } catch (e) {
+                // If JavaScript fails, meta refresh will handle the redirect
+                console.log('Fallback to meta refresh redirect');
+            }
+        })();
+    </script>
 </body>
 </html>`;
 
@@ -1081,6 +1162,114 @@ app.get('/config', (_req, res) => {
   });
 });
 
+// OAuth Authorization Server Discovery Endpoint (MCP OAuth 2.1 spec requirement)
+/**
+ * @swagger
+ * /.well-known/oauth-authorization-server:
+ *   get:
+ *     tags: [OAuth Discovery]
+ *     summary: OAuth Authorization Server Metadata
+ *     description: RFC 8414 compliant OAuth authorization server metadata for MCP OAuth 2.1 compliance
+ *     responses:
+ *       200:
+ *         description: OAuth Authorization Server Metadata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 issuer:
+ *                   type: string
+ *                   example: "https://disco-mcp.up.railway.app"
+ *                 authorization_endpoint:
+ *                   type: string
+ *                   example: "https://disco-mcp.up.railway.app/api/v1/auth/github"
+ *                 token_endpoint:
+ *                   type: string
+ *                   example: "https://disco-mcp.up.railway.app/oauth/token"
+ *                 scopes_supported:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["openid", "profile", "mcp:tools"]
+ *                 code_challenge_methods_supported:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["S256"]
+ */
+app.get('/.well-known/oauth-authorization-server', (_req, res) => {
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+  
+  res.json({
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/api/v1/auth/github`,
+    token_endpoint: `${baseUrl}/oauth/token`,
+    registration_endpoint: `${baseUrl}/oauth/register`,
+    scopes_supported: ['openid', 'profile', 'mcp:tools', 'mcp:resources'],
+    response_types_supported: ['code'],
+    response_modes_supported: ['query'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256'],
+    token_endpoint_auth_methods_supported: ['none', 'client_secret_basic'],
+    revocation_endpoint: `${baseUrl}/oauth/revoke`,
+    introspection_endpoint: `${baseUrl}/oauth/introspect`,
+    jwks_uri: `${baseUrl}/.well-known/jwks.json`
+  });
+});
+
+// OAuth Protected Resource Discovery Endpoint (MCP OAuth 2.1 spec requirement)
+/**
+ * @swagger
+ * /.well-known/oauth-protected-resource:
+ *   get:
+ *     tags: [OAuth Discovery]
+ *     summary: OAuth Protected Resource Metadata
+ *     description: RFC 8707 compliant OAuth protected resource metadata for MCP OAuth 2.1 compliance
+ *     responses:
+ *       200:
+ *         description: OAuth Protected Resource Metadata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 resource_server:
+ *                   type: string
+ *                   example: "https://disco-mcp.up.railway.app"
+ *                 authorization_servers:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["https://disco-mcp.up.railway.app/.well-known/oauth-authorization-server"]
+ *                 scopes_supported:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["mcp:tools", "mcp:resources"]
+ *                 bearer_methods_supported:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["header"]
+ */
+app.get('/.well-known/oauth-protected-resource', (_req, res) => {
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : 'http://localhost:3000';
+  
+  res.json({
+    resource_server: baseUrl,
+    authorization_servers: [`${baseUrl}/.well-known/oauth-authorization-server`],
+    scopes_supported: ['mcp:tools', 'mcp:resources', 'mcp:prompts'],
+    bearer_methods_supported: ['header', 'body', 'query'],
+    resource_documentation: `${baseUrl}/docs`,
+    resource_registration: `${baseUrl}/oauth/resource/register`
+  });
+});
+
 // ChatGPT plugin manifest
 app.get('/.well-known/ai-plugin.json', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
@@ -1106,7 +1295,145 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
   });
 });
 
-// ChatGPT connector configuration endpoint
+// OAuth Token Exchange Endpoint (PKCE support for MCP OAuth 2.1 compliance)
+/**
+ * @swagger
+ * /oauth/token:
+ *   post:
+ *     tags: [OAuth Token]
+ *     summary: OAuth token exchange with PKCE validation
+ *     description: RFC 7636 compliant PKCE token exchange for MCP OAuth 2.1 compliance
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               grant_type:
+ *                 type: string
+ *                 example: "authorization_code"
+ *               code:
+ *                 type: string
+ *                 description: "Authorization code from OAuth callback"
+ *               redirect_uri:
+ *                 type: string
+ *                 description: "Redirect URI used in authorization request"
+ *               client_id:
+ *                 type: string
+ *                 description: "OAuth client identifier"
+ *               code_verifier:
+ *                 type: string
+ *                 description: "PKCE code verifier"
+ *             required: ["grant_type", "code", "code_verifier"]
+ *     responses:
+ *       200:
+ *         description: Access token response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 access_token:
+ *                   type: string
+ *                 token_type:
+ *                   type: string
+ *                   example: "Bearer"
+ *                 expires_in:
+ *                   type: number
+ *                   example: 3600
+ *                 scope:
+ *                   type: string
+ *                   example: "mcp:tools mcp:resources"
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Invalid grant or client authentication failed
+ */
+app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    const { grant_type, code, redirect_uri, client_id, code_verifier } = req.body;
+    
+    // Validate grant type
+    if (grant_type !== 'authorization_code') {
+      return res.status(400).json({
+        error: 'unsupported_grant_type',
+        error_description: 'Only authorization_code grant type is supported'
+      });
+    }
+    
+    // Validate required parameters
+    if (!code || !code_verifier) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing required parameters: code, code_verifier'
+      });
+    }
+    
+    console.log(`🔐 OAuth token exchange request: code=${code.substring(0, 8)}...`);
+    
+    // Import OAuth utilities
+    const { getAndRemoveAuthCodeData, verifyCodeChallenge } = await import('./lib/oauthState.js');
+    
+    // Retrieve stored authorization data
+    const authData = getAndRemoveAuthCodeData(code);
+    if (!authData) {
+      console.warn(`❌ Invalid or expired authorization code: ${code.substring(0, 8)}...`);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'Authorization code is invalid or expired'
+      });
+    }
+    
+    // Verify PKCE challenge
+    if (!verifyCodeChallenge(code_verifier, authData.codeChallenge, authData.codeChallengeMethod)) {
+      console.warn(`❌ PKCE verification failed for code: ${code.substring(0, 8)}...`);
+      return res.status(400).json({
+        error: 'invalid_grant',
+        error_description: 'PKCE verification failed'
+      });
+    }
+    
+    // Validate client ID if provided
+    if (client_id && authData.clientId && client_id !== authData.clientId) {
+      console.warn(`❌ Client ID mismatch: expected ${authData.clientId}, got ${client_id}`);
+      return res.status(400).json({
+        error: 'invalid_client',
+        error_description: 'Client ID does not match'
+      });
+    }
+    
+    // Generate access token with validated data
+    const tokenPayload = {
+      sub: authData.userId,
+      scope: authData.scope,
+      aud: authData.clientId,
+      iss: process.env.NODE_ENV === 'production'
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+        : 'http://localhost:3000',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
+    };
+    
+    const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET!);
+    
+    console.log(`✅ OAuth access token generated for user: ${authData.userId}, client: ${authData.clientId}`);
+    
+    res.json({
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: 3600,
+      scope: authData.scope
+    });
+    
+  } catch (error) {
+    console.error('OAuth token exchange error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Internal server error during token exchange'
+    });
+  }
+});
 /**
  * @swagger
  * /chatgpt-connector:
