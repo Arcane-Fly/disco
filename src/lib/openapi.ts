@@ -165,6 +165,10 @@ const options = {
         description: 'Retrieval-Augmented Generation and search'
       },
       {
+        name: 'Collaboration',
+        description: 'Real-time collaboration and multi-user editing'
+      },
+      {
         name: 'Discovery',
         description: 'Service discovery and configuration'
       }

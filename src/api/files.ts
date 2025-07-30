@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
+import { collaborationManager } from '../lib/collaborationManager.js';
 import { FileCreateRequest, FileListItem, ErrorCode } from '../types/index.js';
 
 const router = Router();
@@ -177,6 +178,14 @@ router.post('/:containerId', async (req: Request, res: Response) => {
 
     await writeFile(session.container, path, content, encoding);
 
+    // Sync to collaborators
+    try {
+      await collaborationManager?.syncFileToCollaborators(containerId, path, content, userId);
+    } catch (collabError) {
+      console.warn('Collaboration sync failed:', collabError);
+      // Don't fail the request if collaboration sync fails
+    }
+
     console.log(`📝 File created/updated: ${path} in container ${containerId}`);
 
     res.json({
@@ -255,6 +264,14 @@ router.put('/:containerId', async (req: Request, res: Response) => {
     }
 
     await writeFile(session.container, path, content, encoding);
+
+    // Sync to collaborators
+    try {
+      await collaborationManager?.syncFileToCollaborators(containerId, path, content, userId);
+    } catch (collabError) {
+      console.warn('Collaboration sync failed:', collabError);
+      // Don't fail the request if collaboration sync fails
+    }
 
     console.log(`✏️  File updated: ${path} in container ${containerId}`);
 
