@@ -60,6 +60,7 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 - ✅ **File system operations** with security validation
 - ✅ **Terminal operations** with streaming support
 - ✅ **Git integration** for repository operations
+- ✅ **Real-time collaboration** with multi-user editing and WebSocket sync
 - ✅ **Health monitoring** with metrics and probes
 - ✅ **Background worker** for maintenance tasks
 

@@ -19,17 +19,19 @@ import { gitRouter } from './api/git.js';
 import { healthRouter } from './api/health.js';
 import { computerUseRouter } from './api/computer-use.js';
 import { ragRouter } from './api/rag.js';
+import { collaborationRouter } from './api/collaboration.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 
-// Import container manager, browser automation, and Redis session manager
+// Import container manager, browser automation, Redis session manager, and collaboration manager
 import { containerManager } from './lib/containerManager.js';
 import { browserAutomationManager } from './lib/browserAutomation.js';
 import { redisSessionManager } from './lib/redisSession.js';
 import { specs } from './lib/openapi.js';
+import { initializeCollaborationManager } from './lib/collaborationManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -2138,6 +2140,7 @@ app.use('/api/v1/terminal', authMiddleware, apiLimiter, terminalRouter);
 app.use('/api/v1/git', authMiddleware, apiLimiter, gitRouter);
 app.use('/api/v1/computer-use', authMiddleware, apiLimiter, computerUseRouter);
 app.use('/api/v1/rag', authMiddleware, apiLimiter, ragRouter);
+app.use('/api/v1/collaboration', authMiddleware, apiLimiter, collaborationRouter);
 
 /**
  * GET /status
@@ -2390,6 +2393,10 @@ io.on('connection', (socket) => {
 
 // Make io available to other modules
 app.set('io', io);
+
+// Initialize collaboration manager
+const collaboration = initializeCollaborationManager(io);
+console.log('🤝 Collaboration manager initialized');
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
