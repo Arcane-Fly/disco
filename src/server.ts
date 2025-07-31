@@ -1051,6 +1051,58 @@ app.get('/auth/callback', (req, res) => {
     <script>
         // Enhanced redirect with browser extension interference mitigation
         (function() {
+            // Prevent browser extension message channel conflicts
+            const originalPostMessage = window.postMessage;
+            window.postMessage = function(message, targetOrigin, transfer) {
+                try {
+                    // Filter out extension-related messages during OAuth flow
+                    if (typeof message === 'object' && message && 
+                        (message.source === 'content-script' || 
+                         message.type === 'FROM_CONTENT_SCRIPT' ||
+                         (typeof targetOrigin === 'string' && targetOrigin.includes('chrome-extension://')))) {
+                        console.log('Blocked extension message during OAuth:', message);
+                        return;
+                    }
+                    return originalPostMessage.call(this, message, targetOrigin, transfer);
+                } catch (e) {
+                    console.log('Message filtering error (ignored):', e);
+                    return originalPostMessage.call(this, message, targetOrigin, transfer);
+                }
+            };
+
+            // Enhanced message listener protection
+            const originalAddEventListener = window.addEventListener;
+            window.addEventListener = function(type, listener, options) {
+                if (type === 'message') {
+                    const wrappedListener = function(event) {
+                        try {
+                            // Block extension-originated messages during OAuth
+                            if (event.origin && (
+                                event.origin.includes('chrome-extension://') ||
+                                event.origin.includes('moz-extension://') ||
+                                event.origin.includes('safari-web-extension://')
+                            )) {
+                                console.log('Blocked extension message event:', event.origin);
+                                return;
+                            }
+                            
+                            // Block async response channel errors
+                            if (event.data && typeof event.data === 'object' && 
+                                event.data.type && event.data.type.includes('async')) {
+                                console.log('Blocked async extension message:', event.data);
+                                return;
+                            }
+
+                            return listener.call(this, event);
+                        } catch (e) {
+                            console.log('Message listener error (handled):', e);
+                        }
+                    };
+                    return originalAddEventListener.call(this, type, wrappedListener, options);
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+            };
+
             try {
                 // Add a small delay to prevent extension interference
                 setTimeout(function() {
