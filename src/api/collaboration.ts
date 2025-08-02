@@ -230,4 +230,143 @@ router.get('/session/:sessionId/users', authMiddleware, async (req: Request, res
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/collaboration/session/{sessionId}/history:
+ *   get:
+ *     summary: Get file version history for a collaboration session
+ *     tags: [Collaboration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Collaboration session ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Maximum number of history entries to return
+ *     responses:
+ *       200:
+ *         description: File version history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 history:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       version:
+ *                         type: integer
+ *                       content:
+ *                         type: string
+ *                       userId:
+ *                         type: string
+ *                       timestamp:
+ *                         type: string
+ *                       operation:
+ *                         type: string
+ *                         enum: [create, update, merge, conflict-resolution]
+ */
+router.get('/session/:sessionId/history', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    const history = collaborationManager.getSessionHistory(sessionId, limit);
+    
+    res.json({ 
+      history,
+      sessionId 
+    });
+  } catch (error) {
+    console.error('Error getting session history:', error);
+    res.status(500).json({ 
+      error: 'Failed to get session history',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/collaboration/session/{sessionId}/resolve-conflict:
+ *   post:
+ *     summary: Manually resolve a file conflict
+ *     tags: [Collaboration]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Collaboration session ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resolvedContent:
+ *                 type: string
+ *                 description: Manually resolved file content
+ *               strategy:
+ *                 type: string
+ *                 enum: [manual, smart-merge, semantic-merge, last-write-wins]
+ *                 description: Resolution strategy used
+ *               userId:
+ *                 type: string
+ *                 description: User who resolved the conflict
+ *             required:
+ *               - resolvedContent
+ *               - strategy
+ *               - userId
+ *     responses:
+ *       200:
+ *         description: Conflict resolved successfully
+ */
+router.post('/session/:sessionId/resolve-conflict', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+    const { resolvedContent, strategy, userId } = req.body;
+    
+    if (!resolvedContent || !strategy || !userId) {
+      return res.status(400).json({ 
+        error: 'Resolved content, strategy, and userId are required' 
+      });
+    }
+    
+    const result = await collaborationManager.resolveManualConflict(
+      sessionId,
+      resolvedContent,
+      strategy,
+      userId
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Conflict resolved successfully',
+      newVersion: result.version,
+      timestamp: result.timestamp
+    });
+  } catch (error) {
+    console.error('Error resolving conflict:', error);
+    res.status(500).json({ 
+      error: 'Failed to resolve conflict',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export { router as collaborationRouter };

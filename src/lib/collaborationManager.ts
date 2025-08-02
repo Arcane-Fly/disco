@@ -1,5 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
+import { conflictResolver, ConflictResolution as AdvancedConflictResolution } from './conflictResolver.js';
 
 /**
  * Real-time Collaboration Manager
@@ -15,6 +16,14 @@ export interface CollaborationSession {
   content: string;
   version: number;
   locks: Map<string, { userId: string; timestamp: Date }>;
+  baseContent?: string; // Store base content for 3-way merge
+  history: Array<{
+    version: number;
+    content: string;
+    userId: string;
+    timestamp: Date;
+    operation: 'create' | 'update' | 'merge' | 'conflict-resolution';
+  }>;
 }
 
 export interface FileOperation {
@@ -28,13 +37,22 @@ export interface FileOperation {
 }
 
 export interface ConflictResolution {
-  strategy: 'last-write-wins' | 'merge' | 'manual';
+  strategy: 'last-write-wins' | 'merge' | 'manual' | 'smart-merge' | 'semantic-merge';
   resolvedContent: string;
   conflictedSections?: Array<{
     start: number;
     end: number;
     versions: string[];
+    resolution?: 'auto' | 'manual';
+    confidence?: number;
   }>;
+  metadata?: {
+    conflictType: 'textual' | 'semantic' | 'structural';
+    severity: 'low' | 'medium' | 'high';
+    autoResolved: boolean;
+    userId: string;
+    timestamp: Date;
+  };
 }
 
 class CollaborationManager {
@@ -95,6 +113,24 @@ class CollaborationManager {
         this.handleCursorPosition(socket, data);
       });
 
+      // Manual conflict resolution
+      socket.on('resolve-conflict', async (data: {
+        sessionId: string;
+        resolvedContent: string;
+        userId: string;
+        strategy: string;
+      }) => {
+        await this.handleManualConflictResolution(socket, data);
+      });
+
+      // Get file history
+      socket.on('get-file-history', (data: {
+        sessionId: string;
+        limit?: number;
+      }) => {
+        this.handleGetFileHistory(socket, data);
+      });
+
       // Disconnect handling
       socket.on('disconnect', () => {
         this.handleDisconnect(socket);
@@ -120,7 +156,9 @@ class CollaborationManager {
         lastModified: new Date(),
         content: '', // Will be loaded from file system
         version: 1,
-        locks: new Map()
+        locks: new Map(),
+        baseContent: '', // Initialize base content for 3-way merge
+        history: []
       };
       this.sessions.set(sessionKey, session);
     }
@@ -202,21 +240,60 @@ class CollaborationManager {
       return;
     }
 
-    // Version conflict detection
+    // Version conflict detection - enhanced with 3-way merge
     if (data.version !== session.version) {
-      const resolution = await this.resolveConflict(session, data.content, data.userId);
-      socket.emit('conflict-detected', {
-        sessionId: data.sessionId,
-        resolution,
-        currentVersion: session.version
-      });
+      const resolution = await this.resolveAdvancedConflict(session, data.content, data.userId);
+      
+      if (resolution.metadata?.autoResolved) {
+        // Auto-resolved conflict - apply and notify
+        session.content = resolution.resolvedContent;
+        session.version += 1;
+        session.lastModified = new Date();
+        
+        // Add to history
+        session.history.push({
+          version: session.version,
+          content: resolution.resolvedContent,
+          userId: data.userId,
+          timestamp: new Date(),
+          operation: 'merge'
+        });
+
+        // Broadcast auto-resolved update
+        this.io.to(data.sessionId).emit('auto-conflict-resolved', {
+          content: resolution.resolvedContent,
+          version: session.version,
+          resolution,
+          userId: data.userId,
+          timestamp: session.lastModified
+        });
+      } else {
+        // Manual resolution required
+        socket.emit('conflict-detected', {
+          sessionId: data.sessionId,
+          resolution,
+          currentVersion: session.version,
+          requiresManualResolution: true
+        });
+      }
       return;
     }
 
-    // Update session
+    // No conflict - update normally
+    // Store previous content as base for future merges
+    session.baseContent = session.content;
     session.content = data.content;
     session.version += 1;
     session.lastModified = new Date();
+
+    // Add to history
+    session.history.push({
+      version: session.version,
+      content: data.content,
+      userId: data.userId,
+      timestamp: new Date(),
+      operation: 'update'
+    });
 
     // Broadcast to other users
     socket.to(data.sessionId).emit('file-updated', {
@@ -226,7 +303,7 @@ class CollaborationManager {
       timestamp: session.lastModified
     });
 
-    console.log(`📝 File updated by ${data.userId} in session ${data.sessionId}`);
+    console.log(`📝 File updated by ${data.userId} in session ${data.sessionId} (v${session.version})`);
   }
 
   private async handleFileLock(socket: Socket, data: {
@@ -279,6 +356,66 @@ class CollaborationManager {
     });
   }
 
+  private async handleManualConflictResolution(socket: Socket, data: {
+    sessionId: string;
+    resolvedContent: string;
+    userId: string;
+    strategy: string;
+  }) {
+    const session = this.sessions.get(this.findSessionKey(data.sessionId));
+    if (!session) {
+      socket.emit('error', { message: 'Session not found' });
+      return;
+    }
+
+    // Apply manual resolution
+    session.content = data.resolvedContent;
+    session.version += 1;
+    session.lastModified = new Date();
+
+    // Add to history
+    session.history.push({
+      version: session.version,
+      content: data.resolvedContent,
+      userId: data.userId,
+      timestamp: new Date(),
+      operation: 'conflict-resolution'
+    });
+
+    // Broadcast resolution to all users
+    this.io.to(data.sessionId).emit('conflict-resolved', {
+      content: data.resolvedContent,
+      version: session.version,
+      userId: data.userId,
+      strategy: data.strategy,
+      timestamp: session.lastModified
+    });
+
+    console.log(`✅ Manual conflict resolved by ${data.userId} using ${data.strategy} strategy`);
+  }
+
+  private handleGetFileHistory(socket: Socket, data: {
+    sessionId: string;
+    limit?: number;
+  }) {
+    const session = this.sessions.get(this.findSessionKey(data.sessionId));
+    if (!session) {
+      socket.emit('error', { message: 'Session not found' });
+      return;
+    }
+
+    const limit = data.limit || 50;
+    const history = session.history
+      .slice(-limit)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    socket.emit('file-history', {
+      sessionId: data.sessionId,
+      history,
+      totalVersions: session.history.length
+    });
+  }
+
   private handleDisconnect(socket: Socket) {
     const userId = this.socketUsers.get(socket.id);
     if (!userId) return;
@@ -297,18 +434,44 @@ class CollaborationManager {
     this.socketUsers.delete(socket.id);
   }
 
-  private async resolveConflict(
+  private async resolveAdvancedConflict(
     session: CollaborationSession,
     newContent: string,
     userId: string
-  ): Promise<ConflictResolution> {
-    // Simple last-write-wins strategy for now
-    // TODO: Implement more sophisticated conflict resolution
-    return {
-      strategy: 'last-write-wins',
-      resolvedContent: newContent,
-      conflictedSections: []
-    };
+  ): Promise<AdvancedConflictResolution> {
+    const baseContent = session.baseContent || session.content;
+    const currentContent = session.content;
+    
+    try {
+      // Use advanced 3-way merge conflict resolution
+      const resolution = await conflictResolver.resolveConflict(
+        baseContent,
+        currentContent,
+        newContent,
+        session.filePath,
+        userId
+      );
+
+      console.log(`🔀 Advanced conflict resolution: ${resolution.strategy} (auto: ${resolution.metadata?.autoResolved})`);
+      
+      return resolution;
+    } catch (error) {
+      console.error('Advanced conflict resolution failed, falling back to simple resolution:', error);
+      
+      // Fallback to simple last-write-wins
+      return {
+        strategy: 'last-write-wins',
+        resolvedContent: newContent,
+        conflictedSections: [],
+        metadata: {
+          conflictType: 'textual',
+          severity: 'medium',
+          autoResolved: true,
+          userId,
+          timestamp: new Date()
+        }
+      };
+    }
   }
 
   private findSessionKey(sessionId: string): string {
@@ -363,6 +526,59 @@ class CollaborationManager {
         excludeUserId
       });
     }
+  }
+
+  public getSessionHistory(sessionId: string, limit: number = 50): any[] {
+    const session = this.sessions.get(this.findSessionKey(sessionId));
+    if (!session) {
+      return [];
+    }
+
+    return session.history
+      .slice(-limit)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+
+  public async resolveManualConflict(
+    sessionId: string,
+    resolvedContent: string,
+    strategy: string,
+    userId: string
+  ): Promise<{ version: number; timestamp: Date }> {
+    const session = this.sessions.get(this.findSessionKey(sessionId));
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    // Apply manual resolution
+    session.content = resolvedContent;
+    session.version += 1;
+    session.lastModified = new Date();
+
+    // Add to history
+    session.history.push({
+      version: session.version,
+      content: resolvedContent,
+      userId,
+      timestamp: new Date(),
+      operation: 'conflict-resolution'
+    });
+
+    // Broadcast resolution to all users
+    this.io.to(sessionId).emit('conflict-resolved', {
+      content: resolvedContent,
+      version: session.version,
+      userId,
+      strategy,
+      timestamp: session.lastModified
+    });
+
+    console.log(`✅ Manual conflict resolved by ${userId} using ${strategy} strategy`);
+    
+    return {
+      version: session.version,
+      timestamp: session.lastModified
+    };
   }
 }
 

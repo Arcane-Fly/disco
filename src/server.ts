@@ -20,18 +20,20 @@ import { healthRouter } from './api/health.js';
 import { computerUseRouter } from './api/computer-use.js';
 import { ragRouter } from './api/rag.js';
 import { collaborationRouter } from './api/collaboration.js';
+import { teamCollaborationRouter } from './api/teams.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 
-// Import container manager, browser automation, Redis session manager, and collaboration manager
+// Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration
 import { containerManager } from './lib/containerManager.js';
 import { browserAutomationManager } from './lib/browserAutomation.js';
 import { redisSessionManager } from './lib/redisSession.js';
 import { specs } from './lib/openapi.js';
 import { initializeCollaborationManager } from './lib/collaborationManager.js';
+import { initializeTeamCollaborationManager } from './lib/teamCollaborationManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -2194,6 +2196,7 @@ app.use('/api/v1/git', authMiddleware, apiLimiter, gitRouter);
 app.use('/api/v1/computer-use', authMiddleware, apiLimiter, computerUseRouter);
 app.use('/api/v1/rag', authMiddleware, apiLimiter, ragRouter);
 app.use('/api/v1/collaboration', authMiddleware, apiLimiter, collaborationRouter);
+app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
 
 /**
  * GET /status
@@ -2450,6 +2453,10 @@ app.set('io', io);
 // Initialize collaboration manager
 const collaboration = initializeCollaborationManager(io);
 console.log('🤝 Collaboration manager initialized');
+
+// Initialize team collaboration manager  
+const teamCollaboration = initializeTeamCollaborationManager();
+console.log('👥 Team collaboration manager initialized');
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
