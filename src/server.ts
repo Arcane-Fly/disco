@@ -1139,7 +1139,8 @@ app.get('/openapi.json', (_req, res) => {
   res.json(specs);
 });
 
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+// Swagger UI Documentation - TypeScript workaround for type compatibility
+(app as any).use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Disco MCP Server API Documentation',
   swaggerOptions: {
