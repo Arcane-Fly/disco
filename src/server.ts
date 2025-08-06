@@ -1139,6 +1139,14 @@ app.get('/openapi.json', (_req, res) => {
   res.json(specs);
 });
 
+// Redirect `/docs` without a trailing slash to `/docs/`.
+// Without this redirect, navigating to `/docs` directly may bypass the
+// Swagger middleware and result in a 404 response. By issuing a 301
+// redirect to `/docs/`, we ensure the Swagger UI loads consistently.
+app.get('/docs', (req, res) => {
+  res.redirect(301, '/docs/');
+});
+
 // Swagger UI Documentation - TypeScript workaround for type compatibility
 (app as any).use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
