@@ -14,7 +14,10 @@ RUN apt-get update && apt-get install -y \
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for building)
-RUN npm ci
+# Use `npm install` instead of `npm ci` because this project does not use a
+# package-lock.json. `npm ci` requires a lockfile and will fail when one is not
+# present. See `packageManager` in package.json which specifies yarn.
+RUN npm install
 
 # Copy application code
 COPY . .
@@ -22,8 +25,10 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Remove dev dependencies to reduce image size
-RUN npm ci --only=production && npm cache clean --force
+# Remove dev dependencies to reduce image size.
+#
+# Use `npm install --omit=dev` to install only production dependencies.
+RUN npm install --omit=dev && npm cache clean --force
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
