@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ContainerSession } from '../types/index.js';
 import { redisSessionManager } from './redisSession.js';
+import { containerProxy } from './containerProxy.js';
 
 // Environment detection
 const isServerEnvironment = typeof window === 'undefined';
@@ -56,9 +57,33 @@ class ContainerManager {
    */
   async createSession(userId: string): Promise<ContainerSession> {
     try {
-      // Check if WebContainer is available
+      // Use Docker proxy in server environment
       if (isServerEnvironment) {
-        throw new Error('Container sessions not available in server environment. Use client-side WebContainer integration.');
+        const sessionId = await containerProxy.createSession('node', userId);
+        const proxySession = containerProxy.getSession(sessionId);
+        if (!proxySession) {
+          throw new Error('Failed to create container session');
+        }
+        
+        // Convert proxy session to ContainerSession format
+        const session: ContainerSession = {
+          id: sessionId,
+          userId: userId || '',
+          container: null, // No WebContainer in server mode
+          createdAt: proxySession.createdAt,
+          lastActive: proxySession.lastActivity,
+          status: proxySession.status === 'running' ? 'ready' : proxySession.status as any
+        };
+        
+        this.sessions.set(sessionId, session);
+        
+        // Store in Redis if available
+        if (redisSessionManager.isAvailable()) {
+          await redisSessionManager.setSession(sessionId, session);
+        }
+        
+        console.log(`📦 Created Docker container session: ${sessionId} for user: ${userId}`);
+        return session;
       }
 
       if (!WebContainer) {

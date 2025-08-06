@@ -25,7 +25,7 @@ import { teamCollaborationRouter } from './api/teams.js';
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { requestLogger } from './middleware/requestLogger.js';
+// import { requestLogger } from './middleware/requestLogger.js'; // TODO: Implement request logging
 
 // Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration
 import { containerManager } from './lib/containerManager.js';
@@ -330,7 +330,7 @@ app.get('/', (req, res) => {
   // Return web interface for browser requests
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
 
   const html = `
 <!DOCTYPE html>
@@ -860,10 +860,10 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
  *               type: string
  */
 app.get('/auth/callback', (req, res) => {
-  const { code, state, error } = req.query;
+  const { code, state: _state, error } = req.query;
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
 
   // Enhanced security headers for OAuth callback to prevent extension interference
   res.setHeader('Content-Security-Policy', [
@@ -1212,7 +1212,7 @@ app.get('/config', (_req, res) => {
   res.json({
     api_url: process.env.NODE_ENV === 'production' 
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}/api/v1`
-      : 'http://localhost:3000/api/v1',
+      : `http://localhost:${port}/api/v1`,
     auth_required: true,
     rate_limit: {
       max: 100,
@@ -1270,7 +1270,7 @@ app.get('/config', (_req, res) => {
 app.get('/.well-known/oauth-authorization-server', (_req, res) => {
   const baseUrl = process.env.NODE_ENV === 'production'
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
   
   res.json({
     issuer: baseUrl,
@@ -1327,7 +1327,7 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
 app.get('/.well-known/oauth-protected-resource', (_req, res) => {
   const baseUrl = process.env.NODE_ENV === 'production'
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
   
   res.json({
     resource_server: baseUrl,
@@ -1343,7 +1343,7 @@ app.get('/.well-known/oauth-protected-resource', (_req, res) => {
 app.get('/.well-known/ai-plugin.json', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
     
   res.json({
     schema_version: 'v1',
@@ -1421,7 +1421,7 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
  */
 app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { grant_type, code, redirect_uri, client_id, code_verifier } = req.body;
+    const { grant_type, code, redirect_uri: _redirect_uri, client_id, code_verifier } = req.body;
     
     // Validate grant type
     if (grant_type !== 'authorization_code') {
@@ -1479,7 +1479,7 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
       aud: authData.clientId,
       iss: process.env.NODE_ENV === 'production'
         ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-        : 'http://localhost:3000',
+        : `http://localhost:${port}`,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
     };
@@ -1603,7 +1603,7 @@ app.post('/oauth/register', express.json(), async (req, res) => {
  */
 app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { token, token_type_hint } = req.body;
+    const { token, token_type_hint: _token_type_hint } = req.body;
     
     if (!token) {
       return res.status(400).json({
@@ -1671,7 +1671,7 @@ app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req
  */
 app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { token, token_type_hint } = req.body;
+    const { token, token_type_hint: _token_type_hint } = req.body;
     
     if (!token) {
       return res.status(400).json({
@@ -1719,7 +1719,7 @@ app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, re
 app.get('/chatgpt-connector', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
 
   res.json({
     connector_url: `${domain}/openapi.json`,
@@ -1782,7 +1782,7 @@ app.get('/chatgpt-connector', (_req, res) => {
 app.get('/claude-connector', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
 
   res.json({
     api_base_url: `${domain}/api/v1`,
@@ -1821,7 +1821,7 @@ app.get('/claude-connector', (_req, res) => {
 app.get('/.well-known/mcp.json', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
     
   res.json({
     version: '1.0',
@@ -1895,7 +1895,7 @@ app.get('/.well-known/mcp.json', (_req, res) => {
  */
 app.post('/mcp', express.json(), (req, res) => {
   try {
-    const { jsonrpc, id, method, params } = req.body;
+    const { jsonrpc, id, method, params: _params } = req.body;
 
     // Validate JSON-RPC format
     if (jsonrpc !== '2.0') {
@@ -2074,7 +2074,7 @@ app.use('/health', healthRouter);
 app.get('/mcp-setup', (_req, res) => {
   const domain = process.env.NODE_ENV === 'production' 
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : 'http://localhost:3000';
+    : `http://localhost:${port}`;
 
   res.json({
     server_info: {
@@ -2463,11 +2463,11 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // Initialize collaboration manager
-const collaboration = initializeCollaborationManager(io);
+const _collaboration = initializeCollaborationManager(io);
 console.log('🤝 Collaboration manager initialized');
 
 // Initialize team collaboration manager  
-const teamCollaboration = initializeTeamCollaborationManager();
+const _teamCollaboration = initializeTeamCollaborationManager();
 console.log('👥 Team collaboration manager initialized');
 
 // Graceful shutdown

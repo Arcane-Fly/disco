@@ -21,13 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          
+      - name: Enable Corepack
+        run: corepack enable
           
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --immutable
         
       - name: Install link checker
-        run: npm install -g linkinator
+        run: yarn global add linkinator
         
       - name: Create docs directory if not exists
         run: mkdir -p docs
