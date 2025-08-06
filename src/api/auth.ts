@@ -13,20 +13,29 @@ router.get('/', (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
   const hasValidToken = authHeader && authHeader.startsWith('Bearer ');
   
-  // Check if OAuth is properly configured
-  const githubOAuthConfigured = !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
+  // Check if OAuth is properly configured with detailed validation
+  const githubClientId = process.env.GITHUB_CLIENT_ID;
+  const githubClientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const githubOAuthConfigured = !!(githubClientId && githubClientSecret);
+  
+  // Check for placeholder values
+  const hasPlaceholders = (githubClientId && githubClientId.includes('your-github-client-id')) ||
+                         (githubClientSecret && githubClientSecret.includes('your-github-client-secret'));
   
   const responseData: any = {
     authenticated: false,
     authentication_required: true,
     available_methods: [
-      ...(githubOAuthConfigured ? ['github_oauth'] : []),
+      ...(githubOAuthConfigured && !hasPlaceholders ? ['github_oauth'] : []),
       'api_key'
     ],
     github_oauth: {
-      available: githubOAuthConfigured,
-      login_url: githubOAuthConfigured ? '/api/v1/auth/github' : null,
-      callback_url: githubOAuthConfigured ? '/api/v1/auth/github/callback' : null
+      available: githubOAuthConfigured && !hasPlaceholders,
+      configured: githubOAuthConfigured,
+      has_placeholders: hasPlaceholders,
+      login_url: (githubOAuthConfigured && !hasPlaceholders) ? '/api/v1/auth/github' : null,
+      callback_url: (githubOAuthConfigured && !hasPlaceholders) ? '/api/v1/auth/github/callback' : null,
+      setup_required: !githubOAuthConfigured || hasPlaceholders
     },
     api_key_auth: {
       available: true,
@@ -37,8 +46,23 @@ router.get('/', (req: Request, res: Response) => {
     },
     token_refresh: {
       url: '/api/v1/auth/refresh'
+    },
+    oauth_discovery: {
+      authorization_server: '/.well-known/oauth-authorization-server',
+      protected_resource: '/.well-known/oauth-protected-resource'
     }
   };
+
+  // Add setup instructions if OAuth is not properly configured
+  if (!githubOAuthConfigured || hasPlaceholders) {
+    responseData.setup_instructions = {
+      step_1: 'Create a GitHub OAuth App at https://github.com/settings/applications/new',
+      step_2: 'Set Authorization callback URL to your domain + /api/v1/auth/github/callback',
+      step_3: 'Configure GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables',
+      step_4: 'Set AUTH_CALLBACK_URL to match your callback URL',
+      note: 'GitHub OAuth is required for full MCP functionality'
+    };
+  }
 
   // If they have a token, check if it's valid
   if (hasValidToken) {
@@ -205,20 +229,50 @@ router.get('/verify', async (req: Request, res: Response) => {
  */
 router.get('/github', (req: Request, res: Response) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
   const callbackUrl = process.env.AUTH_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/v1/auth/github/callback`;
   
-  if (!clientId || !process.env.GITHUB_CLIENT_SECRET) {
-    return res.status(500).json({
+  if (!clientId || !clientSecret) {
+    return res.status(503).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'GitHub OAuth not configured',
+        message: 'GitHub OAuth not configured - service unavailable',
         details: {
           missing_env_vars: [
             ...(!clientId ? ['GITHUB_CLIENT_ID'] : []),
-            ...(!process.env.GITHUB_CLIENT_SECRET ? ['GITHUB_CLIENT_SECRET'] : [])
+            ...(!clientSecret ? ['GITHUB_CLIENT_SECRET'] : [])
           ],
-          setup_instructions: 'Configure GitHub OAuth app and set environment variables'
+          setup_instructions: {
+            step_1: 'Create a GitHub OAuth App at https://github.com/settings/applications/new',
+            step_2: 'Set Authorization callback URL to your domain + /api/v1/auth/github/callback',
+            step_3: 'Configure GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables',
+            step_4: 'Restart the server',
+            documentation: '/docs - See OAuth setup documentation'
+          },
+          current_callback_url: callbackUrl,
+          note: 'This endpoint requires GitHub OAuth configuration to function'
+        }
+      }
+    });
+  }
+
+  // Check for placeholder values
+  if (clientId.includes('your-github-client-id') || clientSecret.includes('your-github-client-secret')) {
+    return res.status(503).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'GitHub OAuth contains placeholder values - configuration incomplete',
+        details: {
+          issue: 'Environment variables contain placeholder values instead of actual OAuth credentials',
+          fix: 'Replace placeholder values with actual GitHub OAuth app credentials',
+          setup_instructions: {
+            step_1: 'Update GITHUB_CLIENT_ID with your actual GitHub OAuth app client ID',
+            step_2: 'Update GITHUB_CLIENT_SECRET with your actual GitHub OAuth app client secret',
+            step_3: 'Ensure AUTH_CALLBACK_URL matches your GitHub OAuth app callback URL',
+            step_4: 'Restart the server'
+          }
         }
       }
     });
