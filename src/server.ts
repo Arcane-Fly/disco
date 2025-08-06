@@ -2200,6 +2200,26 @@ app.get('/mcp-setup', (_req, res) => {
 });
 
 // API routes with specific rate limiting
+
+// Base path handler for /api/v1
+// Provides a friendly message instead of 404 when accessing the API root.
+app.get('/api/v1', (req: Request, res: Response) => {
+  return res.status(200).json({
+    status: 'success',
+    message: 'MCP API v1 base path. Please use a specific endpoint.',
+    endpoints: [
+      '/api/v1/auth',
+      '/api/v1/containers',
+      '/api/v1/files',
+      '/api/v1/terminal',
+      '/api/v1/git',
+      '/api/v1/computer-use',
+      '/api/v1/rag',
+      '/api/v1/collaboration',
+      '/api/v1/teams'
+    ]
+  });
+});
 app.use('/api/v1/auth', authLimiter, authRouter);
 app.use('/api/v1/containers', authMiddleware, apiLimiter, containersRouter);
 app.use('/api/v1/files', authMiddleware, apiLimiter, filesRouter);
