@@ -145,7 +145,8 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'Mcp-Session-Id'],
+  exposedHeaders: ['Mcp-Session-Id'],
   optionsSuccessStatus: 204
 };
 
@@ -536,12 +537,22 @@ app.get('/', (req, res) => {
         </div>
 
         <div>
-            <strong>MCP Client Direct Connection:</strong>
+            <strong>MCP HTTP Stream (Recommended):</strong>
             <div class="platform-url">
                 <span>${domain}/mcp</span>
                 <button class="copy-btn" onclick="copyText('${domain}/mcp')">Copy</button>
             </div>
-            <small style="color: #64748b; margin-left: 12px;">For MCP-compatible clients (Warp Terminal, VSCode, etc.)</small>
+            <small style="color: #64748b; margin-left: 12px;">✅ MCP-compliant HTTP Stream transport (POST for JSON-RPC, GET for SSE)</small>
+        </div>
+
+        <div>
+            <strong>MCP Legacy SSE Transport:</strong>
+            <div class="platform-url">
+                <span>${domain}/sse (SSE) + ${domain}/messages (JSON-RPC)</span>
+                <button class="copy-btn" onclick="copyText('${domain}/sse')">Copy SSE</button>
+                <button class="copy-btn" onclick="copyText('${domain}/messages')">Copy Messages</button>
+            </div>
+            <small style="color: #64748b; margin-left: 12px;">✅ Backward compatibility for older MCP clients</small>
         </div>
 
         <div>
@@ -669,16 +680,12 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         <div id="unauthenticated-configs">
             <h4>Platform URLs (Login Required for Authentication Tokens):</h4>
             
-            <div style="background: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                <strong>🌐 ChatGPT.com Connectors:</strong> ${domain}/openapi.json
+            <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>✅ MCP HTTP Stream (Recommended):</strong> ${domain}/mcp
             </div>
             
             <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                <strong>🤖 Claude.ai External APIs:</strong> ${domain}/api/v1
-            </div>
-            
-            <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                <strong>⚡ MCP Clients (Warp/VSCode):</strong> ${domain}/mcp
+                <strong>🔄 MCP Legacy SSE:</strong> ${domain}/sse + ${domain}/messages
             </div>
 
             <h4>Sample MCP Configuration (Login Required for Real Tokens):</h4>
@@ -1785,16 +1792,24 @@ app.get('/claude-connector', (_req, res) => {
     : `http://localhost:${port}`;
 
   res.json({
-    api_base_url: `${domain}/api/v1`,
-    stream_base_url: `${domain}/api/v1/terminal`,
+    // MCP-compliant endpoints (HTTP Stream transport)
+    api_base_url: `${domain}/mcp`,      // POST this URL for JSON-RPC requests
+    stream_base_url: `${domain}/mcp`,   // GET with Accept: text/event-stream for streaming
+    
+    // Legacy SSE transport for backward compatibility
+    sse_endpoint: `${domain}/sse`,      // GET for SSE streaming
+    messages_endpoint: `${domain}/messages`, // POST for JSON-RPC messages
+    
     openapi_url: `${domain}/openapi.json`,
     platform: "Claude.ai Web Interface", 
-    type: "External API Integration",
+    type: "MCP-Compliant External API Integration",
+    mcp_transport: "http-stream",       // New MCP HTTP Stream transport
+    mcp_version: "2024-11-05",
     instructions: [
       "1. Open Claude.ai (requires Claude Pro/Team/Enterprise)",
       "2. Go to Settings → External APIs or Integrations",
-      "3. Click 'Add API' or 'Add Integration'", 
-      "4. Paste the api_base_url above",
+      "3. For HTTP Stream: Use api_base_url for both JSON-RPC and SSE",
+      "4. For Legacy SSE: Use sse_endpoint for streaming, messages_endpoint for JSON-RPC", 
       "5. Use GitHub OAuth for authentication"
     ],
     authentication: {
@@ -1811,9 +1826,11 @@ app.get('/claude-connector', (_req, res) => {
       "rag:search"
     ],
     notes: [
-      "This is for Claude.ai web interface external API integration",
+      "✅ MCP HTTP Stream transport compliant (recommended)",
+      "✅ Legacy SSE transport support for backward compatibility",
       "Requires Claude Pro, Team, or Enterprise subscription",
-      "Bearer token authentication required for API calls"
+      "Bearer token authentication required for API calls",
+      "Use Mcp-Session-Id header for session management"
     ]
   });
 });
@@ -1851,7 +1868,7 @@ app.get('/.well-known/mcp.json', (_req, res) => {
   });
 });
 
-// MCP transport endpoint for stdio/http bridge
+// MCP transport endpoint with HTTP Stream support
 /**
  * @swagger
  * /mcp:
@@ -1893,8 +1910,366 @@ app.get('/.well-known/mcp.json', (_req, res) => {
  *                   example: 1
  *                 result:
  *                   type: object
+ *   get:
+ *     tags: [MCP]
+ *     summary: MCP HTTP Stream transport endpoint
+ *     description: HTTP Stream transport for MCP with Server-Sent Events
+ *     parameters:
+ *       - in: header
+ *         name: Accept
+ *         schema:
+ *           type: string
+ *           example: "text/event-stream"
+ *         description: Must be "text/event-stream" for SSE
+ *       - in: header
+ *         name: Mcp-Session-Id
+ *         schema:
+ *           type: string
+ *         description: Optional MCP session identifier
+ *     responses:
+ *       200:
+ *         description: Server-Sent Events stream
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
  */
+
+// Handle GET requests for HTTP Stream transport (SSE)
+app.get('/mcp', (req, res) => {
+  const acceptHeader = req.headers.accept;
+  
+  // Check if client wants SSE
+  if (acceptHeader && acceptHeader.includes('text/event-stream')) {
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    // Get session ID if provided
+    const sessionId = req.headers['mcp-session-id'] as string;
+    
+    // Send endpoint event as per MCP spec
+    const domain = process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+    
+    res.write(`event: endpoint\n`);
+    res.write(`data: ${JSON.stringify({ url: `${domain}/mcp` })}\n\n`);
+    
+    // Send server info event
+    res.write(`event: server_info\n`);
+    res.write(`data: ${JSON.stringify({
+      name: 'Disco MCP Server',
+      version: '1.0.0',
+      capabilities: ['tools', 'resources', 'prompts'],
+      session_id: sessionId || 'default'
+    })}\n\n`);
+    
+    // Keep connection alive with periodic ping
+    const pingInterval = setInterval(() => {
+      res.write(`event: ping\n`);
+      res.write(`data: ${Date.now()}\n\n`);
+    }, 30000);
+    
+    // Clean up on close
+    req.on('close', () => {
+      clearInterval(pingInterval);
+    });
+    
+    return;
+  }
+  
+  // For non-SSE requests, return JSON info
+  res.json({
+    transport: 'http-stream',
+    endpoint: `${req.protocol}://${req.get('host')}/mcp`,
+    methods: ['POST', 'GET'],
+    description: 'MCP HTTP Stream transport - POST for JSON-RPC, GET with Accept: text/event-stream for SSE'
+  });
+});
+
+// Handle POST requests for JSON-RPC
 app.post('/mcp', express.json(), (req, res) => {
+  try {
+    const { jsonrpc, id, method, params: _params } = req.body;
+
+    // Validate JSON-RPC format
+    if (jsonrpc !== '2.0') {
+      return res.status(400).json({
+        jsonrpc: '2.0',
+        id: id || null,
+        error: {
+          code: -32600,
+          message: 'Invalid Request',
+          data: 'jsonrpc must be "2.0"'
+        }
+      });
+    }
+
+    // Handle MCP protocol methods
+    switch (method) {
+      case 'initialize':
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          result: {
+            protocolVersion: '2024-11-05',
+            capabilities: {
+              tools: {
+                listChanged: true
+              },
+              resources: {
+                subscribe: true,
+                listChanged: true
+              },
+              prompts: {
+                listChanged: true
+              },
+              logging: {}
+            },
+            serverInfo: {
+              name: 'Disco MCP Server',
+              version: '1.0.0'
+            }
+          }
+        });
+
+      case 'tools/list':
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          result: {
+            tools: [
+              {
+                name: 'file_read',
+                description: 'Read file contents from WebContainer',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    path: { type: 'string', description: 'File path to read' }
+                  },
+                  required: ['path']
+                }
+              },
+              {
+                name: 'file_write',
+                description: 'Write content to file in WebContainer',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    path: { type: 'string', description: 'File path to write' },
+                    content: { type: 'string', description: 'Content to write' }
+                  },
+                  required: ['path', 'content']
+                }
+              },
+              {
+                name: 'terminal_execute',
+                description: 'Execute command in WebContainer terminal',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    command: { type: 'string', description: 'Command to execute' }
+                  },
+                  required: ['command']
+                }
+              },
+              {
+                name: 'git_clone',
+                description: 'Clone repository in WebContainer',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    url: { type: 'string', description: 'Repository URL' },
+                    path: { type: 'string', description: 'Target path' }
+                  },
+                  required: ['url']
+                }
+              }
+            ]
+          }
+        });
+
+      case 'tools/call':
+        // For tool calls, we need authentication
+        if (!req.headers.authorization) {
+          return res.status(401).json({
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32001,
+              message: 'Authentication required',
+              data: 'Bearer token required for tool calls'
+            }
+          });
+        }
+
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [
+              {
+                type: 'text',
+                text: 'Tool call received. Use the REST API endpoints directly for full functionality.'
+              }
+            ]
+          }
+        });
+
+      default:
+        return res.status(400).json({
+          jsonrpc: '2.0',
+          id: id || null,
+          error: {
+            code: -32601,
+            message: 'Method not found',
+            data: `Unknown method: ${method}`
+          }
+        });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      jsonrpc: '2.0',
+      id: req.body?.id || null,
+      error: {
+        code: -32603,
+        message: 'Internal error',
+        data: error instanceof Error ? error.message : 'Unknown error'
+      }
+    });
+  }
+});
+
+// SSE Transport endpoints for backward compatibility
+/**
+ * @swagger
+ * /sse:
+ *   get:
+ *     tags: [MCP SSE Transport]
+ *     summary: SSE endpoint for MCP legacy transport
+ *     description: Server-Sent Events endpoint for backward compatibility with older MCP clients
+ *     parameters:
+ *       - in: header
+ *         name: Accept
+ *         schema:
+ *           type: string
+ *           example: "text/event-stream"
+ *         description: Must be "text/event-stream"
+ *       - in: header
+ *         name: Mcp-Session-Id
+ *         schema:
+ *           type: string
+ *         description: Optional MCP session identifier
+ *     responses:
+ *       200:
+ *         description: Server-Sent Events stream
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ */
+app.get('/sse', (req, res) => {
+  // Set SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control, Mcp-Session-Id'
+  });
+
+  // Get session ID if provided
+  const sessionId = req.headers['mcp-session-id'] as string;
+  
+  // Send endpoint event pointing to /messages for JSON-RPC
+  const domain = process.env.NODE_ENV === 'production' 
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+    : `http://localhost:${port}`;
+  
+  res.write(`event: endpoint\n`);
+  res.write(`data: ${JSON.stringify({ url: `${domain}/messages` })}\n\n`);
+  
+  // Send server info event
+  res.write(`event: server_info\n`);
+  res.write(`data: ${JSON.stringify({
+    name: 'Disco MCP Server',
+    version: '1.0.0',
+    capabilities: ['tools', 'resources', 'prompts'],
+    transport: 'sse',
+    session_id: sessionId || 'default'
+  })}\n\n`);
+  
+  // Keep connection alive with periodic ping
+  const pingInterval = setInterval(() => {
+    res.write(`event: ping\n`);
+    res.write(`data: ${Date.now()}\n\n`);
+  }, 30000);
+  
+  // Clean up on close
+  req.on('close', () => {
+    clearInterval(pingInterval);
+  });
+});
+
+/**
+ * @swagger
+ * /messages:
+ *   post:
+ *     tags: [MCP SSE Transport]
+ *     summary: JSON-RPC endpoint for MCP legacy transport
+ *     description: JSON-RPC message endpoint for backward compatibility with older MCP clients using SSE transport
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               jsonrpc:
+ *                 type: string
+ *                 example: "2.0"
+ *               id:
+ *                 type: number
+ *                 example: 1
+ *               method:
+ *                 type: string
+ *                 example: "initialize"
+ *               params:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: MCP JSON-RPC response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 jsonrpc:
+ *                   type: string
+ *                   example: "2.0"
+ *                 id:
+ *                   type: number
+ *                   example: 1
+ *                 result:
+ *                   type: object
+ */
+app.post('/messages', express.json(), (req, res) => {
+  // Set JSON headers
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Handle session ID
+  const sessionId = req.headers['mcp-session-id'] as string;
+  if (sessionId) {
+    res.setHeader('Mcp-Session-Id', sessionId);
+  }
+  
+  // Reuse the same JSON-RPC logic from /mcp POST handler
   try {
     const { jsonrpc, id, method, params: _params } = req.body;
 
