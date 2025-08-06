@@ -612,7 +612,7 @@ app.get('/', (req, res) => {
             </div>
             <div class="code-block">
                 <button class="copy-btn" onclick="copyToClipboard('claude-connector')">Copy</button>
-                <pre id="claude-connector">${domain}/api/v1</pre>
+                <pre id="claude-connector">${domain}/api/v1 (REST)\n${domain}/api/v1/terminal (SSE)</pre>
             </div>
 
             <h4>For Warp Terminal (MCP Client):</h4>
@@ -1786,6 +1786,7 @@ app.get('/claude-connector', (_req, res) => {
 
   res.json({
     api_base_url: `${domain}/api/v1`,
+    stream_base_url: `${domain}/api/v1/terminal`,
     openapi_url: `${domain}/openapi.json`,
     platform: "Claude.ai Web Interface", 
     type: "External API Integration",
