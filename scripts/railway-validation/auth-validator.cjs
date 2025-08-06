@@ -132,7 +132,9 @@ class AuthValidator {
     // Validate GitHub Client ID format
     const clientId = this.envVars.get('GITHUB_CLIENT_ID');
     if (clientId) {
-      if (clientId.includes('your-github-client-id') || clientId.includes('placeholder')) {
+      if (clientId.includes('${{')) {
+        console.log('✅ GitHub Client ID configured with Railway template variable');
+      } else if (clientId.includes('your-github-client-id') || clientId.includes('placeholder')) {
         this.errors.push('GITHUB_CLIENT_ID contains placeholder value');
         this.fixes.push('Replace GITHUB_CLIENT_ID with actual GitHub OAuth app client ID');
       } else if (!/^[a-f0-9]{20}$/i.test(clientId)) {
@@ -143,7 +145,9 @@ class AuthValidator {
     // Validate GitHub Client Secret
     const clientSecret = this.envVars.get('GITHUB_CLIENT_SECRET');
     if (clientSecret) {
-      if (clientSecret.includes('your-github-client-secret') || clientSecret.includes('placeholder')) {
+      if (clientSecret.includes('${{')) {
+        console.log('✅ GitHub Client Secret configured with Railway template variable');
+      } else if (clientSecret.includes('your-github-client-secret') || clientSecret.includes('placeholder')) {
         this.errors.push('GITHUB_CLIENT_SECRET contains placeholder value');
         this.fixes.push('Replace GITHUB_CLIENT_SECRET with actual GitHub OAuth app client secret');
       }
@@ -173,6 +177,12 @@ class AuthValidator {
     if (!allowedOrigins) {
       this.errors.push('ALLOWED_ORIGINS not configured');
       this.fixes.push('Set ALLOWED_ORIGINS environment variable with comma-separated list of allowed domains');
+      return;
+    }
+
+    // Skip validation for Railway template variables
+    if (allowedOrigins.includes('${{')) {
+      console.log('✅ CORS configured with Railway template variables');
       return;
     }
 
@@ -248,6 +258,12 @@ class AuthValidator {
     if (!callbackUrl) {
       this.warnings.push('AUTH_CALLBACK_URL not configured');
       this.fixes.push('Set AUTH_CALLBACK_URL to your Railway app domain + /api/v1/auth/github/callback');
+      return;
+    }
+
+    // Skip validation for Railway template variables
+    if (callbackUrl.includes('${{')) {
+      console.log('✅ Callback URL configured with Railway template variable');
       return;
     }
 
@@ -356,6 +372,8 @@ class AuthValidator {
     if (!jwtSecret) {
       this.errors.push('JWT_SECRET not configured');
       this.fixes.push('Set JWT_SECRET environment variable with a strong secret');
+    } else if (jwtSecret.includes('${{')) {
+      console.log('✅ JWT Secret configured with Railway template variable');
     } else if (jwtSecret.includes('your-super-secret') || jwtSecret.length < 32) {
       this.warnings.push('JWT_SECRET appears to be weak or placeholder');
       this.fixes.push('Use a strong, unique JWT_SECRET (at least 32 characters)');
