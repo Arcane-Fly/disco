@@ -64,7 +64,10 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET'];
 // WebContainer API key is only required in browser environments where containers are supported
-const optionalEnvVars = ['WEBCONTAINER_API_KEY', 'REDIS_URL', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'];
+// Optional environment variables
+// Note: the WebContainer API key is now supplied via WEBCONTAINER_CLIENT_ID
+// because StackBlitz WebContainers expect this variable name.
+const optionalEnvVars = ['WEBCONTAINER_CLIENT_ID', 'REDIS_URL', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'];
 const securityEnvVars = ['ALLOWED_ORIGINS', 'AUTH_CALLBACK_URL'];
 
 // Check required variables
@@ -2509,7 +2512,10 @@ server.listen(port, '0.0.0.0', async () => {
   console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📁 Data directory: ${dataPath}`);
-  console.log(`🔧 WebContainer integration: ${process.env.WEBCONTAINER_API_KEY ? 'Enabled' : 'Disabled'}`);
+  // Determine WebContainer integration status using WEBCONTAINER_CLIENT_ID.
+  // This variable replaces the previous WEBCONTAINER_API_KEY to align with
+  // StackBlitz WebContainer client expectations.
+  console.log(`🔧 WebContainer integration: ${process.env.WEBCONTAINER_CLIENT_ID ? 'Enabled' : 'Disabled'}`);
 });
 
 export { app, io, dataPath };
