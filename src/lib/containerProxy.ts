@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
+import { createClient, RedisClientType } from 'redis';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -74,7 +75,7 @@ export interface ProcessAPI {
 export class ContainerProxy extends EventEmitter {
   private docker: Docker;
   private sessions: Map<string, ContainerSession>;
-  private redis?: any; // Redis client if available
+  private redis?: RedisClientType; // Redis client if available
   private config: Required<ContainerProxyConfig>;
   private cleanupInterval?: NodeJS.Timeout;
 
@@ -112,9 +113,8 @@ export class ContainerProxy extends EventEmitter {
 
     // Initialize Redis if URL provided
     if (this.config.redisUrl) {
-      // Redis initialization would go here if ioredis is available
-      // For now, we'll skip Redis to avoid dependency issues
-      console.log('Redis URL provided but Redis support disabled in container proxy');
+      // Start Redis connection asynchronously
+      void this.setupRedis(this.config.redisUrl);
     }
 
     // Start cleanup interval
@@ -619,6 +619,42 @@ export class ContainerProxy extends EventEmitter {
       console.log(`Restored ${keys.length} sessions from Redis`);
     } catch (error) {
       console.error(`Failed to restore sessions from Redis: ${error}`);
+    }
+  }
+
+  /**
+   * Initialize Redis client and restore sessions.
+   * This is called from the constructor when a redisUrl is provided. It runs asynchronously
+   * without blocking the constructor.
+   */
+  private async setupRedis(redisUrl: string): Promise<void> {
+    try {
+      this.redis = createClient({
+        url: redisUrl,
+        socket: {
+          reconnectStrategy: (retries: number) => Math.min(retries * 50, 500)
+        }
+      });
+
+      this.redis.on('error', (err) => {
+        console.error('Redis Client Error in ContainerProxy:', err);
+      });
+
+      this.redis.on('connect', () => {
+        console.log('📡 Redis connected in ContainerProxy');
+      });
+
+      this.redis.on('end', () => {
+        console.log('📡 Redis disconnected in ContainerProxy');
+      });
+
+      await this.redis.connect();
+
+      // Restore sessions from Redis on startup
+      await this.restoreSessionsFromRedis();
+    } catch (error) {
+      console.error('❌ Failed to connect to Redis in ContainerProxy:', error);
+      this.redis = undefined;
     }
   }
 
