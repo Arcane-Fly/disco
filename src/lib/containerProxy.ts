@@ -586,11 +586,14 @@ export class ContainerProxy extends EventEmitter {
       processes: Array.from(session.processes.entries())
     };
 
+    // Set the key with an expiry. The redis client expects an options object for expiry.
+    // See: https://github.com/redis/node-redis#basic-usage
     await this.redis.set(
       `session:${session.id}`,
       JSON.stringify(data),
-      'EX',
-      this.config.containerTimeout / 1000
+      {
+        EX: Math.floor(this.config.containerTimeout / 1000)
+      }
     );
   }
 
