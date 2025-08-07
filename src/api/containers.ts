@@ -268,6 +268,131 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/containers/bootstrap
+ * Bootstrap WebContainer session with MCP integration
+ */
+router.post('/bootstrap', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const sessionId = req.headers['x-session-id'] as string || `bootstrap_${Date.now()}`;
+    const { type = 'webcontainer', config = {} } = req.body;
+
+    console.log(`🔧 Bootstrapping ${type} container for user: ${userId}, session: ${sessionId}`);
+
+    // Create container session
+    const session = await containerManager.createSession(userId);
+
+    // Enhanced bootstrap configuration
+    const bootstrapConfig = {
+      memory: config.memory || 512,
+      timeout: config.timeout || 1800000, // 30 minutes
+      coep: config.coep || 'credentialless',
+      ...config
+    };
+
+    // Update session with bootstrap config
+    if (session.container) {
+      // Store bootstrap config in session metadata
+      (session as any).bootstrapConfig = bootstrapConfig;
+      (session as any).sessionId = sessionId;
+    }
+
+    const response = {
+      success: true,
+      sessionId: sessionId,
+      containerId: session.id,
+      status: session.status,
+      url: session.url,
+      capabilities: [
+        'file:read', 'file:write', 'file:delete', 'file:list',
+        'git:clone', 'git:commit', 'git:push', 'git:pull',
+        'terminal:execute', 'terminal:stream',
+        'webcontainer:filesystem', 'webcontainer:terminal'
+      ],
+      config: bootstrapConfig
+    };
+
+    console.log(`✅ WebContainer bootstrapped: ${session.id}`);
+
+    res.status(201).json({
+      status: 'success',
+      data: response
+    });
+
+  } catch (error) {
+    console.error('Container bootstrap error:', error);
+    
+    let statusCode = 500;
+    let errorCode = ErrorCode.INTERNAL_ERROR;
+    let message = 'Failed to bootstrap container';
+
+    if (error instanceof Error) {
+      if (error.message.includes('limit reached')) {
+        statusCode = 429;
+        errorCode = ErrorCode.RATE_LIMIT_EXCEEDED;
+        message = error.message;
+      } else if (error.message.includes('WebContainer')) {
+        errorCode = ErrorCode.WEBCONTAINER_ERROR;
+        message = error.message;
+      }
+    }
+
+    res.status(statusCode).json({
+      status: 'error',
+      error: {
+        code: errorCode,
+        message: message
+      }
+    });
+  }
+});
+
+/**
+ * GET /api/v1/containers/sessions
+ * Get active WebContainer sessions for the user
+ */
+router.get('/sessions', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const containers = containerManager.getUserContainers(userId);
+
+    const sessions = containers.map(session => ({
+      sessionId: (session as any).sessionId || session.id,
+      containerId: session.id,
+      status: session.status,
+      createdAt: session.createdAt,
+      lastActive: session.lastActive,
+      bootstrapConfig: (session as any).bootstrapConfig || {},
+      capabilities: [
+        'file:read', 'file:write', 'file:delete', 'file:list',
+        'git:clone', 'git:commit', 'git:push', 'git:pull',
+        'terminal:execute', 'terminal:stream',
+        'webcontainer:filesystem', 'webcontainer:terminal'
+      ]
+    }));
+
+    res.json({
+      status: 'success',
+      data: {
+        sessions,
+        count: sessions.length,
+        maxSessions: 50 // From the problem statement
+      }
+    });
+
+  } catch (error) {
+    console.error('Container sessions error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to get container sessions'
+      }
+    });
+  }
+});
+
+/**
  * GET /api/v1/containers/stats
  * Get container statistics (for monitoring)
  */
