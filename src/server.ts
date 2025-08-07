@@ -126,10 +126,10 @@ app.use(helmet({
       frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com"],
       connectSrc: ["'self'", "wss:", "ws:"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Needed for Swagger UI
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts
-      styleSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts stylesheets and inline styles
+      styleSrc: ["'self'", "'unsafe-inline'"], // Remove Google Fonts for ChatGPT CSP compatibility
+      styleSrcElem: ["'self'", "'unsafe-inline'"], // Remove Google Fonts for ChatGPT CSP compatibility
       imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"] // Allow Google Fonts assets
+      fontSrc: ["'self'", "data:"] // Remove Google Fonts for ChatGPT CSP compatibility
     },
   },
   crossOriginEmbedderPolicy: false, // Allow embedding for ChatGPT/Claude integration
@@ -1359,7 +1359,8 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
     description_for_human: 'Full development environment with repository access, terminal operations, and computer use capabilities.',
     description_for_model: 'Provides complete development environment through WebContainers with file operations, git integration, terminal access, and browser automation for code development and testing.',
     auth: {
-      type: 'none'
+      type: 'service_http',
+      authorization_type: 'bearer'
     },
     api: {
       type: 'openapi',
