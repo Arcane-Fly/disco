@@ -21,6 +21,7 @@ import { computerUseRouter } from './api/computer-use.js';
 import { ragRouter } from './api/rag.js';
 import { collaborationRouter } from './api/collaboration.js';
 import { teamCollaborationRouter } from './api/teams.js';
+import { providersRouter } from './api/providers.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
@@ -111,28 +112,31 @@ for (const envVar of optionalEnvVars) {
 // CORS Configuration - Railway compliance
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : ['https://chat.openai.com', 'https://chatgpt.com'];
+  : ['https://chat.openai.com', 'https://chatgpt.com', 'https://claude.ai', 'https://webcontainer.io', 'https://disco-mcp.up.railway.app'];
 
 // Never allow '*' in production
 if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
   throw new Error('ALLOWED_ORIGINS must be set in production');
 }
 
-// Security middleware with enhanced headers
+// Security middleware with enhanced headers for WebContainer compatibility
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com"],
-      connectSrc: ["'self'", "wss:", "ws:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Needed for Swagger UI
-      styleSrc: ["'self'", "'unsafe-inline'"], // Remove Google Fonts for ChatGPT CSP compatibility
-      styleSrcElem: ["'self'", "'unsafe-inline'"], // Remove Google Fonts for ChatGPT CSP compatibility
+      frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com", "https://claude.ai"],
+      connectSrc: ["'self'", "wss:", "ws:", "https://webcontainer.io"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"], // Allow WebContainer CDN
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrcElem: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "data:"] // Remove Google Fonts for ChatGPT CSP compatibility
+      fontSrc: ["'self'", "data:"],
+      workerSrc: ["'self'", "blob:"], // Required for WebContainer Workers
+      childSrc: ["'self'", "blob:"]   // Required for WebContainer iframes
     },
   },
-  crossOriginEmbedderPolicy: false, // Allow embedding for ChatGPT/Claude integration
+  crossOriginEmbedderPolicy: { policy: 'credentialless' }, // Enable SharedArrayBuffer support
+  crossOriginOpenerPolicy: { policy: 'same-origin' },      // Required for WebContainer
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -154,6 +158,19 @@ app.use(cors(corsOptions));
 
 // Explicit OPTIONS handler for preflight requests
 app.options('*', cors(corsOptions));
+
+// Serve static files with proper headers for WebContainer
+app.use('/public', express.static(path.join(process.cwd(), 'public'), {
+  setHeaders: (res, path) => {
+    // Set COEP and COOP headers for WebContainer compatibility
+    res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    
+    // Additional security headers for static files
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  }
+}));
 
 // Enhanced rate limiting with different limits for different endpoints
 const globalLimiter = rateLimit({
@@ -246,6 +263,107 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   };
   
   next();
+});
+
+// MCP Manifest endpoint for AI platform registration
+/**
+ * @swagger
+ * /mcp-manifest.json:
+ *   get:
+ *     tags: [MCP Discovery]
+ *     summary: MCP server manifest
+ *     description: Returns MCP server manifest for AI platform registration with comprehensive capabilities and configuration
+ *     responses:
+ *       200:
+ *         description: MCP server manifest
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ */
+app.get('/mcp-manifest.json', async (_req, res) => {
+  try {
+    const manifestPath = path.join(process.cwd(), 'mcp-manifest.json');
+    const manifestData = await fs.readFile(manifestPath, 'utf-8');
+    const manifest = JSON.parse(manifestData);
+    
+    // Update URLs based on current environment
+    const domain = process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+    
+    // Update server URL in manifest
+    manifest.server_url = domain;
+    manifest.authentication.authorization_endpoint = `${domain}/api/v1/auth/github`;
+    manifest.authentication.token_endpoint = `${domain}/oauth/token`;
+    
+    // Update transport URLs
+    manifest.transports.forEach((transport: any) => {
+      if (transport.url) {
+        transport.url = transport.url.replace('https://disco-mcp.up.railway.app', domain);
+      }
+      if (transport.sse_endpoint) {
+        transport.sse_endpoint = transport.sse_endpoint.replace('https://disco-mcp.up.railway.app', domain);
+      }
+      if (transport.messages_endpoint) {
+        transport.messages_endpoint = transport.messages_endpoint.replace('https://disco-mcp.up.railway.app', domain);
+      }
+    });
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json(manifest);
+    
+  } catch (error) {
+    console.error('Error serving MCP manifest:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: 'MANIFEST_ERROR',
+        message: 'Failed to load MCP manifest'
+      }
+    });
+  }
+});
+
+// WebContainer Loader endpoint with COEP headers
+/**
+ * @swagger
+ * /webcontainer-loader:
+ *   get:
+ *     tags: [WebContainer]
+ *     summary: WebContainer browser initialization
+ *     description: Returns HTML page for browser-side WebContainer initialization with proper COEP/COOP headers
+ *     responses:
+ *       200:
+ *         description: WebContainer loader HTML page
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ */
+app.get('/webcontainer-loader', async (_req, res) => {
+  try {
+    const loaderPath = path.join(process.cwd(), 'public', 'webcontainer-loader.html');
+    const loaderContent = await fs.readFile(loaderPath, 'utf-8');
+    
+    // Set headers required for WebContainer SharedArrayBuffer support
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
+    res.send(loaderContent);
+    
+  } catch (error) {
+    console.error('Error serving WebContainer loader:', error);
+    res.status(500).json({
+      status: 'error',
+      error: {
+        code: 'LOADER_ERROR',
+        message: 'Failed to load WebContainer loader'
+      }
+    });
+  }
 });
 
 // Root discovery endpoint with web interface
@@ -2593,7 +2711,8 @@ app.get('/api/v1', (req: Request, res: Response) => {
       '/api/v1/computer-use',
       '/api/v1/rag',
       '/api/v1/collaboration',
-      '/api/v1/teams'
+      '/api/v1/teams',
+      '/api/v1/providers'
     ]
   });
 });
@@ -2606,6 +2725,7 @@ app.use('/api/v1/computer-use', authMiddleware, apiLimiter, computerUseRouter);
 app.use('/api/v1/rag', authMiddleware, apiLimiter, ragRouter);
 app.use('/api/v1/collaboration', authMiddleware, apiLimiter, collaborationRouter);
 app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
+app.use('/api/v1/providers', authMiddleware, apiLimiter, providersRouter);
 
 /**
  * GET /status
@@ -2912,7 +3032,22 @@ server.listen(port, '0.0.0.0', async () => {
   // Determine WebContainer integration status using WEBCONTAINER_CLIENT_ID.
   // This variable replaces the previous WEBCONTAINER_API_KEY to align with
   // StackBlitz WebContainer client expectations.
-  console.log(`🔧 WebContainer integration: ${process.env.WEBCONTAINER_CLIENT_ID ? 'Enabled' : 'Disabled'}`);
+  // Determine WebContainer integration status using WEBCONTAINER_CLIENT_ID.
+  // This variable replaces the previous WEBCONTAINER_API_KEY to align with
+  // StackBlitz WebContainer client expectations.
+  const webcontainerStatus = process.env.WEBCONTAINER_CLIENT_ID ? 'Enabled' : 'Server-mode (client-side integration)';
+  console.log(`🔧 WebContainer integration: ${webcontainerStatus}`);
+  
+  if (process.env.WEBCONTAINER_CLIENT_ID) {
+    console.log('✅ WebContainer client-side integration ready');
+  } else {
+    console.log('ℹ️  WebContainer running in server mode - full functionality available via browser client');
+  }
+  
+  // Log new endpoints
+  console.log(`📋 MCP Manifest: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/mcp-manifest.json`);
+  console.log(`🚀 WebContainer Loader: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/webcontainer-loader`);
+  console.log(`🤖 Provider Management: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/api/v1/providers`);
 });
 
 export { app, io, dataPath };

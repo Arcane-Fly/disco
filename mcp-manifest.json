@@ -1,0 +1,137 @@
+{
+  "name": "disco-mcp",
+  "description": "Quantum Router MCP with WebContainer support - Full development environment for ChatGPT and Claude integration",
+  "version": "1.0.0",
+  "server_url": "https://disco-mcp.up.railway.app",
+  "protocol_version": "2024-11-05",
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true,
+    "webcontainer": true,
+    "logging": true
+  },
+  "endpoints": {
+    "health": "/health",
+    "mcp_http_stream": "/mcp",
+    "mcp_legacy_sse": "/sse",
+    "mcp_legacy_messages": "/messages",
+    "containers": "/api/v1/containers",
+    "sessions": "/api/v1/containers/sessions",
+    "bootstrap": "/api/v1/containers/bootstrap",
+    "auth": "/api/v1/auth/github",
+    "openapi": "/openapi.json",
+    "docs": "/docs"
+  },
+  "authentication": {
+    "type": "oauth2",
+    "authorization_endpoint": "https://disco-mcp.up.railway.app/api/v1/auth/github",
+    "token_endpoint": "https://disco-mcp.up.railway.app/oauth/token",
+    "scopes": ["openid", "profile", "mcp:tools", "mcp:resources"],
+    "pkce_required": true
+  },
+  "transports": [
+    {
+      "type": "http-stream",
+      "url": "https://disco-mcp.up.railway.app/mcp",
+      "methods": ["POST", "GET"],
+      "description": "Primary MCP HTTP Stream transport - POST for JSON-RPC, GET for SSE"
+    },
+    {
+      "type": "sse",
+      "sse_endpoint": "https://disco-mcp.up.railway.app/sse",
+      "messages_endpoint": "https://disco-mcp.up.railway.app/messages",
+      "description": "Legacy SSE transport for backward compatibility"
+    }
+  ],
+  "tools": [
+    {
+      "name": "file_read",
+      "description": "Read file contents from WebContainer",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "description": "File path to read"}
+        },
+        "required": ["path"]
+      }
+    },
+    {
+      "name": "file_write", 
+      "description": "Write content to file in WebContainer",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "description": "File path to write"},
+          "content": {"type": "string", "description": "Content to write"}
+        },
+        "required": ["path", "content"]
+      }
+    },
+    {
+      "name": "terminal_execute",
+      "description": "Execute command in WebContainer terminal",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": {"type": "string", "description": "Command to execute"}
+        },
+        "required": ["command"]
+      }
+    },
+    {
+      "name": "git_clone",
+      "description": "Clone repository in WebContainer",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string", "description": "Repository URL"},
+          "path": {"type": "string", "description": "Target path"}
+        },
+        "required": ["url"]
+      }
+    },
+    {
+      "name": "computer_use_screenshot",
+      "description": "Take screenshot using browser automation",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string", "description": "URL to screenshot"},
+          "element": {"type": "string", "description": "CSS selector for specific element"}
+        }
+      }
+    }
+  ],
+  "webcontainer": {
+    "supported": true,
+    "client_side": true,
+    "requires_coep": true,
+    "bootstrap_endpoint": "/api/v1/containers/bootstrap",
+    "initialization_script": "/webcontainer-loader.html"
+  },
+  "cors": {
+    "allowed_origins": [
+      "https://chat.openai.com",
+      "https://chatgpt.com", 
+      "https://claude.ai",
+      "https://webcontainer.io"
+    ]
+  },
+  "platform_integration": {
+    "chatgpt": {
+      "connector_url": "https://disco-mcp.up.railway.app/openapi.json",
+      "setup_guide": "/chatgpt-connector"
+    },
+    "claude": {
+      "api_base_url": "https://disco-mcp.up.railway.app/mcp",
+      "setup_guide": "/claude-connector"
+    }
+  },
+  "deployment": {
+    "environment": "production",
+    "railway_service_id": "b8ea9420-d160-4ea2-b612-821f1868d33a",
+    "domain": "disco-mcp.up.railway.app",
+    "health_check": "https://disco-mcp.up.railway.app/health"
+  }
+}
