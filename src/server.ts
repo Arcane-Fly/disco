@@ -24,10 +24,12 @@ import { teamCollaborationRouter } from './api/teams.js';
 import { providersRouter } from './api/providers.js';
 import { dashboardRouter } from './api/dashboard.js';
 import { performanceRouter } from './api/performance.js';
+import { securityRouter } from './api/security.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { securityAuditMiddleware, securityInputValidationMiddleware } from './middleware/securityAudit.js';
 // import { requestLogger } from './middleware/requestLogger.js'; // TODO: Implement request logging
 
 // Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration, performance optimizer
@@ -38,6 +40,7 @@ import { specs } from './lib/openapi.js';
 import { initializeCollaborationManager } from './lib/collaborationManager.js';
 import { initializeTeamCollaborationManager } from './lib/teamCollaborationManager.js';
 import { performanceOptimizer } from './lib/performanceOptimizer.js';
+import { securityComplianceManager } from './lib/securityComplianceManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -223,6 +226,10 @@ app.use(globalLimiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Security middleware - must be after body parsing
+app.use(securityInputValidationMiddleware);
+app.use(securityAuditMiddleware);
 
 // Enhanced request logging with security monitoring
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -2730,6 +2737,7 @@ app.use('/api/v1/collaboration', authMiddleware, apiLimiter, collaborationRouter
 app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
 app.use('/api/v1/providers', authMiddleware, apiLimiter, providersRouter);
 app.use('/api/v1/performance', authMiddleware, apiLimiter, performanceRouter);
+app.use('/api/v1/security', authMiddleware, apiLimiter, securityRouter);
 
 // Dashboard routes (with lighter rate limiting for better user experience)
 app.use('/dashboard', dashboardRouter);

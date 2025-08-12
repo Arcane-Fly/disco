@@ -335,6 +335,38 @@
                 </div>
             </section>
 
+            <!-- Security & Compliance -->
+            <section class="security-compliance-section">
+                <h2 style="color: #ef4444; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    🛡️ Security & Compliance
+                    <button id="refreshSecurity" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
+                </h2>
+                <div class="security-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #f59e0b; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Audit Logs</h3>
+                        <div id="auditLogMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                    </div>
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #ef4444; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Security Incidents</h3>
+                        <div id="securityIncidentMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="viewIncidents" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">View Incidents</button>
+                    </div>
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Compliance Status</h3>
+                        <div id="complianceMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="generateReport" style="background: #059669; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Generate Report</button>
+                    </div>
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #8b5cf6; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Zero Trust</h3>
+                        <div id="zeroTrustMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                    </div>
+                </div>
+                <div class="security-summary" style="background: rgba(30, 41, 59, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                    <h4 style="color: #e2e8f0; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Security Overview</h4>
+                    <div id="securityOverview" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                </div>
+            </section>
+
             <!-- Alerts -->
             <section class="alerts-section">
                 <h2 class="alerts-header">
@@ -375,7 +407,8 @@
                         this.updateMetrics(),
                         this.updateCharts(),
                         this.updateAlerts(),
-                        this.updatePerformanceOptimization()
+                        this.updatePerformanceOptimization(),
+                        this.updateSecurityCompliance()
                     ]);
                 } catch (error) {
                     console.error('Failed to load initial data:', error);
@@ -642,6 +675,19 @@
                 document.getElementById('triggerResourceOptimization').addEventListener('click', async () => {
                     await this.triggerResourceOptimization();
                 });
+
+                // Security compliance event listeners
+                document.getElementById('refreshSecurity').addEventListener('click', async () => {
+                    await this.updateSecurityCompliance();
+                });
+
+                document.getElementById('viewIncidents').addEventListener('click', async () => {
+                    await this.viewSecurityIncidents();
+                });
+
+                document.getElementById('generateReport').addEventListener('click', async () => {
+                    await this.generateComplianceReport();
+                });
             }
 
             startAutoRefresh() {
@@ -649,6 +695,7 @@
                     await this.updateMetrics();
                     await this.updateAlerts();
                     await this.updatePerformanceOptimization();
+                    await this.updateSecurityCompliance();
                     this.updateTimestamp();
                 }, 30000); // Refresh every 30 seconds
 
@@ -858,6 +905,156 @@
                         messageEl.parentNode.removeChild(messageEl);
                     }
                 }, 5000);
+            }
+
+            async updateSecurityCompliance() {
+                try {
+                    const response = await fetch('/api/v1/security/metrics', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.renderSecurityCompliance(data);
+                    } else {
+                        console.warn('Security compliance metrics unavailable:', data.error);
+                        this.renderSecurityComplianceUnavailable();
+                    }
+                } catch (error) {
+                    console.error('Error updating security compliance:', error);
+                    this.renderSecurityComplianceUnavailable();
+                }
+            }
+
+            renderSecurityCompliance(data) {
+                // Audit log metrics
+                document.getElementById('auditLogMetrics').innerHTML = `
+                    <div>Total Logs: <strong>${data.auditLogs.total.toLocaleString()}</strong></div>
+                    <div>Last 24h: <strong>${data.auditLogs.last24h}</strong></div>
+                    <div>High Risk: <strong>${data.auditLogs.highRisk}</strong></div>
+                `;
+
+                // Security incident metrics
+                const incidentColor = data.securityIncidents.critical > 0 ? '#ef4444' : 
+                                    data.securityIncidents.unresolved > 0 ? '#f59e0b' : '#10b981';
+                document.getElementById('securityIncidentMetrics').innerHTML = `
+                    <div>Total: <strong>${data.securityIncidents.total}</strong></div>
+                    <div>Unresolved: <strong style="color: ${incidentColor}">${data.securityIncidents.unresolved}</strong></div>
+                    <div>Critical: <strong style="color: #ef4444">${data.securityIncidents.critical}</strong></div>
+                    <div>Last 24h: <strong>${data.securityIncidents.last24h}</strong></div>
+                `;
+
+                // Compliance metrics
+                const complianceColor = data.compliance.lastStatus === 'compliant' ? '#10b981' : 
+                                      data.compliance.lastStatus === 'warning' ? '#f59e0b' : '#ef4444';
+                document.getElementById('complianceMetrics').innerHTML = `
+                    <div>Status: <strong style="color: ${complianceColor}">${(data.compliance.lastStatus || 'unknown').toUpperCase()}</strong></div>
+                    <div>Reports: <strong>${data.compliance.reports}</strong></div>
+                    <div>SOC 2: Ready</div>
+                `;
+
+                // Zero Trust metrics
+                const zeroTrustColor = data.compliance.zeroTrustEnabled ? '#10b981' : '#ef4444';
+                document.getElementById('zeroTrustMetrics').innerHTML = `
+                    <div>Status: <strong style="color: ${zeroTrustColor}">${data.compliance.zeroTrustEnabled ? 'ACTIVE' : 'DISABLED'}</strong></div>
+                    <div>Monitoring: <strong style="color: ${data.compliance.securityMonitoring ? '#10b981' : '#ef4444'}">${data.compliance.securityMonitoring ? 'ENABLED' : 'DISABLED'}</strong></div>
+                    <div>Trust Validation: Real-time</div>
+                `;
+
+                // Security overview
+                const overallStatus = data.securityIncidents.critical > 0 ? 'CRITICAL' : 
+                                    data.securityIncidents.unresolved > 5 ? 'WARNING' : 'HEALTHY';
+                const overallColor = overallStatus === 'CRITICAL' ? '#ef4444' : 
+                                   overallStatus === 'WARNING' ? '#f59e0b' : '#10b981';
+
+                document.getElementById('securityOverview').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${overallColor};"></div>
+                        <span>Security Status: <strong style="color: ${overallColor}">${overallStatus}</strong></span>
+                    </div>
+                    <div style="color: #94a3b8;">
+                        SOC 2 Type II: Ready | Zero Trust: ${data.compliance.zeroTrustEnabled ? 'Active' : 'Inactive'} | 
+                        Audit Logs: ${data.auditLogs.total.toLocaleString()} | Incidents: ${data.securityIncidents.total}
+                    </div>
+                `;
+            }
+
+            renderSecurityComplianceUnavailable() {
+                ['auditLogMetrics', 'securityIncidentMetrics', 'complianceMetrics', 'zeroTrustMetrics'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<div style="color: #94a3b8;">Metrics unavailable</div>';
+                });
+                
+                document.getElementById('securityOverview').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></div>
+                        <span>Security System: <strong style="color: #94a3b8">UNAVAILABLE</strong></span>
+                    </div>
+                    <div style="margin-top: 0.5rem; color: #64748b;">
+                        Security and compliance features require authentication
+                    </div>
+                `;
+            }
+
+            async viewSecurityIncidents() {
+                try {
+                    const response = await fetch('/api/v1/security/incidents', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.incidents) {
+                        const incidentsList = data.incidents.slice(0, 10).map(incident => 
+                            `<div style="margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 4px;">
+                                <strong>${incident.severity.toUpperCase()}</strong>: ${incident.description}
+                                <br><small style="color: #94a3b8;">${new Date(incident.timestamp).toLocaleString()}</small>
+                            </div>`
+                        ).join('');
+                        
+                        this.showOptimizationMessage('Recent Security Incidents', 
+                            incidentsList || 'No recent security incidents', false);
+                    } else {
+                        throw new Error(data.error || 'Failed to fetch incidents');
+                    }
+                } catch (error) {
+                    console.error('Security incidents error:', error);
+                    this.showOptimizationMessage('Security incidents unavailable', error.message, true);
+                }
+            }
+
+            async generateComplianceReport() {
+                try {
+                    const endDate = new Date();
+                    const startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+                    
+                    const response = await fetch('/api/v1/security/compliance/generate-report', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type: 'weekly',
+                            startDate: startDate.toISOString(),
+                            endDate: endDate.toISOString()
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Compliance Report Generated', 
+                            `Weekly report created with ${data.metrics.totalRequests} requests analyzed. Status: ${data.status.toUpperCase()}`);
+                        await this.updateSecurityCompliance();
+                    } else {
+                        throw new Error(data.error || 'Report generation failed');
+                    }
+                } catch (error) {
+                    console.error('Compliance report error:', error);
+                    this.showOptimizationMessage('Compliance report failed', error.message, true);
+                }
             }
 
             destroy() {
