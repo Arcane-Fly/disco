@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
+import os from 'os';
 
 const router = Router();
 
@@ -111,7 +112,7 @@ router.get('/api/metrics', async (_req: Request, res: Response) => {
           usage_percent: Math.round(memoryUsagePercent * 100) / 100
         },
         cpu: {
-          load_average: process.platform !== 'win32' ? (require('os').loadavg() || [0, 0, 0]) : [0, 0, 0]
+          load_average: process.platform !== 'win32' ? (os.loadavg() || [0, 0, 0]) : [0, 0, 0]
         }
       },
       containers: {
