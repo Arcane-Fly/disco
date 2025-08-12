@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disco MCP - Performance Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #334155;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header .subtitle {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-top: 0.25rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-healthy { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-critical { background-color: #ef4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .metric-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .metric-change {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .metric-change.positive {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .metric-change.negative {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .time-selector {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .time-btn {
+            padding: 0.25rem 0.75rem;
+            background: transparent;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-btn.active,
+        .time-btn:hover {
+            background: #60a5fa;
+            color: #0f172a;
+            border-color: #60a5fa;
+        }
+
+        .alerts-section {
+            margin-top: 2rem;
+        }
+
+        .alerts-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid;
+        }
+
+        .alert.warning { border-left-color: #f59e0b; }
+        .alert.critical { border-left-color: #ef4444; }
+        .alert.info { border-left-color: #3b82f6; }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-message {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-action {
+            color: #60a5fa;
+            font-size: 0.75rem;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #fca5a5;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .dashboard {
+                padding: 1rem;
+            }
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.75rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <div class="status-indicator status-healthy" id="statusIndicator"></div>
+            Disco MCP Dashboard
+        </h1>
+        <div class="subtitle">Performance Analytics & System Monitoring</div>
+    </header>
+
+    <main class="dashboard">
+        <div class="loading" id="loading">
+            Loading dashboard metrics...
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <!-- Key Metrics -->
+            <section class="metrics-grid" id="metricsGrid">
+                <!-- Metrics will be populated by JavaScript -->
+            </section>
+
+            <!-- Charts -->
+            <section class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        System Resources
+                        <div class="time-selector">
+                            <button class="time-btn active" data-period="1h">1H</button>
+                            <button class="time-btn" data-period="6h">6H</button>
+                            <button class="time-btn" data-period="24h">24H</button>
+                            <button class="time-btn" data-period="7d">7D</button>
+                        </div>
+                    </div>
+                    <canvas id="resourceChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">
+                        Performance Metrics
+                        <div class="time-selector">
+                            <button class="time-btn active" data-period="1h">1H</button>
+                            <button class="time-btn" data-period="6h">6H</button>
+                            <button class="time-btn" data-period="24h">24H</button>
+                            <button class="time-btn" data-period="7d">7D</button>
+                        </div>
+                    </div>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+            </section>
+
+            <!-- Alerts -->
+            <section class="alerts-section">
+                <h2 class="alerts-header">
+                    🚨 System Alerts
+                    <span id="alertCount" style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">0</span>
+                </h2>
+                <div id="alertsContainer">
+                    <!-- Alerts will be populated by JavaScript -->
+                </div>
+            </section>
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+    </main>
+
+    <script>
+        class DashboardManager {
+            constructor() {
+                this.resourceChart = null;
+                this.performanceChart = null;
+                this.currentPeriod = '1h';
+                this.updateInterval = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadInitialData();
+                this.setupCharts();
+                this.setupEventListeners();
+                this.startAutoRefresh();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+            }
+
+            async loadInitialData() {
+                try {
+                    await Promise.all([
+                        this.updateMetrics(),
+                        this.updateCharts(),
+                        this.updateAlerts()
+                    ]);
+                } catch (error) {
+                    console.error('Failed to load initial data:', error);
+                    this.showError('Failed to load dashboard data');
+                }
+            }
+
+            async updateMetrics() {
+                try {
+                    const response = await fetch('/dashboard/api/metrics');
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.error || 'Failed to fetch metrics');
+                    
+                    this.renderMetrics(data);
+                    this.updateStatusIndicator(data.health_status);
+                } catch (error) {
+                    console.error('Error updating metrics:', error);
+                    this.showError('Failed to update metrics');
+                }
+            }
+
+            renderMetrics(data) {
+                const metricsGrid = document.getElementById('metricsGrid');
+                
+                const metrics = [
+                    {
+                        title: 'Memory Usage',
+                        value: `${data.system.memory.used}`,
+                        unit: `MB / ${data.system.memory.total} MB`,
+                        change: data.system.memory.usage_percent < 75 ? 'positive' : 'negative',
+                        changeText: `${data.system.memory.usage_percent}% used`
+                    },
+                    {
+                        title: 'Active Containers',
+                        value: data.containers.active,
+                        unit: `/ ${data.containers.max_containers} max`,
+                        change: data.containers.utilization_percent < 80 ? 'positive' : 'negative',
+                        changeText: `${data.containers.utilization_percent}% utilization`
+                    },
+                    {
+                        title: 'Response Time',
+                        value: data.performance.avg_response_time,
+                        unit: 'ms',
+                        change: data.performance.avg_response_time < 200 ? 'positive' : 'negative',
+                        changeText: data.performance.avg_response_time < 200 ? 'Excellent' : 'Needs attention'
+                    },
+                    {
+                        title: 'Success Rate',
+                        value: data.performance.success_rate,
+                        unit: '%',
+                        change: data.performance.success_rate > 95 ? 'positive' : 'negative',
+                        changeText: `${data.performance.error_rate}% error rate`
+                    },
+                    {
+                        title: 'Uptime',
+                        value: this.formatUptime(data.system.uptime),
+                        unit: '',
+                        change: 'positive',
+                        changeText: 'Running stable'
+                    },
+                    {
+                        title: 'Requests/Min',
+                        value: data.performance.requests_per_minute,
+                        unit: 'req/min',
+                        change: 'positive',
+                        changeText: 'Active traffic'
+                    }
+                ];
+
+                metricsGrid.innerHTML = metrics.map(metric => `
+                    <div class="metric-card">
+                        <div class="metric-title">${metric.title}</div>
+                        <div class="metric-value">
+                            ${metric.value}
+                            <span class="metric-unit">${metric.unit}</span>
+                        </div>
+                        <div class="metric-change ${metric.change}">${metric.changeText}</div>
+                    </div>
+                `).join('');
+            }
+
+            formatUptime(seconds) {
+                const days = Math.floor(seconds / 86400);
+                const hours = Math.floor((seconds % 86400) / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                
+                if (days > 0) return `${days}d ${hours}h`;
+                if (hours > 0) return `${hours}h ${minutes}m`;
+                return `${minutes}m`;
+            }
+
+            updateStatusIndicator(status) {
+                const indicator = document.getElementById('statusIndicator');
+                indicator.className = `status-indicator status-${status}`;
+            }
+
+            async updateCharts() {
+                try {
+                    const response = await fetch(`/dashboard/api/historical?period=${this.currentPeriod}`);
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.error || 'Failed to fetch historical data');
+                    
+                    this.updateResourceChart(data.data);
+                    this.updatePerformanceChart(data.data);
+                } catch (error) {
+                    console.error('Error updating charts:', error);
+                    this.showError('Failed to update charts');
+                }
+            }
+
+            setupCharts() {
+                const chartConfig = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#374151' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#374151' }
+                        }
+                    }
+                };
+
+                this.resourceChart = new Chart(document.getElementById('resourceChart'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: chartConfig
+                });
+
+                this.performanceChart = new Chart(document.getElementById('performanceChart'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: chartConfig
+                });
+            }
+
+            updateResourceChart(data) {
+                const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+                
+                this.resourceChart.data = {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Memory Usage (%)',
+                            data: data.map(d => d.memory_usage),
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Container Usage (%)',
+                            data: data.map(d => d.container_usage),
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                };
+                this.resourceChart.update();
+            }
+
+            updatePerformanceChart(data) {
+                const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+                
+                this.performanceChart.data = {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Response Time (ms)',
+                            data: data.map(d => d.response_time),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Requests/Min',
+                            data: data.map(d => d.requests_per_minute),
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                };
+                
+                this.performanceChart.options.scales.y1 = {
+                    type: 'linear',
+                    display: false,
+                    position: 'right'
+                };
+                
+                this.performanceChart.update();
+            }
+
+            async updateAlerts() {
+                try {
+                    const response = await fetch('/dashboard/api/alerts');
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.error || 'Failed to fetch alerts');
+                    
+                    this.renderAlerts(data.alerts);
+                    document.getElementById('alertCount').textContent = data.alert_count;
+                } catch (error) {
+                    console.error('Error updating alerts:', error);
+                    this.showError('Failed to update alerts');
+                }
+            }
+
+            renderAlerts(alerts) {
+                const container = document.getElementById('alertsContainer');
+                
+                if (alerts.length === 0) {
+                    container.innerHTML = '<div class="alert info"><div class="alert-title">✅ All systems operational</div><div class="alert-message">No active alerts or warnings.</div></div>';
+                    return;
+                }
+
+                container.innerHTML = alerts.map(alert => `
+                    <div class="alert ${alert.severity}">
+                        <div class="alert-title">${alert.title}</div>
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-action">💡 ${alert.suggested_action}</div>
+                    </div>
+                `).join('');
+            }
+
+            setupEventListeners() {
+                // Time period selectors
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.target.parentElement.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentPeriod = e.target.dataset.period;
+                        await this.updateCharts();
+                    });
+                });
+            }
+
+            startAutoRefresh() {
+                this.updateInterval = setInterval(async () => {
+                    await this.updateMetrics();
+                    await this.updateAlerts();
+                    this.updateTimestamp();
+                }, 30000); // Refresh every 30 seconds
+
+                this.updateTimestamp();
+            }
+
+            updateTimestamp() {
+                document.getElementById('lastUpdated').textContent = 
+                    `Last updated: ${new Date().toLocaleString()}`;
+            }
+
+            showError(message) {
+                const dashboardContent = document.getElementById('dashboardContent');
+                if (dashboardContent) {
+                    dashboardContent.innerHTML = `<div class="error">${message}</div>`;
+                }
+            }
+
+            destroy() {
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+                if (this.resourceChart) this.resourceChart.destroy();
+                if (this.performanceChart) this.performanceChart.destroy();
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new DashboardManager();
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (window.dashboard) {
+                window.dashboard.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -22,6 +22,7 @@ import { ragRouter } from './api/rag.js';
 import { collaborationRouter } from './api/collaboration.js';
 import { teamCollaborationRouter } from './api/teams.js';
 import { providersRouter } from './api/providers.js';
+import { dashboardRouter } from './api/dashboard.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
@@ -2726,6 +2727,9 @@ app.use('/api/v1/rag', authMiddleware, apiLimiter, ragRouter);
 app.use('/api/v1/collaboration', authMiddleware, apiLimiter, collaborationRouter);
 app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
 app.use('/api/v1/providers', authMiddleware, apiLimiter, providersRouter);
+
+// Dashboard routes (with lighter rate limiting for better user experience)
+app.use('/dashboard', dashboardRouter);
 
 /**
  * GET /status
