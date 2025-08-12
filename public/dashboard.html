@@ -306,6 +306,35 @@
                 </div>
             </section>
 
+            <!-- Performance Optimization -->
+            <section class="performance-optimization-section">
+                <h2 style="color: #60a5fa; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    🚀 Performance Optimization
+                    <button id="refreshOptimization" style="background: #1e40af; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
+                </h2>
+                <div class="optimization-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="optimization-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #38bdf8; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Smart Scaling</h3>
+                        <div id="scalingMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="triggerScaling" style="background: #0ea5e9; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Analyze & Scale</button>
+                    </div>
+                    <div class="optimization-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #fbbf24; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Container Pre-warming</h3>
+                        <div id="prewarmingMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="triggerPrewarming" style="background: #f59e0b; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Analyze Patterns</button>
+                    </div>
+                    <div class="optimization-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Resource Optimization</h3>
+                        <div id="resourceOptimizationMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="triggerResourceOptimization" style="background: #059669; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Optimize Now</button>
+                    </div>
+                </div>
+                <div class="optimization-summary" style="background: rgba(30, 41, 59, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                    <h4 style="color: #e2e8f0; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Optimization Status</h4>
+                    <div id="optimizationStatus" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                </div>
+            </section>
+
             <!-- Alerts -->
             <section class="alerts-section">
                 <h2 class="alerts-header">
@@ -345,7 +374,8 @@
                     await Promise.all([
                         this.updateMetrics(),
                         this.updateCharts(),
-                        this.updateAlerts()
+                        this.updateAlerts(),
+                        this.updatePerformanceOptimization()
                     ]);
                 } catch (error) {
                     console.error('Failed to load initial data:', error);
@@ -595,12 +625,30 @@
                         await this.updateCharts();
                     });
                 });
+
+                // Performance optimization event listeners
+                document.getElementById('refreshOptimization').addEventListener('click', async () => {
+                    await this.updatePerformanceOptimization();
+                });
+
+                document.getElementById('triggerScaling').addEventListener('click', async () => {
+                    await this.triggerScalingAnalysis();
+                });
+
+                document.getElementById('triggerPrewarming').addEventListener('click', async () => {
+                    await this.triggerPrewarmingAnalysis();
+                });
+
+                document.getElementById('triggerResourceOptimization').addEventListener('click', async () => {
+                    await this.triggerResourceOptimization();
+                });
             }
 
             startAutoRefresh() {
                 this.updateInterval = setInterval(async () => {
                     await this.updateMetrics();
                     await this.updateAlerts();
+                    await this.updatePerformanceOptimization();
                     this.updateTimestamp();
                 }, 30000); // Refresh every 30 seconds
 
@@ -617,6 +665,199 @@
                 if (dashboardContent) {
                     dashboardContent.innerHTML = `<div class="error">${message}</div>`;
                 }
+            }
+
+            async updatePerformanceOptimization() {
+                try {
+                    const response = await fetch('/api/v1/performance/metrics', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.renderPerformanceOptimization(data);
+                    } else {
+                        console.warn('Performance optimization metrics unavailable:', data.error);
+                        this.renderPerformanceOptimizationUnavailable();
+                    }
+                } catch (error) {
+                    console.error('Error updating performance optimization:', error);
+                    this.renderPerformanceOptimizationUnavailable();
+                }
+            }
+
+            renderPerformanceOptimization(data) {
+                // Scaling metrics
+                document.getElementById('scalingMetrics').innerHTML = `
+                    <div>Scaling Actions Today: <strong>${data.scalingActionsToday}</strong></div>
+                    <div>Container Utilization: <strong>${data.averageContainerUtilization.toFixed(1)}%</strong></div>
+                    <div>Cost Savings: <strong>$${data.costSavings.toFixed(2)}</strong></div>
+                `;
+
+                // Prewarming metrics
+                document.getElementById('prewarmingMetrics').innerHTML = `
+                    <div>Users Analyzed: <strong>${data.totalUsersAnalyzed}</strong></div>
+                    <div>Prewarming Rules: <strong>${data.totalPrewarmingRules}</strong></div>
+                    <div>Performance Improvement: <strong>${data.performanceImprovement.toFixed(1)}%</strong></div>
+                `;
+
+                // Resource optimization metrics
+                document.getElementById('resourceOptimizationMetrics').innerHTML = `
+                    <div>Status: <strong style="color: ${data.optimizationStatus === 'active' ? '#10b981' : '#ef4444'}">${data.optimizationStatus.toUpperCase()}</strong></div>
+                    <div>Memory Optimizations: Available</div>
+                    <div>Container Pooling: Active</div>
+                `;
+
+                // Optimization status
+                const statusColor = data.optimizationStatus === 'active' ? '#10b981' : '#ef4444';
+                document.getElementById('optimizationStatus').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${statusColor};"></div>
+                        <span>Optimization System: <strong style="color: ${statusColor}">${data.optimizationStatus.toUpperCase()}</strong></span>
+                    </div>
+                    <div style="margin-top: 0.5rem; color: #94a3b8;">
+                        Total Users Analyzed: ${data.totalUsersAnalyzed} | 
+                        Performance Improvement: ${data.performanceImprovement.toFixed(1)}% | 
+                        Cost Savings: $${data.costSavings.toFixed(2)}
+                    </div>
+                `;
+            }
+
+            renderPerformanceOptimizationUnavailable() {
+                ['scalingMetrics', 'prewarmingMetrics', 'resourceOptimizationMetrics'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<div style="color: #94a3b8;">Metrics unavailable</div>';
+                });
+                
+                document.getElementById('optimizationStatus').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></div>
+                        <span>Optimization System: <strong style="color: #94a3b8">UNAVAILABLE</strong></span>
+                    </div>
+                    <div style="margin-top: 0.5rem; color: #64748b;">
+                        Performance optimization features require authentication
+                    </div>
+                `;
+            }
+
+            async triggerScalingAnalysis() {
+                const button = document.getElementById('triggerScaling');
+                const originalText = button.textContent;
+                button.textContent = 'Analyzing...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/performance/scaling/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Scaling analysis completed', `${data.executedActions} actions executed, ${data.deferredActions} deferred`);
+                        await this.updatePerformanceOptimization();
+                    } else {
+                        throw new Error(data.error || 'Scaling analysis failed');
+                    }
+                } catch (error) {
+                    console.error('Scaling analysis error:', error);
+                    this.showOptimizationMessage('Scaling analysis failed', error.message, true);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            async triggerPrewarmingAnalysis() {
+                const button = document.getElementById('triggerPrewarming');
+                const originalText = button.textContent;
+                button.textContent = 'Analyzing...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/performance/prewarming/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Prewarming analysis completed', `${data.rulesApplied} prewarming rules applied`);
+                        await this.updatePerformanceOptimization();
+                    } else {
+                        throw new Error(data.error || 'Prewarming analysis failed');
+                    }
+                } catch (error) {
+                    console.error('Prewarming analysis error:', error);
+                    this.showOptimizationMessage('Prewarming analysis failed', error.message, true);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            async triggerResourceOptimization() {
+                const button = document.getElementById('triggerResourceOptimization');
+                const originalText = button.textContent;
+                button.textContent = 'Optimizing...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/performance/optimize', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Resource optimization completed', 
+                            `Memory: ${data.memoryOptimizations} optimizations, Container: ${data.containerOptimizations} optimizations, Performance gain: ${(data.performanceGains * 100).toFixed(1)}%`);
+                        await this.updatePerformanceOptimization();
+                    } else {
+                        throw new Error(data.error || 'Resource optimization failed');
+                    }
+                } catch (error) {
+                    console.error('Resource optimization error:', error);
+                    this.showOptimizationMessage('Resource optimization failed', error.message, true);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            showOptimizationMessage(title, message, isError = false) {
+                const messageEl = document.createElement('div');
+                messageEl.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${isError ? '#ef4444' : '#10b981'};
+                    color: white;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    max-width: 300px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                `;
+                messageEl.innerHTML = `<strong>${title}</strong><br/>${message}`;
+                
+                document.body.appendChild(messageEl);
+                
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.parentNode.removeChild(messageEl);
+                    }
+                }, 5000);
             }
 
             destroy() {
