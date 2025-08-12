@@ -15,6 +15,9 @@ export const securityAuditMiddleware = async (req: Request, res: Response, next:
   let responseBody: any;
   let responseLogged = false;
 
+  // Add security headers early, before any response is sent
+  addSecurityHeaders(res);
+
   // Intercept response to capture status code and response time
   const logResponse = async () => {
     if (responseLogged) return;
@@ -34,11 +37,10 @@ export const securityAuditMiddleware = async (req: Request, res: Response, next:
         responseBody: shouldLogResponseBody(req, res) ? responseBody : undefined
       });
       
-      // Add security headers
-      addSecurityHeaders(res);
-      
-      // Add audit log ID to response headers for traceability
-      res.setHeader('X-Audit-Log-Id', logId);
+      // Only add audit log ID header if response hasn't been sent yet
+      if (!res.headersSent) {
+        res.setHeader('X-Audit-Log-Id', logId);
+      }
       
     } catch (error) {
       console.error('Security audit logging failed:', error);
@@ -49,21 +51,24 @@ export const securityAuditMiddleware = async (req: Request, res: Response, next:
   res.json = function(body: any) {
     responseBody = body;
     const result = originalJson.call(this, body);
-    logResponse();
+    // Log asynchronously to avoid blocking
+    logResponse().catch(err => console.error('Async logging failed:', err));
     return result;
   };
 
   res.send = function(body: any) {
     responseBody = body;
     const result = originalSend.call(this, body);
-    logResponse();
+    // Log asynchronously to avoid blocking
+    logResponse().catch(err => console.error('Async logging failed:', err));
     return result;
   };
 
   res.end = function(chunk?: any, encoding?: any, cb?: any) {
     if (chunk) responseBody = chunk;
     const result = originalEnd.call(this, chunk, encoding, cb);
-    logResponse();
+    // Log asynchronously to avoid blocking
+    logResponse().catch(err => console.error('Async logging failed:', err));
     return result;
   };
 
@@ -204,6 +209,11 @@ function shouldLogResponseBody(req: Request, res: Response): boolean {
  * Add comprehensive security headers
  */
 function addSecurityHeaders(res: Response): void {
+  // Check if headers have already been sent
+  if (res.headersSent) {
+    return;
+  }
+
   // Prevent XSS attacks
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
