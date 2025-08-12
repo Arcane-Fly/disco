@@ -275,6 +275,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Favicon endpoint to prevent 400 errors
+app.get('/favicon.ico', (_req, res) => {
+  // Return a minimal 16x16 transparent PNG
+  const transparentPng = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAC0lEQVQI12NQBAAAAAAAIAAI4AACJpAAAAAElFTkSuQmCC',
+    'base64'
+  );
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+  res.send(transparentPng);
+});
+
 // MCP Manifest endpoint for AI platform registration
 /**
  * @swagger

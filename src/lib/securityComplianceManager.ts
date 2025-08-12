@@ -597,6 +597,9 @@ export class SecurityComplianceManager {
 
   private async persistAuditLog(entry: AuditLogEntry): Promise<void> {
     try {
+      // Ensure directory exists before writing
+      await fs.mkdir(this.dataDirectory, { recursive: true });
+      
       const filePath = path.join(this.dataDirectory, `audit-${entry.timestamp.toISOString().split('T')[0]}.json`);
       const logLine = JSON.stringify(entry) + '\n';
       await fs.appendFile(filePath, logLine);
@@ -607,6 +610,9 @@ export class SecurityComplianceManager {
 
   private async persistSecurityIncident(incident: SecurityIncident): Promise<void> {
     try {
+      // Ensure directory exists before writing
+      await fs.mkdir(this.dataDirectory, { recursive: true });
+      
       const filePath = path.join(this.dataDirectory, 'security-incidents.json');
       const incidents = await this.loadSecurityIncidents();
       incidents.push(incident);
@@ -618,6 +624,9 @@ export class SecurityComplianceManager {
 
   private async persistComplianceReport(report: ComplianceReport): Promise<void> {
     try {
+      // Ensure directory exists before writing
+      await fs.mkdir(this.dataDirectory, { recursive: true });
+      
       const filePath = path.join(this.dataDirectory, `compliance-${report.id}.json`);
       await fs.writeFile(filePath, JSON.stringify(report, null, 2));
     } catch (error) {
