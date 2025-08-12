@@ -116,6 +116,69 @@ class DiscoMCPClient(
     }
     
     /**
+     * Create or resume a terminal session
+     */
+    fun createTerminalSession(containerId: String, sessionName: String? = null): TerminalSession {
+        val requestBody = mutableMapOf<String, Any>()
+        sessionName?.let { requestBody["sessionName"] = it }
+        
+        val response = post("/terminal/$containerId/session", requestBody)
+        
+        if (!response.isSuccessful) {
+            throw IOException("Failed to create terminal session: ${response.code}")
+        }
+        
+        val jsonBody = response.body?.string() ?: throw IOException("Empty response")
+        return gson.fromJson(jsonBody, TerminalSession::class.java)
+    }
+    
+    /**
+     * List active terminal sessions for a container
+     */
+    fun listTerminalSessions(containerId: String): List<TerminalSessionInfo> {
+        val response = get("/terminal/$containerId/sessions")
+        
+        if (!response.isSuccessful) {
+            throw IOException("Failed to list terminal sessions: ${response.code}")
+        }
+        
+        val jsonBody = response.body?.string() ?: throw IOException("Empty response")
+        val jsonObject = gson.fromJson(jsonBody, JsonObject::class.java)
+        val sessionsArray = jsonObject.getAsJsonArray("sessions")
+        
+        return sessionsArray.map { element ->
+            gson.fromJson(element, TerminalSessionInfo::class.java)
+        }
+    }
+    
+    /**
+     * Get terminal session history
+     */
+    fun getTerminalHistory(containerId: String, sessionId: String, limit: Int = 50): List<CommandHistoryEntry> {
+        val response = get("/terminal/$containerId/session/$sessionId/history?limit=$limit")
+        
+        if (!response.isSuccessful) {
+            throw IOException("Failed to get terminal history: ${response.code}")
+        }
+        
+        val jsonBody = response.body?.string() ?: throw IOException("Empty response")
+        val jsonObject = gson.fromJson(jsonBody, JsonObject::class.java)
+        val historyArray = jsonObject.getAsJsonArray("history")
+        
+        return historyArray.map { element ->
+            gson.fromJson(element, CommandHistoryEntry::class.java)
+        }
+    }
+    
+    /**
+     * Terminate a terminal session
+     */
+    fun terminateTerminalSession(containerId: String, sessionId: String): Boolean {
+        val response = delete("/terminal/$containerId/session/$sessionId")
+        return response.isSuccessful
+    }
+    
+    /**
      * List files in container directory
      */
     fun listFiles(containerId: String, path: String = "/"): List<FileItem> {
@@ -251,4 +314,36 @@ data class GitStatus(
     val modified: List<String>,
     val staged: List<String>,
     val untracked: List<String>
+)
+
+data class TerminalSession(
+    val sessionId: String,
+    val containerId: String,
+    val sessionName: String?,
+    val workingDirectory: String,
+    val environment: Map<String, String>,
+    val createdAt: String,
+    val active: Boolean
+)
+
+data class TerminalSessionInfo(
+    val id: String,
+    val sessionId: String,
+    val sessionName: String?,
+    val containerId: String,
+    val workingDirectory: String,
+    val lastActivity: String,
+    val active: Boolean,
+    val commandCount: Int
+)
+
+data class CommandHistoryEntry(
+    val id: String,
+    val command: String,
+    val workingDirectory: String,
+    val exitCode: Int,
+    val duration: Long,
+    val timestamp: String,
+    val stdout: String?,
+    val stderr: String?
 )
