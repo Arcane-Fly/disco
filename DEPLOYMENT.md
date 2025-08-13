@@ -242,6 +242,103 @@ Test the health endpoint:
 curl https://your-app.up.railway.app/health
 ```
 
+## Railway-Specific Configuration
+
+### Volume Configuration for Security Persistence
+
+The MCP Server includes a security compliance manager that logs audit trails and security events. In Railway's containerized environment, you need to configure persistent storage for these logs:
+
+#### Option 1: Using Railway Volumes (Recommended)
+
+1. **Attach a Railway Volume**:
+   - Go to your Railway project dashboard
+   - Click on your service
+   - Navigate to the "Volumes" tab
+   - Click "Attach Volume"
+   - Set Mount Path to `/data`
+   - Choose appropriate size (e.g., 1GB for audit logs)
+
+2. **Configure Security Data Directory**:
+   ```bash
+   railway variables set SECURITY_DATA_DIR=/data/disco/security
+   ```
+
+#### Option 2: Using Environment Variable Configuration
+
+Configure the security data directory to use Railway's volume mount path:
+
+```bash
+railway variables set RAILWAY_VOLUME_MOUNT_PATH=/data
+```
+
+The server will automatically resolve the security directory to `/data/disco/security`.
+
+#### Option 3: Fallback Configuration
+
+If no volume is attached, the server gracefully falls back to:
+1. `/tmp/disco/security` (ephemeral storage in production)
+2. In-memory logging only if filesystem is completely read-only
+
+This ensures the server remains operational even without persistent storage, though audit logs won't persist between deployments.
+
+#### Verification
+
+After deployment with volume configuration:
+
+```bash
+# Check if security directory is properly configured
+curl https://your-app.up.railway.app/api/v1/security/metrics
+
+# Check server logs for security initialization messages
+railway logs --filter "Security compliance"
+```
+
+You should see log messages like:
+```
+🛡️ Security compliance data directory initialized { dir: '/data/disco/security' }
+```
+
+### Favicon and Static Asset Configuration
+
+The MCP Server includes proper favicon handling to prevent validation errors in Railway deployments:
+
+#### Verification
+
+Test that favicon requests return proper responses:
+
+```bash
+# Should return 200 OK with image/png content-type
+curl -I https://your-app.up.railway.app/favicon.ico
+
+# Should return 204 No Content (alternative response)
+curl -I https://your-app.up.railway.app/favicon.ico
+```
+
+#### Troubleshooting
+
+If you encounter 400 errors on favicon requests:
+
+1. **Check Security Middleware Configuration**:
+   ```bash
+   railway logs --filter "INVALID_INPUT"
+   ```
+
+2. **Verify Excluded Paths**:
+   The security middleware automatically excludes favicon requests. Check that this is working:
+   ```bash
+   railway logs --filter "favicon"
+   ```
+
+#### Custom Favicon
+
+To serve a custom favicon instead of the default transparent PNG:
+
+1. Add your favicon file to the `public` directory
+2. Update the favicon handler in `server.ts` or add static file serving:
+   ```bash
+   railway variables set SERVE_STATIC_FILES=true
+   ```
+
 ## Production Configuration
 
 ### Environment Variables
