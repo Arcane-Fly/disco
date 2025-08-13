@@ -326,7 +326,7 @@ export const securityInputValidationMiddleware = (req: Request, res: Response, n
     /[;&|`$(){}[\]]/,
     
     // Path traversal
-    /\.\.[\/\\]/,
+    /\.\.[/\\]/,
     
     // NoSQL injection
     /\$where|\$regex|\$gt|\$lt|\$ne/i,
@@ -394,14 +394,21 @@ export const securityInputValidationMiddleware = (req: Request, res: Response, n
       }
     }).catch(console.error);
     
-    return res.status(400).json({
+    const errorResponse: any = {
       status: 'error',
       error: {
         code: 'INVALID_INPUT',
         message: 'Input validation failed',
         violations: allViolations.length
       }
-    });
+    };
+    
+    // Add detailed violation information in development
+    if (process.env.NODE_ENV !== 'production') {
+      errorResponse.error.details = allViolations;
+    }
+    
+    return res.status(400).json(errorResponse);
   }
   
   next();

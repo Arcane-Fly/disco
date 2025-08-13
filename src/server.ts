@@ -30,6 +30,7 @@ import { securityRouter } from './api/security.js';
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { securityAuditMiddleware, securityInputValidationMiddleware } from './middleware/securityAudit.js';
+import faviconRouter from './middleware/favicon.js';
 // import { requestLogger } from './middleware/requestLogger.js'; // TODO: Implement request logging
 
 // Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration, performance optimizer
@@ -227,9 +228,8 @@ app.use(globalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Security middleware - must be after body parsing
-app.use(securityInputValidationMiddleware);
-app.use(securityAuditMiddleware);
+// 1) Mount favicon early to bypass validation entirely
+app.use(faviconRouter);
 
 // Enhanced request logging with security monitoring
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -275,17 +275,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Favicon endpoint to prevent 400 errors
-app.get('/favicon.ico', (_req, res) => {
-  // Return a minimal 16x16 transparent PNG
-  const transparentPng = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAC0lEQVQI12NQBAAAAAAAIAAI4AACJpAAAAAElFTkSuQmCC',
-    'base64'
-  );
-  res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
-  res.send(transparentPng);
-});
+// 3) Scope security validators to API traffic only (instead of global)
+app.use('/api', securityInputValidationMiddleware);
+app.use('/api', securityAuditMiddleware);
 
 // MCP Manifest endpoint for AI platform registration
 /**
