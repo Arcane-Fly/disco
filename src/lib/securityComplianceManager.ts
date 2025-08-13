@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { resolveSecurityDataDir, findWritableDir } from '../config/securityPersistence.js';
 
 interface AuditLogEntry {
   id: string;
@@ -79,13 +80,16 @@ export class SecurityComplianceManager {
   
   private readonly maxAuditLogs = 1000000; // 1 million log entries
   private readonly auditLogRetentionDays = 2555; // 7 years for SOC 2 compliance
-  private readonly dataDirectory: string;
+  private readonly dataDirectoryDefault: string;
+  private dataDirectory: string;
+  private allowFilePersistence = true;
   
   private isSecurityMonitoringEnabled = true;
   private zeroTrustEnabled = true;
 
-  constructor(dataDir: string = './data/security') {
-    this.dataDirectory = dataDir;
+  constructor(dataDir?: string) {
+    this.dataDirectoryDefault = resolveSecurityDataDir();
+    this.dataDirectory = (dataDir && dataDir.trim()) || this.dataDirectoryDefault;
     this.initializeSecurityCompliance();
     console.log('🛡️  Security & Compliance Manager initialized - SOC 2 Type II ready');
   }
@@ -588,49 +592,64 @@ export class SecurityComplianceManager {
   // Persistence methods
   private async initializeSecurityCompliance(): Promise<void> {
     try {
-      await fs.mkdir(this.dataDirectory, { recursive: true });
-      console.log('🛡️  Security compliance data directory initialized');
+      const preferred = [
+        this.dataDirectory,
+        process.env.SECURITY_DATA_DIR || '',
+        this.dataDirectoryDefault,
+        '/data/disco/security',
+        '/mnt/data/disco/security',
+        process.env.NODE_ENV === 'production' ? '/tmp/disco/security' : '',
+        process.cwd() + '/data/security'
+      ].filter(Boolean) as string[];
+
+      const { dir, tried } = await findWritableDir(preferred);
+      if (!dir) {
+        this.allowFilePersistence = false;
+        console.warn('⚠️  No writable audit log directory found. File persistence disabled.', { tried });
+        return;
+      }
+
+      this.dataDirectory = dir;
+      console.log('🛡️  Security compliance data directory initialized', { dir });
     } catch (error) {
-      console.error('Failed to initialize security compliance directory:', error);
+      this.allowFilePersistence = false;
+      console.error('Failed to initialize security compliance directory. File persistence disabled.', error);
     }
   }
 
   private async persistAuditLog(entry: AuditLogEntry): Promise<void> {
+    if (!this.allowFilePersistence) return;
     try {
-      // Ensure directory exists before writing
-      await fs.mkdir(this.dataDirectory, { recursive: true });
-      
       const filePath = path.join(this.dataDirectory, `audit-${entry.timestamp.toISOString().split('T')[0]}.json`);
       const logLine = JSON.stringify(entry) + '\n';
       await fs.appendFile(filePath, logLine);
     } catch (error) {
-      console.error('Failed to persist audit log:', error);
+      this.allowFilePersistence = false;
+      console.error('Failed to persist audit log. Disabling file persistence to avoid repeated failures.', error);
     }
   }
 
   private async persistSecurityIncident(incident: SecurityIncident): Promise<void> {
+    if (!this.allowFilePersistence) return;
     try {
-      // Ensure directory exists before writing
-      await fs.mkdir(this.dataDirectory, { recursive: true });
-      
       const filePath = path.join(this.dataDirectory, 'security-incidents.json');
       const incidents = await this.loadSecurityIncidents();
       incidents.push(incident);
       await fs.writeFile(filePath, JSON.stringify(incidents, null, 2));
     } catch (error) {
-      console.error('Failed to persist security incident:', error);
+      this.allowFilePersistence = false;
+      console.error('Failed to persist security incident. Disabling file persistence.', error);
     }
   }
 
   private async persistComplianceReport(report: ComplianceReport): Promise<void> {
+    if (!this.allowFilePersistence) return;
     try {
-      // Ensure directory exists before writing
-      await fs.mkdir(this.dataDirectory, { recursive: true });
-      
       const filePath = path.join(this.dataDirectory, `compliance-${report.id}.json`);
       await fs.writeFile(filePath, JSON.stringify(report, null, 2));
     } catch (error) {
-      console.error('Failed to persist compliance report:', error);
+      this.allowFilePersistence = false;
+      console.error('Failed to persist compliance report. Disabling file persistence.', error);
     }
   }
 

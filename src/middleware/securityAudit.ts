@@ -307,6 +307,12 @@ export const securityRateLimitMiddleware = (windowMs: number, max: number, messa
  * Input validation middleware with security logging
  */
 export const securityInputValidationMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  // Skip validation for favicon and other static assets
+  const excludedPaths = ['/favicon.ico', '/robots.txt', '/sitemap.xml'];
+  if (excludedPaths.includes(req.path)) {
+    return next();
+  }
+  
   const suspiciousPatterns = [
     // SQL Injection patterns
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|UNION|OR|AND)\b.*(\b(FROM|WHERE|JOIN|HAVING)\b|[';]|--|\*|\/\*))/i,
