@@ -31,6 +31,14 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
    curl http://localhost:3000/capabilities
    ```
 
+### Production Testing
+
+You can also test the live Railway deployment:
+```bash
+curl https://disco-mcp.up.railway.app/health
+curl https://disco-mcp.up.railway.app/capabilities
+```
+
 ### Railway Deployment
 
 1. **Install Railway CLI:**
