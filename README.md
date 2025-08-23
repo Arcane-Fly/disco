@@ -8,7 +8,7 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
 
 1. **Clone and install dependencies:**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/Arcane-Fly/disco.git
    cd disco
    npm install
    ```
