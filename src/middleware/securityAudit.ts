@@ -313,6 +313,19 @@ export const securityInputValidationMiddleware = (req: Request, res: Response, n
     return next();
   }
   
+  // Skip validation for OAuth/discovery endpoints that must accept normal browser headers
+  const oauthExcludedPaths = [
+    '/v1/auth/github',                           // Note: path without /api prefix (middleware applied to /api)
+    '/v1/auth/github/callback',
+    '/.well-known/oauth-authorization-server',  // This is a root path
+    '/.well-known/oauth-protected-resource',    // This is a root path  
+    '/oauth/token'                              // This is a root path
+  ];
+  
+  if (oauthExcludedPaths.includes(req.path)) {
+    return next();
+  }
+  
   const suspiciousPatterns = [
     // SQL Injection patterns
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|UNION|OR|AND)\b.*(\b(FROM|WHERE|JOIN|HAVING)\b|[';]|--|\*|\/\*))/i,
@@ -326,7 +339,7 @@ export const securityInputValidationMiddleware = (req: Request, res: Response, n
     /[;&|`$(){}[\]]/,
     
     // Path traversal
-    /\.\.[\/\\]/,
+    /\.\.[/\\]/,
     
     // NoSQL injection
     /\$where|\$regex|\$gt|\$lt|\$ne/i,
@@ -394,14 +407,21 @@ export const securityInputValidationMiddleware = (req: Request, res: Response, n
       }
     }).catch(console.error);
     
-    return res.status(400).json({
+    const errorResponse: any = {
       status: 'error',
       error: {
         code: 'INVALID_INPUT',
         message: 'Input validation failed',
         violations: allViolations.length
       }
-    });
+    };
+    
+    // Add detailed violation information in development
+    if (process.env.NODE_ENV !== 'production') {
+      errorResponse.error.details = allViolations;
+    }
+    
+    return res.status(400).json(errorResponse);
   }
   
   next();

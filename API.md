@@ -5,7 +5,7 @@ This document provides comprehensive API documentation for the MCP Server WebCon
 ## Base URL
 
 - **Development**: `http://localhost:3000`
-- **Production**: `https://your-app.up.railway.app`
+- **Production**: `https://disco-mcp.up.railway.app`
 
 ## Authentication
 
