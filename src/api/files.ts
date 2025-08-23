@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
 import { collaborationManager } from '../lib/collaborationManager.js';
 import { FileCreateRequest, FileListItem, ErrorCode } from '../types/index.js';
+import { validateContainerSession, SessionValidatedRequest } from '../middleware/sessionValidator.js';
 
 const router = Router();
 
@@ -9,33 +10,10 @@ const router = Router();
  * GET /api/v1/files/:containerId
  * List directory contents
  */
-router.get('/:containerId', async (req: Request, res: Response) => {
+router.get('/:containerId', validateContainerSession, async (req: SessionValidatedRequest, res: Response) => {
   try {
-    const { containerId } = req.params;
     const { path = '/' } = req.query;
-    const userId = req.user!.userId;
-
-    const session = await containerManager.getSession(containerId);
-    
-    if (!session) {
-      return res.status(404).json({
-        status: 'error',
-        error: {
-          code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
-      });
-    }
-
-    if (session.userId !== userId) {
-      return res.status(403).json({
-        status: 'error',
-        error: {
-          code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
-      });
-    }
+    const session = req.session!; // Validated by middleware
 
     // List files in the specified path
     const files = await listFiles(session.container, path as string);
@@ -64,11 +42,10 @@ router.get('/:containerId', async (req: Request, res: Response) => {
  * GET /api/v1/files/:containerId/content
  * Get file content
  */
-router.get('/:containerId/content', async (req: Request, res: Response) => {
+router.get('/:containerId/content', validateContainerSession, async (req: SessionValidatedRequest, res: Response) => {
   try {
-    const { containerId } = req.params;
     const { path } = req.query;
-    const userId = req.user!.userId;
+    const session = req.session!; // Validated by middleware
 
     if (!path || typeof path !== 'string') {
       return res.status(400).json({
@@ -80,29 +57,7 @@ router.get('/:containerId/content', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
-    
-    if (!session) {
-      return res.status(404).json({
-        status: 'error',
-        error: {
-          code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
-      });
-    }
-
-    if (session.userId !== userId) {
-      return res.status(403).json({
-        status: 'error',
-        error: {
-          code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
-      });
-    }
-
-    const content = await readFile(session.container, path);
+    const content = await readFile(session.container, path as string);
 
     res.json({
       status: 'success',

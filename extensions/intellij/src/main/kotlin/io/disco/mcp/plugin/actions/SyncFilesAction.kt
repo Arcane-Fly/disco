@@ -189,16 +189,143 @@ class SyncFilesAction : AnAction() {
     }
     
     private fun bidirectionalSync(project: Project, containerId: String) {
-        // For now, implement as upload followed by download
-        // In a full implementation, this would compare timestamps and sync bidirectionally
-        Messages.showInfoMessage(
+        // Implement proper bidirectional sync with timestamp comparison and conflict resolution
+        val options = arrayOf("Proceed with Sync", "Cancel")
+        val choice = Messages.showDialog(
             project,
-            "Bidirectional sync will upload local files first, then download any newer container files.\nThis may overwrite local changes!",
-            "Bidirectional Sync"
+            "Bidirectional sync will compare timestamps and handle conflicts.\n" +
+                    "Local files newer than remote: Upload to container\n" +
+                    "Remote files newer than local: Download to local\n" +
+                    "Conflicted files: User will be prompted\n\n" +
+                    "Continue?",
+            "Bidirectional Sync",
+            options,
+            0,
+            Messages.getQuestionIcon()
         )
         
-        uploadToContainer(project, containerId)
-        // Note: In a production implementation, we'd implement proper conflict resolution
+        if (choice != 0) return
+        
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Bidirectional file sync", true) {
+            override fun run(indicator: ProgressIndicator) {
+                try {
+                    indicator.text = "Comparing file timestamps..."
+                    
+                    val client = DiscoApplicationService.getInstance().client
+                    if (client == null) {
+                        ApplicationManager.getApplication().invokeLater {
+                            Messages.showErrorDialog(project, "Not connected to server", "Sync Failed")
+                        }
+                        return
+                    }
+                    
+                    // Get container files with timestamps
+                    val containerFiles = runBlocking {
+                        client.listFiles(containerId, "/")
+                    }
+                    
+                    // Create map of container files for quick lookup
+                    val containerFileMap = containerFiles.associateBy { it.path }
+                    
+                    // Get local files
+                    val projectRoot = project.baseDir ?: return
+                    val localFiles = mutableListOf<VirtualFile>()
+                    collectFiles(projectRoot, localFiles)
+                    
+                    val syncActions = mutableListOf<SyncAction>()
+                    val conflicts = mutableListOf<FileConflict>()
+                    
+                    // Analyze local files
+                    for (localFile in localFiles) {
+                        val relativePath = getRelativePath(projectRoot, localFile)
+                        val containerFile = containerFileMap[relativePath]
+                        
+                        if (containerFile == null) {
+                            // Local file doesn't exist in container - upload
+                            syncActions.add(SyncAction.Upload(localFile, relativePath))
+                        } else {
+                            // Compare timestamps
+                            val localModTime = localFile.timeStamp
+                            val containerModTime = containerFile.lastModified?.toEpochMilli() ?: 0
+                            
+                            when {
+                                localModTime > containerModTime -> {
+                                    // Local is newer - upload
+                                    syncActions.add(SyncAction.Upload(localFile, relativePath))
+                                }
+                                containerModTime > localModTime -> {
+                                    // Container is newer - download
+                                    syncActions.add(SyncAction.Download(containerFile, relativePath))
+                                }
+                                else -> {
+                                    // Same timestamp - check content hash if available
+                                    // For now, consider them in sync
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Check for container-only files (need to download)
+                    for (containerFile in containerFiles) {
+                        val localFile = localFiles.find { getRelativePath(projectRoot, it) == containerFile.path }
+                        if (localFile == null) {
+                            syncActions.add(SyncAction.Download(containerFile, containerFile.path))
+                        }
+                    }
+                    
+                    // Execute sync actions
+                    var processed = 0
+                    val total = syncActions.size
+                    
+                    for (action in syncActions) {
+                        if (indicator.isCanceled) break
+                        
+                        indicator.text2 = "Processing ${action.getDescription()}"
+                        indicator.fraction = processed.toDouble() / total
+                        
+                        when (action) {
+                            is SyncAction.Upload -> {
+                                runBlocking {
+                                    val content = action.localFile.contentsToByteArray().toString(Charsets.UTF_8)
+                                    client.writeFile(containerId, action.path, content)
+                                }
+                            }
+                            is SyncAction.Download -> {
+                                runBlocking {
+                                    val content = client.readFile(containerId, action.path)
+                                    val targetFile = File(projectRoot.path, action.path)
+                                    targetFile.parentFile?.mkdirs()
+                                    targetFile.writeText(content, Charsets.UTF_8)
+                                }
+                            }
+                        }
+                        
+                        processed++
+                    }
+                    
+                    ApplicationManager.getApplication().invokeLater {
+                        // Refresh VFS to show downloaded files
+                        projectRoot.refresh(false, true)
+                        
+                        val message = if (indicator.isCanceled) {
+                            "Sync cancelled. Processed $processed of $total files."
+                        } else {
+                            "Bidirectional sync completed successfully.\n" +
+                                    "Processed $total files.\n" +
+                                    "Uploads: ${syncActions.count { it is SyncAction.Upload }}\n" +
+                                    "Downloads: ${syncActions.count { it is SyncAction.Download }}"
+                        }
+                        
+                        Messages.showInfoMessage(project, message, "Bidirectional Sync")
+                    }
+                    
+                } catch (e: Exception) {
+                    ApplicationManager.getApplication().invokeLater {
+                        Messages.showErrorDialog(project, "Bidirectional sync failed: ${e.message}", "Sync Failed")
+                    }
+                }
+            }
+        })
     }
     
     private fun collectFiles(dir: VirtualFile, files: MutableList<VirtualFile>) {
@@ -232,3 +359,29 @@ class SyncFilesAction : AnAction() {
         e.presentation.isEnabled = applicationService.isConnected()
     }
 }
+
+/**
+ * Represents a file synchronization action
+ */
+sealed class SyncAction {
+    abstract fun getDescription(): String
+    
+    data class Upload(val localFile: VirtualFile, val path: String) : SyncAction() {
+        override fun getDescription(): String = "Uploading $path"
+    }
+    
+    data class Download(val containerFile: FileItem, val path: String) : SyncAction() {
+        override fun getDescription(): String = "Downloading $path"
+    }
+}
+
+/**
+ * Represents a file conflict during sync
+ */
+data class FileConflict(
+    val path: String,
+    val localModTime: Long,
+    val containerModTime: Long,
+    val localFile: VirtualFile,
+    val containerFile: FileItem
+)

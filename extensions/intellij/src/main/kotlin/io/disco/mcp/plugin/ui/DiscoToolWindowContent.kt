@@ -3,11 +3,13 @@ package io.disco.mcp.plugin.ui
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import io.disco.mcp.plugin.api.Container
+import io.disco.mcp.plugin.config.DiscoConfigurable
 import io.disco.mcp.plugin.services.DiscoApplicationService
 import java.awt.BorderLayout
 import javax.swing.*
@@ -201,7 +203,7 @@ class DiscoToolWindowContent(private val project: Project) {
     
     private inner class SettingsAction : AnAction("Settings", "Open Disco MCP Settings", AllIcons.General.Settings) {
         override fun actionPerformed(e: AnActionEvent) {
-            // TODO: Open settings dialog
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, DiscoConfigurable::class.java)
         }
     }
 }

@@ -215,44 +215,83 @@ const limiter = rateLimit({
 
 ### 1. Helper Function Analysis
 
-**Files API - Missing Implementations**
+**Files API - Fully Implemented**
 ```typescript
-// Currently stubbed functions that need implementation
+// File operations are fully implemented using WebContainer fs API
 async function listFiles(container: WebContainer, path: string): Promise<FileListItem[]> {
-  // TODO: Implement using container.fs.readdir
-  return []; // Current stub returns empty array
+  // ✅ IMPLEMENTED: Uses container.fs.readdir with file type detection
+  const fs = container.fs;
+  const entries = await fs.readdir(path, { withFileTypes: true });
+  // Returns structured file list with names, types, sizes, and modification dates
 }
 
-async function createFile(container: WebContainer, path: string, content: string): Promise<void> {
-  // TODO: Implement using container.fs.writeFile
-  console.log(`Creating file: ${path}`); // Current stub just logs
+async function writeFile(container: WebContainer, path: string, content: string, encoding: string = 'utf-8'): Promise<void> {
+  // ✅ IMPLEMENTED: Uses container.fs.writeFile with directory creation
+  const fs = container.fs;
+  // Automatically creates parent directories if they don't exist
+  await fs.mkdir(dirPath, { recursive: true });
+  await fs.writeFile(path, content, encoding);
 }
 
 async function readFile(container: WebContainer, path: string): Promise<string> {
-  // TODO: Implement using container.fs.readFile
-  return ""; // Current stub returns empty string
+  // ✅ IMPLEMENTED: Uses container.fs.readFile with proper error handling
+  const fs = container.fs;
+  return await fs.readFile(path, 'utf-8');
+}
+
+async function deleteFile(container: WebContainer, path: string): Promise<void> {
+  // ✅ IMPLEMENTED: Uses container.fs.rm with error handling
+  const fs = container.fs;
+  await fs.rm(path);
 }
 ```
 
-**Git Operations - Missing Implementations**
+**Git Operations - Fully Implemented**
 ```typescript
-// Git helper functions that need real implementation
+// Git operations are fully implemented using container.spawn()
 async function cloneRepository(
   container: WebContainer,
-  url: string,
-  options: GitCloneOptions
+  options: GitCloneRequest
 ): Promise<GitResponse> {
-  // TODO: Use container.spawn('git', ['clone', ...])
-  return { success: true, message: 'Stub implementation' };
+  // ✅ IMPLEMENTED: Uses container.spawn('git', ['clone', ...]) with authentication
+  const args = ['clone'];
+  if (branch) args.push('-b', branch);
+  
+  // Handles GitHub token authentication by modifying URL
+  const authenticatedUrl = url.includes('github.com') 
+    ? url.replace('https://github.com/', `https://${authToken}@github.com/`)
+    : url;
+  
+  const cloneProcess = await container.spawn('git', [...args, authenticatedUrl, directory]);
+  return await cloneProcess.exit;
 }
 
 async function commitChanges(
   container: WebContainer,
-  message: string,
-  files?: string[]
+  options: GitCommitRequest
 ): Promise<GitResponse> {
-  // TODO: Implement git add, commit sequence
-  return { success: true, commitHash: 'stub-hash' };
+  // ✅ IMPLEMENTED: Full git add, commit sequence with author configuration
+  if (author) {
+    await container.spawn('git', ['config', 'user.name', author.name]);
+    await container.spawn('git', ['config', 'user.email', author.email]);
+  }
+  
+  // Stage files and commit
+  await container.spawn('git', ['add', ...files]);
+  const commitProcess = await container.spawn('git', ['commit', '-m', message]);
+  return { success: true, commitHash: await getLatestCommitHash(container) };
+}
+
+async function pushChanges(container: WebContainer, options: GitPushRequest): Promise<GitResponse> {
+  // ✅ IMPLEMENTED: Git push with authentication and branch specification
+  const pushProcess = await container.spawn('git', ['push', remote, branch]);
+  return { success: exitCode === 0, message: 'Push completed' };
+}
+
+async function pullChanges(container: WebContainer, options: GitPullRequest): Promise<GitResponse> {
+  // ✅ IMPLEMENTED: Git pull with merge handling
+  const pullProcess = await container.spawn('git', ['pull', remote, branch]);
+  return { success: exitCode === 0, message: 'Pull completed' };
 }
 ```
 
