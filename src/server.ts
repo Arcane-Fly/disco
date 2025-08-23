@@ -31,7 +31,7 @@ import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { securityAuditMiddleware, securityInputValidationMiddleware } from './middleware/securityAudit.js';
 import faviconRouter from './middleware/favicon.js';
-// import { requestLogger } from './middleware/requestLogger.js'; // TODO: Implement request logging
+import { requestLogger } from './middleware/requestLogger.js';
 
 // Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration, performance optimizer
 import { containerManager } from './lib/containerManager.js';
@@ -230,6 +230,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 1) Mount favicon early to bypass validation entirely
 app.use(faviconRouter);
+
+// Request logging middleware
+app.use(requestLogger);
 
 // Enhanced request logging with security monitoring
 app.use((req: Request, res: Response, next: NextFunction) => {
