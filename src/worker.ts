@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { containerManager } from './lib/containerManager.js';
+import { loggers } from './lib/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -12,14 +13,14 @@ class Worker {
   private isShuttingDown = false;
 
   constructor() {
-    console.log('🔧 Starting MCP Worker...');
+    loggers.worker.info('Starting MCP Worker...');
   }
 
   /**
    * Start background tasks
    */
   start(): void {
-    console.log('▶️  Worker started');
+    loggers.worker.info('Worker started');
 
     // Container cleanup task (every 10 minutes)
     const cleanupInterval = setInterval(async () => {
@@ -53,7 +54,7 @@ class Worker {
     }, 2 * 60 * 1000);
     this.intervalIds.push(memoryInterval);
 
-    console.log('✅ Background tasks scheduled');
+    loggers.worker.info('Background tasks scheduled');
   }
 
   /**
@@ -61,10 +62,13 @@ class Worker {
    */
   private async runCleanupTask(): Promise<void> {
     try {
-      console.log('🧹 Running container cleanup task...');
+      loggers.worker.info('Running container cleanup task...');
       
       const stats = containerManager.getStats();
-      console.log(`📊 Active containers: ${stats.activeSessions}/${stats.maxContainers}`);
+      loggers.worker.info('Active containers statistics', { 
+        activeSessions: stats.activeSessions, 
+        maxContainers: stats.maxContainers 
+      });
       
       // The cleanup is handled automatically by container manager
       // This task just logs the status

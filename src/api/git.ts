@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
 import { GitCloneRequest, GitCommitRequest, GitPushRequest, GitResponse, ErrorCode } from '../types/index.js';
+import { loggers } from '../lib/logger.js';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`📥 Cloning repository: ${url} into container ${containerId}`);
+    loggers.git.info('Cloning repository', { url, containerId, branch });
 
     const result = await cloneRepository(session.container, {
       url,
@@ -64,7 +65,7 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Git clone error:', error);
+    loggers.git.error('Git clone error', error);
     res.status(500).json({
       status: 'error',
       error: {
