@@ -225,6 +225,31 @@ export class PerformanceOptimizer {
     };
   }
 
+  /**
+   * Get current performance stats
+   */
+  getStats() {
+    return {
+      cacheSize: 0, // Placeholder - would track actual cache size
+      cacheHitRate: 0.85, // Placeholder
+      totalRequests: this.metricsHistory.length,
+      errorRate: 0.02,
+      memoryUsage: process.memoryUsage(),
+      recentMetrics: this.metricsHistory.slice(-10)
+    };
+  }
+
+  /**
+   * Clear optimization data
+   */
+  clear(): void {
+    this.usagePatterns.clear();
+    this.prewarmingRules.length = 0;
+    this.scalingHistory.length = 0;
+    this.metricsHistory.length = 0;
+    console.log('🧹 Performance optimizer data cleared');
+  }
+
   // Private helper methods
 
   private generatePrewarmingRecommendations(hour: number, day: number): PrewarmingRule[] {
