@@ -23,8 +23,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 // Replaced react-beautiful-dnd with modern @dnd-kit for better performance and accessibility
-import { DragDropProvider } from './ui/DragDropProvider.js';
-import { Button } from './ui/Button.js';
+import { DragDropProvider } from './ui/DragDropProvider';
+import { Button } from './ui/Button';
 import { EventEmitter } from 'events';
 
 // =====================================================================================

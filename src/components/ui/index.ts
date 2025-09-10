@@ -7,26 +7,24 @@
 export { Button } from './Button';
 export { Card } from './Card';
 export { Input } from './Input';
-export { Badge } from './Badge';
-export { Skeleton } from './Skeleton';
-export { Tooltip } from './Tooltip';
+export { 
+  Badge, 
+  Skeleton, 
+  Tooltip,
+  NodeConnector,
+  Grid,
+  Container,
+  Sidebar,
+  Chart,
+  MetricCard,
+  ProgressIndicator,
+  CodeGenerator,
+  SmartSuggestions
+} from './placeholders';
 
 // Advanced components for workflow building
 export { DragDropProvider } from './DragDropProvider';
 export { WorkflowNode } from './WorkflowNode';
-export { NodeConnector } from './NodeConnector';
 
-// Layout components
-export { Grid } from './Grid';
-export { Container } from './Container';
-export { Sidebar } from './Sidebar';
-
-// Data visualization components
-export { Chart } from './Chart';
-export { MetricCard } from './MetricCard';
-export { ProgressIndicator } from './ProgressIndicator';
-
-// AI-powered components
+// AI-powered components - Simplified for Phase 1
 export { AIAssistant } from './AIAssistant';
-export { CodeGenerator } from './CodeGenerator';
-export { SmartSuggestions } from './SmartSuggestions';
