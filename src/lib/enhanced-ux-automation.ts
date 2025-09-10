@@ -259,7 +259,8 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       comparePerformance = true
     } = options;
 
-    console.log(`🔍 Performing advanced visual regression test: ${testName}`);
+    const safeTestName = testName.replace(/\r|\n/g, "");
+    console.log(`🔍 Performing advanced visual regression test: "${safeTestName}"`);
 
     // Perform base visual regression
     const baseResult = await super.performVisualRegression(
