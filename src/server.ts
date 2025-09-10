@@ -25,6 +25,7 @@ import { providersRouter } from './api/providers.js';
 import { dashboardRouter } from './api/dashboard.js';
 import { performanceRouter } from './api/performance.js';
 import { securityRouter } from './api/security.js';
+import strategicUXRouter from './api/strategic-ux.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
@@ -2745,6 +2746,7 @@ app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
 app.use('/api/v1/providers', authMiddleware, apiLimiter, providersRouter);
 app.use('/api/v1/performance', authMiddleware, apiLimiter, performanceRouter);
 app.use('/api/v1/security', authMiddleware, apiLimiter, securityRouter);
+app.use('/api/v1/strategic-ux', authMiddleware, apiLimiter, strategicUXRouter);
 
 // Dashboard routes (with lighter rate limiting for better user experience)
 app.use('/dashboard', dashboardRouter);
