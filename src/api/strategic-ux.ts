@@ -26,6 +26,10 @@ const router = Router();
 router.post('/:containerId/intelligent-automation', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
+    // Sanitize containerId to prevent log injection
+    const safeContainerId = typeof containerId === 'string'
+      ? containerId.replace(/[\r\n]/g, '')
+      : String(containerId);
     const { 
       sessionId,
       pageId,
@@ -77,7 +81,7 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
       }
     }));
 
-    console.log(`🎯 Starting intelligent UI automation for container ${containerId}`);
+    console.log(`🎯 Starting intelligent UI automation for container [user-input:${safeContainerId}]`);
     console.log(`📊 Enhanced features: Accessibility=${enableAccessibilityValidation}, Performance=${enablePerformanceMonitoring}, Semantics=${enableSemanticAnalysis}, Usability=${enableUsabilityScoring}`);
 
     const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
