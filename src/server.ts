@@ -25,6 +25,7 @@ import { providersRouter } from './api/providers.js';
 import { dashboardRouter } from './api/dashboard.js';
 import { performanceRouter } from './api/performance.js';
 import { securityRouter } from './api/security.js';
+import enhancementRouter from './api/enhancement.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
@@ -42,6 +43,7 @@ import { initializeCollaborationManager } from './lib/collaborationManager.js';
 import { initializeTeamCollaborationManager } from './lib/teamCollaborationManager.js';
 import { performanceOptimizer } from './lib/performanceOptimizer.js';
 import { securityComplianceManager } from './lib/securityComplianceManager.js';
+import { mcpEnhancementEngine } from './lib/mcpEnhancementEngine.js';
 
 // Load environment variables
 dotenv.config();
@@ -2745,6 +2747,7 @@ app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
 app.use('/api/v1/providers', authMiddleware, apiLimiter, providersRouter);
 app.use('/api/v1/performance', authMiddleware, apiLimiter, performanceRouter);
 app.use('/api/v1/security', authMiddleware, apiLimiter, securityRouter);
+app.use('/api/v1/enhancement', authMiddleware, apiLimiter, enhancementRouter);
 
 // Dashboard routes (with lighter rate limiting for better user experience)
 app.use('/dashboard', dashboardRouter);
@@ -3073,3 +3076,8 @@ server.listen(port, '0.0.0.0', async () => {
 });
 
 export { app, io, dataPath };
+
+// Export a createServer function for testing
+export function createServer() {
+  return app;
+}
