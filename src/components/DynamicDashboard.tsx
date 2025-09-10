@@ -22,7 +22,9 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+// Replaced react-beautiful-dnd with modern @dnd-kit for better performance and accessibility
+import { DragDropProvider } from './ui/DragDropProvider.js';
+import { Button } from './ui/Button.js';
 import { EventEmitter } from 'events';
 
 // =====================================================================================
@@ -830,20 +832,23 @@ export const DynamicDashboard: React.FC = () => {
     // Add more widget types here as they're developed
   }), []);
 
-  // Drag and drop handlers
-  const onDragStart = useCallback(() => {
+  // Modern @dnd-kit drag and drop handlers
+  const handleDragStart = useCallback(() => {
     setIsDragging(true);
   }, []);
 
-  const onDragEnd = useCallback((result: DropResult) => {
+  const handleDragEnd = useCallback((event: any) => {
     setIsDragging(false);
     
-    if (!result.destination || !stateManagerRef.current) return;
+    const { active, over } = event;
+    if (!over || !stateManagerRef.current) return;
 
-    const { source, destination } = result;
-    if (source.index === destination.index) return;
-
-    stateManagerRef.current.reorderWidgets(source.index, destination.index);
+    const activeIndex = activeLayout?.widgets.findIndex(w => w.id === active.id) ?? -1;
+    const overIndex = activeLayout?.widgets.findIndex(w => w.id === over.id) ?? -1;
+    
+    if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+      stateManagerRef.current.reorderWidgets(activeIndex, overIndex);
+    }
   }, []);
 
   // Widget management functions
@@ -1048,95 +1053,82 @@ export const DynamicDashboard: React.FC = () => {
 
       {/* Dashboard Content */}
       <div style={{ padding: '24px' }}>
-        <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-          <Droppable droppableId="dashboard" direction="vertical">
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                style={{
-                  minHeight: '400px',
-                  background: snapshot.isDraggingOver ? 'rgba(59, 130, 246, 0.05)' : 'transparent',
-                  borderRadius: '8px',
-                  transition: 'background-color 0.2s ease',
-                  border: snapshot.isDraggingOver ? '2px dashed #3b82f6' : '2px dashed transparent'
-                }}
-              >
-                {activeLayout?.widgets.map((widget, index) => {
-                  const WidgetComponent = widgetRenderers[widget.type];
-                  
-                  if (!WidgetComponent) {
-                    return null;
-                  }
+        <DragDropProvider 
+          onDragStart={handleDragStart} 
+          onDragEnd={handleDragEnd}
+          strategy="vertical"
+        >
+          <div style={{
+            minHeight: '400px',
+            background: 'transparent',
+            borderRadius: '8px',
+            transition: 'background-color 0.2s ease'
+          }}>
+            {activeLayout?.widgets.map((widget, index) => {
+              const WidgetComponent = widgetRenderers[widget.type];
+              
+              if (!WidgetComponent) {
+                return null;
+              }
 
-                  return (
-                    <Draggable key={widget.id} draggableId={widget.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          style={{
-                            ...provided.draggableProps.style,
-                            marginBottom: '16px',
-                            height: `${widget.size.height * 80}px`,
-                            transition: snapshot.isDragging ? 'none' : 'all 0.3s ease'
-                          }}
-                        >
-                          <WidgetComponent
-                            widget={widget}
-                            onUpdate={(updates) => handleUpdateWidget(widget.id, updates)}
-                            onRemove={() => handleRemoveWidget(widget.id)}
-                            isDragging={snapshot.isDragging}
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
+              return (
+                <div
+                  key={widget.id}
+                  style={{
+                    marginBottom: '16px',
+                    height: `${widget.size.height * 80}px`,
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <WidgetComponent
+                    widget={widget}
+                    onUpdate={(updates) => handleUpdateWidget(widget.id, updates)}
+                    onRemove={() => handleRemoveWidget(widget.id)}
+                    isDragging={isDragging}
+                  />
+                </div>
+              );
+            })}
 
-                {/* Empty State */}
-                {(!activeLayout?.widgets || activeLayout.widgets.length === 0) && (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '64px 32px',
-                    color: '#6b7280'
-                  }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-                    <h3 style={{ 
-                      fontSize: '18px', 
-                      fontWeight: 600, 
-                      marginBottom: '8px',
-                      color: selectedTheme === 'dark' ? '#d1d5db' : '#374151'
-                    }}>
-                      Your Dashboard is Empty
-                    </h3>
-                    <p style={{ fontSize: '14px', marginBottom: '24px' }}>
-                      Add widgets using the dropdown menu above to start monitoring your system.
-                    </p>
-                    <button
-                      onClick={() => handleAddWidget('performance-metrics')}
-                      style={{
-                        padding: '12px 24px',
-                        background: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        transition: 'background-color 0.2s'
-                      }}
-                    >
-                      Add Your First Widget
-                    </button>
-                  </div>
-                )}
+            {/* Empty State */}
+            {(!activeLayout?.widgets || activeLayout.widgets.length === 0) && (
+              <div style={{
+                textAlign: 'center',
+                padding: '64px 32px',
+                color: '#6b7280'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+                <h3 style={{ 
+                  fontSize: '18px', 
+                  fontWeight: 600, 
+                  marginBottom: '8px',
+                  color: selectedTheme === 'dark' ? '#d1d5db' : '#374151'
+                }}>
+                  Your Dashboard is Empty
+                </h3>
+                <p style={{ fontSize: '14px', marginBottom: '24px' }}>
+                  Add widgets using the dropdown menu above to start monitoring your system.
+                </p>
+                <button
+                  onClick={() => handleAddWidget('performance-metrics')}
+                  style={{
+                    padding: '12px 24px',
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  Add Your First Widget
+                </button>
               </div>
             )}
-          </Droppable>
-        </DragDropContext>
+          </div>
+        </DragDropProvider>
       </div>
 
       {/* Global Styles for Animations */}
