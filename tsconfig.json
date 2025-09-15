@@ -22,9 +22,8 @@
     "noUnusedParameters": false,
     "exactOptionalPropertyTypes": false,
     "resolveJsonModule": true,
-    "types": ["node", "jest"],
     "isolatedModules": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test", "src/**/*.full.tsx"]
+  "exclude": ["node_modules", "dist", "test", "src/**/*.full.tsx", "frontend"]
 }
