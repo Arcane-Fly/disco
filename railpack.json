@@ -6,12 +6,8 @@
     "node": "20.x"
   },
   "caches": {
-    "yarn-cache": {
-      "directory": "/root/.yarn",
-      "type": "shared"
-    },
-    "yarn-berry-cache": {
-      "directory": "/root/.yarn/berry/cache",
+    "npm-cache": {
+      "directory": "/root/.npm",
       "type": "shared"
     },
     "webcontainer-cache": {
@@ -22,10 +18,9 @@
   "steps": {
     "install": {
       "commands": [
-        "corepack enable",
-        "yarn install --immutable"
+        "npm install"
       ],
-      "caches": ["yarn-cache", "yarn-berry-cache"]
+      "caches": ["npm-cache"]
     },
     "build": {
       "inputs": [
@@ -35,7 +30,7 @@
         }
       ],
       "commands": [
-        "yarn build"
+        "npm run build"
       ]
     }
   },
