@@ -4,7 +4,7 @@
  */
 
 import request from 'supertest';
-import { createServer } from '../src/server.js';
+import { createTestServer } from '../src/testServer.js';
 import { mcpEnhancementEngine } from '../src/lib/mcpEnhancementEngine.js';
 import { performanceOptimizer } from '../src/lib/performanceOptimizer.js';
 
@@ -13,7 +13,7 @@ describe('Enhancement System Integration', () => {
   let authToken: string;
 
   beforeAll(async () => {
-    app = createServer();
+    app = await createTestServer();
     
     // Get auth token for testing
     const authResponse = await request(app)

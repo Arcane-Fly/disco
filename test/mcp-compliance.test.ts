@@ -1,7 +1,13 @@
 import request from 'supertest';
-import { app } from '../src/server.js';
+import { initializeServer } from '../src/server.js';
 
 describe('MCP Compliance Tests', () => {
+  let app: any;
+
+  beforeAll(async () => {
+    app = await initializeServer();
+  });
+
   describe('HTTP Stream Transport (/mcp)', () => {
     test('should handle POST requests for JSON-RPC', async () => {
       const response = await request(app)

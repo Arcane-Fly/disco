@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
-import { app } from '../src/server';
+import { createTestServer } from '../src/testServer.js';
 
 /**
  * Comprehensive Test Suite for 1000x Enhanced MCP Server
@@ -9,9 +9,11 @@ import { app } from '../src/server';
 
 describe('🚀 Ultimate MCP Platform Integration Tests', () => {
   let server: any;
+  let app: any;
 
   beforeAll(async () => {
-    // Start test server
+    // Initialize and start test server
+    app = await createTestServer();
     server = app.listen(0);
   });
 
