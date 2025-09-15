@@ -21,7 +21,7 @@ interface MCPTool {
 
 // Modern Dark Theme with Gradients - now using centralized theme
 const UltimateMCPDashboard = () => {
-  const [isDarkMode, setIsDarkMode] = useToggle(true);
+  const [isDarkMode, toggleDarkMode] = useToggle(true);
   const currentTheme = getTheme(isDarkMode);
   
   // State management using centralized hooks
@@ -30,10 +30,6 @@ const UltimateMCPDashboard = () => {
   const qualityState = useAsyncState<QualityMetrics | null>(null);
   const toolsState = useAsyncState<MCPTool[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'platforms' | 'tools' | 'metrics'>('overview');
-
-  // Enhanced Dashboard Component
-export const UltimateMCPDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'platforms' | 'tools' | 'metrics'>('overview');
 
   // Real-time Data Fetching with centralized state management
@@ -72,16 +68,19 @@ export const UltimateMCPDashboard: React.FC = () => {
 
   // Mock data for demonstration
   useEffect(() => {
-    if (!platformsState.data || platformsState.data.length === 0) {
+    if (!platformsState.state.data || platformsState.state.data.length === 0) {
       platformsState.setData([
         {
           name: 'ChatGPT',
           status: 'connected',
           lastSeen: '2 minutes ago',
+          timestamp: Date.now(),
+          source: 'mock',
           version: '2.0.0',
           features: ['Tools', 'Resources', 'Completions'],
           responseTime: 45,
-          errorCount: 0
+          errorCount: 0,
+          healthScore: 98
         },
         {
           name: 'Claude',
@@ -140,7 +139,7 @@ export const UltimateMCPDashboard: React.FC = () => {
       ]);
     }
 
-    if (!metricsState.data) {
+    if (!metricsState.state.data) {
       metricsState.setData({
         timestamp: Date.now(),
         source: 'mock',
@@ -154,7 +153,7 @@ export const UltimateMCPDashboard: React.FC = () => {
       });
     }
 
-    if (!qualityState.data) {
+    if (!qualityState.state.data) {
       qualityState.setData({
         timestamp: Date.now(),
         source: 'mock',
@@ -167,7 +166,7 @@ export const UltimateMCPDashboard: React.FC = () => {
       });
     }
 
-    if (!toolsState.data || toolsState.data.length === 0) {
+    if (!toolsState.state.data || toolsState.state.data.length === 0) {
       toolsState.setData([
         { name: 'file_read', description: 'Read file contents', category: 'File Operations', usage: 1247, lastUsed: '2 minutes ago', status: 'active' },
         { name: 'terminal_execute', description: 'Execute terminal commands', category: 'System', usage: 986, lastUsed: '1 minute ago', status: 'active' },
@@ -177,15 +176,14 @@ export const UltimateMCPDashboard: React.FC = () => {
         { name: 'code_analyze', description: 'Analyze code quality', category: 'Code Analysis', usage: 765, lastUsed: '3 minutes ago', status: 'active' }
       ]);
     }
-  }, [platformsState.data?.length]);
+  }, [platformsState.state.data?.length]);
 
-  // Status Color Helper
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return theme.colors.success;
-      case 'connecting': return theme.colors.warning;
-      case 'error': return theme.colors.error;
-      default: return theme.colors.textSecondary;
+      case 'connected': return currentTheme.colors.success;
+      case 'connecting': return currentTheme.colors.warning; 
+      case 'error': return currentTheme.colors.error;
+      default: return currentTheme.colors.textSecondary;
     }
   };
 
@@ -231,9 +229,9 @@ export const UltimateMCPDashboard: React.FC = () => {
     <motion.div
       className={`p-6 rounded-xl border backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] ${className}`}
       style={{
-        background: gradient ? theme.gradients.dark : theme.colors.surface,
-        borderColor: theme.colors.border,
-        color: theme.colors.text
+        background: gradient ? currentTheme.gradients.surface : currentTheme.colors.surface,
+        borderColor: currentTheme.colors.border,
+        color: currentTheme.colors.text
       }}
       whileHover={{ y: -4 }}
       initial={{ opacity: 0, y: 20 }}
@@ -250,14 +248,14 @@ export const UltimateMCPDashboard: React.FC = () => {
       <Card gradient>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium" style={{ color: theme.colors.textSecondary }}>
+            <p className="text-sm font-medium" style={{ color: currentTheme.colors.textSecondary }}>
               Connected Platforms
             </p>
             <p className="text-3xl font-bold mt-2">
-              <AnimatedCounter value={platforms.filter(p => p.status === 'connected').length} />
+              <AnimatedCounter value={platformsState.state.data?.filter(p => p.status === 'connected').length || 0} />
             </p>
           </div>
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: theme.gradients.success }}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: currentTheme.gradients.success }}>
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -268,14 +266,14 @@ export const UltimateMCPDashboard: React.FC = () => {
       <Card gradient>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium" style={{ color: theme.colors.textSecondary }}>
+            <p className="text-sm font-medium" style={{ color: currentTheme.colors.textSecondary }}>
               Avg Response Time
             </p>
             <p className="text-3xl font-bold mt-2">
-              <AnimatedCounter value={performance?.responseTime || 0} suffix="ms" />
+              <AnimatedCounter value={metricsState.state.data?.responseTime || 0} suffix="ms" />
             </p>
           </div>
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: theme.gradients.primary }}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: currentTheme.gradients.primary }}>
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -286,14 +284,14 @@ export const UltimateMCPDashboard: React.FC = () => {
       <Card gradient>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium" style={{ color: theme.colors.textSecondary }}>
+            <p className="text-sm font-medium" style={{ color: currentTheme.colors.textSecondary }}>
               System Uptime
             </p>
             <p className="text-3xl font-bold mt-2">
-              <AnimatedCounter value={performance?.uptime || 0} suffix="%" decimals={2} />
+              <AnimatedCounter value={metricsState.state.data?.uptime || 0} suffix="%" decimals={2} />
             </p>
           </div>
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: theme.gradients.success }}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: currentTheme.gradients.success }}>
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -304,14 +302,14 @@ export const UltimateMCPDashboard: React.FC = () => {
       <Card gradient>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium" style={{ color: theme.colors.textSecondary }}>
+            <p className="text-sm font-medium" style={{ color: currentTheme.colors.textSecondary }}>
               Requests/Second
             </p>
             <p className="text-3xl font-bold mt-2">
-              <AnimatedCounter value={performance?.requestsPerSecond || 0} />
+              <AnimatedCounter value={metricsState.state.data?.requestsPerSecond || 0} />
             </p>
           </div>
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: theme.gradients.warning }}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: currentTheme.gradients.warning }}>
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
@@ -324,7 +322,7 @@ export const UltimateMCPDashboard: React.FC = () => {
   // Platforms Tab Content
   const PlatformsContent = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {platforms.map((platform, index) => (
+      {platformsState.state.data?.map((platform, index) => (
         <Card key={platform.name}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">{platform.name}</h3>
@@ -333,7 +331,7 @@ export const UltimateMCPDashboard: React.FC = () => {
               style={{ backgroundColor: getStatusColor(platform.status) }}
             />
           </div>
-          <div className="space-y-2 text-sm" style={{ color: theme.colors.textSecondary }}>
+          <div className="space-y-2 text-sm" style={{ color: currentTheme.colors.textSecondary }}>
             <p>Status: <span style={{ color: getStatusColor(platform.status) }}>{platform.status}</span></p>
             <p>Version: {platform.version}</p>
             <p>Last Seen: {platform.lastSeen}</p>
@@ -348,8 +346,8 @@ export const UltimateMCPDashboard: React.FC = () => {
                   key={feature}
                   className="px-2 py-1 text-xs rounded-full"
                   style={{ 
-                    backgroundColor: theme.colors.primary + '20',
-                    color: theme.colors.primary
+                    backgroundColor: currentTheme.colors.primary + '20',
+                    color: currentTheme.colors.primary
                   }}
                 >
                   {feature}
@@ -365,7 +363,7 @@ export const UltimateMCPDashboard: React.FC = () => {
   // Tools Tab Content
   const ToolsContent = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {tools.map((tool) => (
+      {toolsState.state.data?.map((tool) => (
         <Card key={tool.name}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">{tool.name}</h3>
@@ -374,23 +372,23 @@ export const UltimateMCPDashboard: React.FC = () => {
               style={{ backgroundColor: getStatusColor(tool.status) }}
             />
           </div>
-          <p className="text-sm mb-3" style={{ color: theme.colors.textSecondary }}>
+          <p className="text-sm mb-3" style={{ color: currentTheme.colors.textSecondary }}>
             {tool.description}
           </p>
-          <div className="space-y-2 text-sm" style={{ color: theme.colors.textSecondary }}>
+          <div className="space-y-2 text-sm" style={{ color: currentTheme.colors.textSecondary }}>
             <p>Category: {tool.category}</p>
             <p>Usage: {tool.usage.toLocaleString()} calls</p>
             <p>Last Used: {tool.lastUsed}</p>
           </div>
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: theme.colors.border }}>
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: currentTheme.colors.border }}>
             <div className="flex justify-between items-center">
               <span className="text-sm">Performance</span>
-              <div className="w-24 h-2 rounded-full" style={{ backgroundColor: theme.colors.border }}>
+              <div className="w-24 h-2 rounded-full" style={{ backgroundColor: currentTheme.colors.border }}>
                 <div 
                   className="h-full rounded-full transition-all duration-300"
                   style={{ 
                     width: `${Math.min(100, (tool.usage / 2500) * 100)}%`,
-                    background: theme.gradients.success
+                    background: currentTheme.gradients.success
                   }}
                 />
               </div>
@@ -407,9 +405,9 @@ export const UltimateMCPDashboard: React.FC = () => {
       <Card>
         <h3 className="text-xl font-semibold mb-6">Performance Metrics</h3>
         <div className="space-y-4">
-          {performance && Object.entries(performance).map(([key, value]) => (
+          {metricsState.state.data && Object.entries(metricsState.state.data).map(([key, value]) => (
             <div key={key} className="flex justify-between items-center">
-              <span className="text-sm capitalize" style={{ color: theme.colors.textSecondary }}>
+              <span className="text-sm capitalize" style={{ color: currentTheme.colors.textSecondary }}>
                 {key.replace(/([A-Z])/g, ' $1').trim()}
               </span>
               <span className="font-semibold">
@@ -429,9 +427,9 @@ export const UltimateMCPDashboard: React.FC = () => {
       <Card>
         <h3 className="text-xl font-semibold mb-6">Quality Metrics</h3>
         <div className="space-y-4">
-          {quality && Object.entries(quality).map(([key, value]) => (
+          {qualityState.state.data && Object.entries(qualityState.state.data).map(([key, value]) => (
             <div key={key} className="flex justify-between items-center">
-              <span className="text-sm capitalize" style={{ color: theme.colors.textSecondary }}>
+              <span className="text-sm capitalize" style={{ color: currentTheme.colors.textSecondary }}>
                 {key.replace(/([A-Z])/g, ' $1').trim()}
               </span>
               <span className="font-semibold">
@@ -452,15 +450,17 @@ export const UltimateMCPDashboard: React.FC = () => {
     { id: 'metrics', label: 'Metrics', icon: '📈' }
   ] as const;
 
+  const isLoading = platformsState.state.loading || metricsState.state.loading || qualityState.state.loading || toolsState.state.loading;
+
   if (isLoading) {
     return (
       <div 
         className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: theme.colors.background }}
+        style={{ backgroundColor: currentTheme.colors.background }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 mx-auto mb-4" style={{ borderColor: theme.colors.primary }} />
-          <p className="text-xl" style={{ color: theme.colors.text }}>Loading Ultimate MCP Dashboard...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 mx-auto mb-4" style={{ borderColor: currentTheme.colors.primary }} />
+          <p className="text-xl" style={{ color: currentTheme.colors.text }}>Loading Ultimate MCP Dashboard...</p>
         </div>
       </div>
     );
@@ -469,28 +469,28 @@ export const UltimateMCPDashboard: React.FC = () => {
   return (
     <div 
       className="min-h-screen p-6"
-      style={{ backgroundColor: theme.colors.background, color: theme.colors.text }}
+      style={{ backgroundColor: currentTheme.colors.background, color: currentTheme.colors.text }}
     >
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2" style={{ background: theme.gradients.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <h1 className="text-4xl font-bold mb-2" style={{ background: currentTheme.gradients.primary, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Disco MCP Ultimate
             </h1>
-            <p className="text-lg" style={{ color: theme.colors.textSecondary }}>
+            <p className="text-lg" style={{ color: currentTheme.colors.textSecondary }}>
               1000x Enhanced Quality & Universal Platform Integration
             </p>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: theme.colors.success }} />
-              <span className="text-sm" style={{ color: theme.colors.textSecondary }}>Live</span>
+              <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: currentTheme.colors.success }} />
+              <span className="text-sm" style={{ color: currentTheme.colors.textSecondary }}>Live</span>
             </div>
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={toggleDarkMode}
               className="p-2 rounded-lg transition-colors"
-              style={{ backgroundColor: theme.colors.surface, color: theme.colors.text }}
+              style={{ backgroundColor: currentTheme.colors.surface, color: currentTheme.colors.text }}
             >
               {isDarkMode ? '☀️' : '🌙'}
             </button>
@@ -498,7 +498,7 @@ export const UltimateMCPDashboard: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: theme.colors.surface }}>
+        <div className="flex space-x-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: currentTheme.colors.surface }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -507,8 +507,8 @@ export const UltimateMCPDashboard: React.FC = () => {
                 activeTab === tab.id ? 'font-semibold' : ''
               }`}
               style={{
-                backgroundColor: activeTab === tab.id ? theme.colors.primary : 'transparent',
-                color: activeTab === tab.id ? 'white' : theme.colors.textSecondary
+                backgroundColor: activeTab === tab.id ? currentTheme.colors.primary : 'transparent',
+                color: activeTab === tab.id ? 'white' : currentTheme.colors.textSecondary
               }}
             >
               <span>{tab.icon}</span>
@@ -534,7 +534,7 @@ export const UltimateMCPDashboard: React.FC = () => {
         </AnimatePresence>
 
         {/* Footer */}
-        <div className="mt-12 pt-8 border-t text-center" style={{ borderColor: theme.colors.border, color: theme.colors.textSecondary }}>
+        <div className="mt-12 pt-8 border-t text-center" style={{ borderColor: currentTheme.colors.border, color: currentTheme.colors.textSecondary }}>
           <p>© 2024 Disco MCP Ultimate - Next Generation AI Platform Integration</p>
           <p className="mt-2">
             Supporting 15+ Platforms • 99.97% Uptime • 1000x Performance Enhancement
