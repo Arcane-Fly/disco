@@ -36,6 +36,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { securityAuditMiddleware, securityInputValidationMiddleware } from './middleware/securityAudit.js';
 import faviconRouter from './middleware/favicon.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { performanceMonitor } from './middleware/performance.js';
 
 // Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration, performance optimizer
 import { containerManager } from './lib/containerManager.js';
@@ -285,6 +286,9 @@ app.use(faviconRouter);
 
 // Request logging middleware
 app.use(requestLogger);
+
+// Performance monitoring middleware
+app.use(performanceMonitor);
 
 // Enhanced request logging with security monitoring
 app.use((req: Request, res: Response, next: NextFunction) => {
