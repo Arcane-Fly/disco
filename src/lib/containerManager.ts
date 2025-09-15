@@ -32,9 +32,9 @@ class ContainerManager {
   private readonly poolSize: number;
 
   constructor(
-    maxInactiveMinutes: number = 30,
-    maxContainers: number = 50,
-    poolSize: number = 5
+    maxInactiveMinutes: number = parseInt(process.env.CONTAINER_TIMEOUT_MINUTES || "15", 10),
+    maxContainers: number = parseInt(process.env.MAX_CONTAINERS || "20", 10),
+    poolSize: number = parseInt(process.env.POOL_SIZE || "3", 10)
   ) {
     this.maxInactiveMinutes = maxInactiveMinutes;
     this.maxContainers = maxContainers;
@@ -345,17 +345,43 @@ console.log('Current directory:', process.cwd());
   private async cleanupInactive(): Promise<void> {
     const now = new Date();
     const sessionsToCleanup: string[] = [];
+    
+    // Check memory usage
+    const memoryUsage = process.memoryUsage();
+    const memoryPercentage = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
+    const memoryThreshold = parseInt(process.env.MEMORY_THRESHOLD || "75", 10);
+    
+    // If memory usage is high, be more aggressive with cleanup
+    const effectiveMaxInactiveMinutes = memoryPercentage > memoryThreshold 
+      ? Math.max(5, this.maxInactiveMinutes * 0.5)  // Clean up after half the time if memory is high
+      : this.maxInactiveMinutes;
 
     for (const [sessionId, session] of this.sessions.entries()) {
       const inactiveMinutes = (now.getTime() - session.lastActive.getTime()) / (1000 * 60);
       
-      if (inactiveMinutes > this.maxInactiveMinutes) {
+      if (inactiveMinutes > effectiveMaxInactiveMinutes) {
         sessionsToCleanup.push(sessionId);
       }
     }
 
+    // If we're still over memory threshold, clean up the oldest sessions regardless of time
+    if (memoryPercentage > memoryThreshold && sessionsToCleanup.length === 0) {
+      const sortedSessions = Array.from(this.sessions.entries())
+        .sort(([,a], [,b]) => a.lastActive.getTime() - b.lastActive.getTime());
+      
+      // Clean up oldest 25% of sessions if memory is critical
+      const sessionsToRemove = Math.ceil(sortedSessions.length * 0.25);
+      for (let i = 0; i < sessionsToRemove && i < sortedSessions.length; i++) {
+        sessionsToCleanup.push(sortedSessions[i][0]);
+      }
+      
+      if (sessionsToCleanup.length > 0) {
+        console.warn(`⚠️ High memory usage (${memoryPercentage.toFixed(1)}%), force-cleaning ${sessionsToCleanup.length} oldest sessions`);
+      }
+    }
+
     if (sessionsToCleanup.length > 0) {
-      console.log(`🧹 Cleaning up ${sessionsToCleanup.length} inactive containers`);
+      console.log(`🧹 Cleaning up ${sessionsToCleanup.length} inactive containers (memory: ${memoryPercentage.toFixed(1)}%)`);
       
       for (const sessionId of sessionsToCleanup) {
         try {
@@ -364,9 +390,15 @@ console.log('Current directory:', process.cwd());
           console.error(`Failed to cleanup session ${sessionId}:`, error);
         }
       }
+      
+      // Trigger garbage collection if available
+      if (global.gc && memoryPercentage > memoryThreshold) {
+        global.gc();
+        console.log('🗑️ Triggered garbage collection due to high memory usage');
+      }
     }
 
-    console.log(`📊 Active containers: ${this.sessions.size}/${this.maxContainers}`);
+    console.log(`📊 Active containers: ${this.sessions.size}/${this.maxContainers} (Memory: ${memoryPercentage.toFixed(1)}%)`);
   }
 
   /**

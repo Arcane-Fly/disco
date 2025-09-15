@@ -12,18 +12,32 @@ declare module 'express-serve-static-core' {
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
+    const apiKey = req.query.apiKey as string;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Check if neither authorization header nor API key is provided
+    if (!authHeader && !apiKey) {
       return res.status(401).json({
         status: 'error',
         error: {
           code: ErrorCode.AUTH_FAILED,
-          message: 'Missing or invalid authorization header'
+          message: 'Authentication required. Please provide Authorization header or apiKey parameter.',
+          details: 'Use Authorization: Bearer <token> header or ?apiKey=<key> query parameter'
+        }
+      });
+    }
+    
+    // If authorization header is provided but invalid format
+    if (authHeader && !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.AUTH_FAILED,
+          message: 'Invalid authorization header format. Expected: Bearer <token>'
         }
       });
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader ? authHeader.substring(7) : apiKey; // Remove 'Bearer ' prefix or use apiKey
     
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET not configured');
