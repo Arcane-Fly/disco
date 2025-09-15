@@ -1,6 +1,6 @@
 {
   "name": "disco-mcp-ultimate",
-  "description": "Ultimate MCP Server - 1000x Enhanced Quality, UI & UX with Universal Platform Integration for ChatGPT, Claude, VS Code, Cursor, Warp Terminal, and 15+ AI Platforms",
+  "description": "Multi-platform MCP Server with enhanced UI/UX, improved performance, and universal integration for ChatGPT, Claude, VS Code, Cursor, Warp Terminal, and over 15 AI platforms.",
   "version": "2.0.0",
   "server_url": "https://disco-mcp.up.railway.app",
   "protocol_version": "2024-11-05",

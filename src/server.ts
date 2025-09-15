@@ -3167,57 +3167,103 @@ app.get('/ui', (_req, res) => {
             const avgResponseTime = dashboardData.platforms.reduce((sum, p) => sum + p.responseTime, 0) / dashboardData.platforms.length || 0;
             const totalUsers = dashboardData.platforms.reduce((sum, p) => sum + p.activeUsers, 0);
             
-            metricsContainer.innerHTML = \`
-                <div class="metric-card">
-                    <div class="metric-icon">🔗</div>
-                    <div class="metric-title">Connected Platforms</div>
-                    <div class="metric-value">\${connected}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">⚡</div>
-                    <div class="metric-title">Avg Response Time</div>
-                    <div class="metric-value">\${Math.round(avgResponseTime)}ms</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">✅</div>
-                    <div class="metric-title">System Uptime</div>
-                    <div class="metric-value">99.97%</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">📊</div>
-                    <div class="metric-title">Requests/Second</div>
-                    <div class="metric-value">2,847</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">👥</div>
-                    <div class="metric-title">Active Users</div>
-                    <div class="metric-value">\${totalUsers.toLocaleString()}</div>
-                </div>
-            \`;
+            // Clear previous metrics
+            metricsContainer.innerHTML = '';
+            
+            // Helper to create a metric card
+            function createMetricCard(icon, title, value) {
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'metric-icon';
+                iconDiv.textContent = icon;
+                card.appendChild(iconDiv);
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'metric-title';
+                titleDiv.textContent = title;
+                card.appendChild(titleDiv);
+                
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'metric-value';
+                valueDiv.textContent = value;
+                card.appendChild(valueDiv);
+                
+                return card;
+            }
+            
+            metricsContainer.appendChild(createMetricCard('🔗', 'Connected Platforms', String(connected)));
+            metricsContainer.appendChild(createMetricCard('⚡', 'Avg Response Time', Math.round(avgResponseTime) + 'ms'));
+            metricsContainer.appendChild(createMetricCard('✅', 'System Uptime', '99.97%'));
+            metricsContainer.appendChild(createMetricCard('📊', 'Requests/Second', '2,847'));
+            metricsContainer.appendChild(createMetricCard('👥', 'Active Users', totalUsers.toLocaleString()));
         }
         
         function renderPlatforms() {
             const platformsContainer = document.getElementById('platforms');
             
+            // Clear previous content
+            platformsContainer.innerHTML = '';
+            
             if (!dashboardData.platforms.length) {
-                platformsContainer.innerHTML = '<p style="text-align: center; color: #94A3B8;">No platform data available</p>';
+                const noDataMsg = document.createElement('p');
+                noDataMsg.style.textAlign = 'center';
+                noDataMsg.style.color = '#94A3B8';
+                noDataMsg.textContent = 'No platform data available';
+                platformsContainer.appendChild(noDataMsg);
                 return;
             }
             
-            platformsContainer.innerHTML = dashboardData.platforms.map(platform => \`
-                <div class="platform-card">
-                    <div class="platform-header">
-                        <div class="platform-name">\${platform.name}</div>
-                        <div class="status-dot status-\${platform.status}"></div>
-                    </div>
-                    <div class="platform-stats">
-                        Status: <strong>\${platform.status}</strong><br>
-                        Response: <strong>\${platform.responseTime}ms</strong><br>
-                        Users: <strong>\${platform.activeUsers.toLocaleString()}</strong><br>
-                        Features: \${platform.features.join(', ')}
-                    </div>
-                </div>
-            \`).join('');
+            // Helper to create a platform card
+            function createPlatformCard(platform) {
+                const card = document.createElement('div');
+                card.className = 'platform-card';
+                
+                const header = document.createElement('div');
+                header.className = 'platform-header';
+                
+                const name = document.createElement('div');
+                name.className = 'platform-name';
+                name.textContent = platform.name;
+                header.appendChild(name);
+                
+                const statusDot = document.createElement('div');
+                statusDot.className = 'status-dot status-' + platform.status;
+                header.appendChild(statusDot);
+                
+                card.appendChild(header);
+                
+                const stats = document.createElement('div');
+                stats.className = 'platform-stats';
+                
+                const statusSpan = document.createElement('strong');
+                statusSpan.textContent = platform.status;
+                stats.appendChild(document.createTextNode('Status: '));
+                stats.appendChild(statusSpan);
+                stats.appendChild(document.createElement('br'));
+                
+                const responseSpan = document.createElement('strong');
+                responseSpan.textContent = platform.responseTime + 'ms';
+                stats.appendChild(document.createTextNode('Response: '));
+                stats.appendChild(responseSpan);
+                stats.appendChild(document.createElement('br'));
+                
+                const usersSpan = document.createElement('strong');
+                usersSpan.textContent = platform.activeUsers.toLocaleString();
+                stats.appendChild(document.createTextNode('Users: '));
+                stats.appendChild(usersSpan);
+                stats.appendChild(document.createElement('br'));
+                
+                stats.appendChild(document.createTextNode('Features: ' + platform.features.join(', ')));
+                
+                card.appendChild(stats);
+                return card;
+            }
+            
+            dashboardData.platforms.forEach(platform => {
+                platformsContainer.appendChild(createPlatformCard(platform));
+            });
         }
         
         function refreshData() {
