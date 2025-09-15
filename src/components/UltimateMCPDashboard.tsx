@@ -89,7 +89,10 @@ const UltimateMCPDashboard = () => {
           version: '2.0.0',
           features: ['Tools', 'Resources', 'Prompts', 'Sampling'],
           responseTime: 38,
-          errorCount: 0
+          errorCount: 0,
+          healthScore: 95,
+          timestamp: Date.now(),
+          source: 'claude-platform'
         },
         {
           name: 'VS Code',
@@ -98,7 +101,10 @@ const UltimateMCPDashboard = () => {
           version: '2.0.0',
           features: ['Tools', 'Resources', 'Logging'],
           responseTime: 12,
-          errorCount: 0
+          errorCount: 0,
+          healthScore: 98,
+          timestamp: Date.now(),
+          source: 'vscode-extension'
         },
         {
           name: 'Cursor',
@@ -107,7 +113,10 @@ const UltimateMCPDashboard = () => {
           version: '2.0.0',
           features: ['Tools', 'Resources', 'Completions'],
           responseTime: 23,
-          errorCount: 0
+          errorCount: 0,
+          healthScore: 96,
+          timestamp: Date.now(),
+          source: 'cursor-extension'
         },
         {
           name: 'Warp Terminal',
@@ -116,7 +125,10 @@ const UltimateMCPDashboard = () => {
           version: '2.0.0',
           features: ['Tools', 'Terminal', 'Natural Language'],
           responseTime: 67,
-          errorCount: 0
+          errorCount: 0,
+          healthScore: 92,
+          timestamp: Date.now(),
+          source: 'warp-integration'
         },
         {
           name: 'JetBrains',
@@ -125,7 +137,10 @@ const UltimateMCPDashboard = () => {
           version: '2.0.0',
           features: ['Tools', 'Resources', 'Code Assistance'],
           responseTime: 89,
-          errorCount: 1
+          errorCount: 1,
+          healthScore: 78,
+          timestamp: Date.now(),
+          source: 'jetbrains-plugin'
         },
         {
           name: 'Zed',
@@ -134,7 +149,10 @@ const UltimateMCPDashboard = () => {
           version: '2.0.0',
           features: ['Prompts', 'Tools', 'Editor Integration'],
           responseTime: 34,
-          errorCount: 0
+          errorCount: 0,
+          healthScore: 94,
+          timestamp: Date.now(),
+          source: 'zed-extension'
         }
       ]);
     }
@@ -231,7 +249,7 @@ const UltimateMCPDashboard = () => {
       style={{
         background: gradient ? currentTheme.gradients.surface : currentTheme.colors.surface,
         borderColor: currentTheme.colors.border,
-        color: currentTheme.colors.text
+        color: currentTheme.colors.textPrimary
       }}
       whileHover={{ y: -4 }}
       initial={{ opacity: 0, y: 20 }}
@@ -460,7 +478,7 @@ const UltimateMCPDashboard = () => {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 mx-auto mb-4" style={{ borderColor: currentTheme.colors.primary }} />
-          <p className="text-xl" style={{ color: currentTheme.colors.text }}>Loading Ultimate MCP Dashboard...</p>
+          <p className="text-xl" style={{ color: currentTheme.colors.textPrimary }}>Loading Ultimate MCP Dashboard...</p>
         </div>
       </div>
     );
@@ -469,7 +487,7 @@ const UltimateMCPDashboard = () => {
   return (
     <div 
       className="min-h-screen p-6"
-      style={{ backgroundColor: currentTheme.colors.background, color: currentTheme.colors.text }}
+      style={{ backgroundColor: currentTheme.colors.background, color: currentTheme.colors.textPrimary }}
     >
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -490,7 +508,7 @@ const UltimateMCPDashboard = () => {
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg transition-colors"
-              style={{ backgroundColor: currentTheme.colors.surface, color: currentTheme.colors.text }}
+              style={{ backgroundColor: currentTheme.colors.surface, color: currentTheme.colors.textPrimary }}
             >
               {isDarkMode ? '☀️' : '🌙'}
             </button>

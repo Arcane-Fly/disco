@@ -321,10 +321,19 @@ export const darkTheme = {
 };
 
 // Theme type definition
-export type Theme = typeof lightTheme;
+export interface Theme {
+  colors: typeof colors;
+  spacing: typeof spacing; 
+  typography: typeof typography;
+  borderRadius: typeof borderRadius;
+  shadows: typeof shadows;
+  animations: typeof animations;
+  light: typeof lightTheme;
+  dark: typeof darkTheme;
+}
 
 // Complete theme configuration
-export const theme = {
+export const theme: Theme = {
   colors,
   spacing,
   typography,
@@ -336,22 +345,22 @@ export const theme = {
 };
 
 // Theme utilities
-export const getTheme = (isDark: boolean): Theme['light'] | Theme['dark'] => {
+export const getTheme = (isDark: boolean): typeof lightTheme | typeof darkTheme => {
   return isDark ? darkTheme : lightTheme;
 };
 
 // CSS custom properties generator
-export const generateCSSCustomProperties = (currentTheme: Theme['light'] | Theme['dark']) => {
+export const generateCSSCustomProperties = (currentTheme: typeof lightTheme | typeof darkTheme) => {
   const cssVars: Record<string, string> = {};
   
   // Generate color variables
   Object.entries(currentTheme.colors).forEach(([key, value]) => {
-    cssVars[`--color-${key}`] = value;
+    cssVars[`--color-${key}`] = value as string;
   });
   
   // Generate gradient variables
   Object.entries(currentTheme.gradients).forEach(([key, value]) => {
-    cssVars[`--gradient-${key}`] = value;
+    cssVars[`--gradient-${key}`] = value as string;
   });
   
   // Generate spacing variables
