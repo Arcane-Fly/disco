@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ContainerSession } from '../types/index.js';
 import { redisSessionManager } from './redisSession.js';
 import { containerProxy } from './containerProxy.js';
+import CircuitBreaker from 'opossum';
 
 // Environment detection
 const isServerEnvironment = typeof window === 'undefined';
@@ -30,6 +31,7 @@ class ContainerManager {
   private readonly maxInactiveMinutes: number;
   private readonly maxContainers: number;
   private readonly poolSize: number;
+  private circuitBreaker: CircuitBreaker<[string], ContainerSession>;
 
   constructor(
     maxInactiveMinutes: number = parseInt(process.env.CONTAINER_TIMEOUT_MINUTES || "15", 10),
@@ -39,6 +41,27 @@ class ContainerManager {
     this.maxInactiveMinutes = maxInactiveMinutes;
     this.maxContainers = maxContainers;
     this.poolSize = poolSize;
+    
+    // Initialize circuit breaker for container creation
+    this.circuitBreaker = new CircuitBreaker(this.createSessionInternal.bind(this), {
+      timeout: 30000, // 30 second timeout
+      errorThresholdPercentage: 50, // Trip if 50% of requests fail
+      resetTimeout: 60000, // Try again after 1 minute
+      volumeThreshold: 10, // Minimum 10 requests before considering trips
+      capacitor: 10 // Number of recent requests to consider
+    });
+    
+    this.circuitBreaker.on('open', () => {
+      console.warn('⚠️ Container creation circuit breaker opened - too many failures');
+    });
+    
+    this.circuitBreaker.on('halfOpen', () => {
+      console.log('🔄 Container creation circuit breaker trying to close');
+    });
+    
+    this.circuitBreaker.on('close', () => {
+      console.log('✅ Container creation circuit breaker closed - service recovered');
+    });
     
     // Start cleanup interval (check every 5 minutes)
     this.cleanupInterval = setInterval(() => this.cleanupInactive(), 5 * 60 * 1000);
@@ -56,6 +79,13 @@ class ContainerManager {
    * Create a new container session for a user
    */
   async createSession(userId: string): Promise<ContainerSession> {
+    return this.circuitBreaker.fire(userId);
+  }
+
+  /**
+   * Internal method for creating container sessions (used by circuit breaker)
+   */
+  private async createSessionInternal(userId: string): Promise<ContainerSession> {
     try {
       // Use Docker proxy in server environment
       if (isServerEnvironment) {

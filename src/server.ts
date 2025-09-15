@@ -30,6 +30,10 @@ import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
 
+// Import route handlers
+import { rootHandler } from './routes/root.js';
+import { metricsHandler } from './routes/metrics.js';
+
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -3498,6 +3502,20 @@ app.get('/capabilities', (_req, res) => {
     }
   });
 });
+
+// Metrics endpoint for monitoring
+/**
+ * @swagger
+ * /metrics:
+ *   get:
+ *     tags: [Monitoring]
+ *     summary: System metrics
+ *     description: Returns real-time system metrics including memory usage, container stats, and performance data
+ *     responses:
+ *       200:
+ *         description: System metrics
+ */
+app.get('/metrics', metricsHandler);
 
 // Catch-all route
 app.use('*', (_req, res) => {
