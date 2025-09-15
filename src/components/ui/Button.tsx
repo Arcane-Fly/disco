@@ -1,10 +1,12 @@
 /**
  * Modern Button Component - Phase 1 Implementation
  * Based on shadcn/ui patterns with enhanced accessibility and animations
+ * DRY Refactored: Uses centralized theme system
  */
 
 import React, { forwardRef } from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
+import { theme, getTheme } from '../../types/theme';
 
 // Button variant definitions following design system
 export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'size'> {
@@ -15,104 +17,103 @@ export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'size'> {
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
   children: React.ReactNode;
+  darkMode?: boolean;
 }
 
-// Design tokens following modern design system principles
-const buttonVariants = {
-  default: {
-    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-    color: '#ffffff',
-    border: '1px solid transparent',
-    '&:hover': {
-      background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+// Design tokens using centralized theme system
+const getButtonVariants = (isDark: boolean = false) => {
+  const currentTheme = getTheme(isDark);
+  
+  return {
+    default: {
+      background: currentTheme.gradients.primary,
+      color: currentTheme.colors.textInverse,
+      border: '1px solid transparent',
+      '&:hover': {
+        background: currentTheme.gradients.primary,
+        boxShadow: theme.shadows.lg,
+        filter: 'brightness(110%)'
+      },
+      '&:focus': {
+        outline: 'none',
+        ring: `2px solid ${currentTheme.colors.primaryHover}`,
+        ringOffset: '2px'
+      }
     },
-    '&:focus': {
-      outline: 'none',
-      ring: '2px solid #60a5fa',
-      ringOffset: '2px'
+    destructive: {
+      background: currentTheme.gradients.error,
+      color: currentTheme.colors.textInverse,
+      border: '1px solid transparent',
+      '&:hover': {
+        background: currentTheme.gradients.error,
+        filter: 'brightness(110%)'
+      }
+    },
+    outline: {
+      background: 'transparent',
+      color: currentTheme.colors.textPrimary,
+      border: `1px solid ${currentTheme.colors.border}`,
+      '&:hover': {
+        background: currentTheme.colors.surfaceHover,
+        color: currentTheme.colors.textPrimary
+      }
+    },
+    secondary: {
+      background: currentTheme.colors.buttonSecondary,
+      color: currentTheme.colors.textPrimary,
+      border: `1px solid ${currentTheme.colors.border}`,
+      '&:hover': {
+        background: currentTheme.colors.surfaceHover
+      }
+    },
+    ghost: {
+      background: 'transparent',
+      color: currentTheme.colors.textSecondary,
+      border: '1px solid transparent',
+      '&:hover': {
+        background: currentTheme.colors.surfaceHover,
+        color: currentTheme.colors.textPrimary
+      }
+    },
+    link: {
+      background: 'transparent',
+      color: currentTheme.colors.primary,
+      border: 'none',
+      textDecoration: 'underline underline-offset-4',
+      '&:hover': {
+        color: currentTheme.colors.primaryHover
+      }
     }
-  },
-  destructive: {
-    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-    color: '#ffffff',
-    border: '1px solid transparent',
-    '&:hover': {
-      background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
-    }
-  },
-  outline: {
-    background: 'transparent',
-    color: '#374151',
-    border: '1px solid #d1d5db',
-    '&:hover': {
-      background: '#f9fafb',
-      color: '#111827'
-    }
-  },
-  secondary: {
-    background: '#f3f4f6',
-    color: '#374151',
-    border: '1px solid transparent',
-    '&:hover': {
-      background: '#e5e7eb'
-    }
-  },
-  ghost: {
-    background: 'transparent',
-    color: '#374151',
-    border: '1px solid transparent',
-    '&:hover': {
-      background: '#f3f4f6'
-    }
-  },
-  link: {
-    background: 'transparent',
-    color: '#3b82f6',
-    border: 'none',
-    textDecoration: 'underline',
-    '&:hover': {
-      color: '#1d4ed8'
-    }
-  }
+  };
 };
 
-const buttonSizes = {
+const getSizeStyles = () => ({
   default: {
     height: '40px',
-    padding: '0 16px',
-    fontSize: '14px',
-    borderRadius: '6px'
+    padding: `0 ${theme.spacing[4]}`,
+    fontSize: theme.typography.fontSize.sm,
+    borderRadius: theme.borderRadius.md
   },
   sm: {
     height: '32px',
-    padding: '0 12px',
-    fontSize: '13px',
-    borderRadius: '4px'
+    padding: `0 ${theme.spacing[3]}`,
+    fontSize: theme.typography.fontSize.xs,
+    borderRadius: theme.borderRadius.sm
   },
   lg: {
     height: '48px',
-    padding: '0 24px',
-    fontSize: '16px',
-    borderRadius: '8px'
+    padding: `0 ${theme.spacing[6]}`,
+    fontSize: theme.typography.fontSize.base,
+    borderRadius: theme.borderRadius.lg
   },
   icon: {
     height: '40px',
     width: '40px',
     padding: '0',
-    borderRadius: '6px'
+    borderRadius: theme.borderRadius.md
   }
-};
+});
 
-/**
- * Modern Button component with enhanced animations and accessibility
- * Features:
- * - Multiple variants following design system
- * - Smooth micro-interactions
- * - Loading states with spinner
- * - Icon support
- * - Full accessibility compliance
- */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   variant = 'default',
   size = 'default',
@@ -120,20 +121,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   leftIcon,
   rightIcon,
   fullWidth = false,
+  darkMode = false,
   disabled,
   children,
   className = '',
   ...props
 }, ref) => {
-  const variantStyles = buttonVariants[variant];
-  const sizeStyles = buttonSizes[size];
+  const variants = getButtonVariants(darkMode);
+  const sizes = getSizeStyles();
+  const variantStyles = variants[variant];
+  const sizeStyles = sizes[size];
 
   const buttonStyle = {
     ...sizeStyles,
     background: variantStyles.background,
     color: variantStyles.color,
     border: variantStyles.border,
-    fontWeight: 500,
+    fontWeight: theme.typography.fontWeight.medium,
     fontFamily: 'inherit',
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     opacity: disabled || loading ? 0.6 : 1,
