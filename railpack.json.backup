@@ -25,7 +25,8 @@
     "build": {
       "inputs": [
         {
-          "step": "install"
+          "step": "install",
+          "include": ["."]
         }
       ],
       "commands": [
@@ -44,7 +45,8 @@
     "restartPolicyMaxRetries": 3,
     "inputs": [
       {
-        "step": "build"
+        "step": "build",
+        "include": ["."]
       }
     ],
     "aptPackages": ["git", "curl"],
