@@ -3,6 +3,7 @@
   "testEnvironment": "node",
   "roots": ["<rootDir>/test"],
   "testMatch": ["**/*.test.ts"],
+  "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
   "collectCoverageFrom": [
     "src/**/*.ts",
     "!src/**/*.d.ts"
@@ -11,14 +12,11 @@
     "^(\\.{1,2}/.*)\\.js$": "$1"
   },
   "extensionsToTreatAsEsm": [".ts"],
-  "globals": {
-    "ts-jest": {
-      "useESM": true
-    }
-  },
   "transform": {
     "^.+\\.ts$": ["ts-jest", {
       "useESM": true
     }]
-  }
+  },
+  "testTimeout": 30000,
+  "maxWorkers": 1
 }
