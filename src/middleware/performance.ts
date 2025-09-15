@@ -15,7 +15,9 @@ export const performanceMonitor = (req: Request, res: Response, next: NextFuncti
   res.on('finish', () => {
     const duration = Date.now() - startTime;
     if (duration > 1000) {
-      console.warn(`🐌 Slow request: ${req.method} ${req.path} - ${duration}ms`);
+      // Remove newlines and carriage returns from path for safe logging
+      const sanitizedPath = req.path.replace(/[\r\n]/g, "");
+      console.warn(`🐌 Slow request: ${req.method} ${sanitizedPath} - ${duration}ms`);
     }
   });
   
