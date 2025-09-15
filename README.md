@@ -215,7 +215,7 @@ npm run build
 
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deployment guide
 - [API.md](./API.md) - API documentation
-- [PRD.md](./prd.md) - Product requirements
+- [PRD.md](./docs/prd.md) - Product requirements
 
 ## 🤝 Contributing
 
