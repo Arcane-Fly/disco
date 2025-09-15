@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Successfully reviewed the last 10 PRs and completed **critical infrastructure fixes** that resolve the major issues identified in the FINAL_ANALYSIS_REPORT.md. The Disco MCP Server is now significantly more production-ready with key blocking issues resolved.
+Successfully reviewed the last 10 PRs and completed **critical infrastructure fixes** that resolve the major issues identified in the docs/analysis/FINAL_ANALYSIS_REPORT.md. The Disco MCP Server is now significantly more production-ready with key blocking issues resolved.
 
 ## ✅ Completed Tasks
 
