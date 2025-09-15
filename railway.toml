@@ -20,3 +20,7 @@ minReplicas = 1
 maxReplicas = 2
 targetCPUPercent = 70
 targetMemoryPercent = 80
+
+[deploy.cron]
+schedule = "0 */6 * * *"
+command = "node scripts/cleanup-stale-containers.js"
