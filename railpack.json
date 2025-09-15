@@ -18,7 +18,7 @@
   "steps": {
     "install": {
       "commands": [
-        "npm install"
+        "yarn install --immutable"
       ],
       "caches": ["npm-cache"]
     },
@@ -30,7 +30,7 @@
         }
       ],
       "commands": [
-        "npm run build"
+        "yarn build"
       ]
     }
   },
@@ -39,12 +39,22 @@
       "image": "ghcr.io/railwayapp/railpack-runtime:node-20"
     },
     "startCommand": "node dist/server.js",
+    "healthCheckPath": "/health",
+    "healthCheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3,
     "inputs": [
       {
         "step": "build",
         "include": ["."]
       }
     ],
-    "aptPackages": ["git", "curl"]
+    "aptPackages": ["git", "curl"],
+    "scaling": {
+      "minReplicas": 1,
+      "maxReplicas": 2,
+      "targetCPUPercent": 70,
+      "targetMemoryPercent": 80
+    }
   }
 }
