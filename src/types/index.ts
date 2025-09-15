@@ -1,3 +1,7 @@
+// Export centralized types
+export * from './metrics';
+export * from './theme';
+
 // Container types
 export interface ContainerSession {
   id: string;

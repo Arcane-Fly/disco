@@ -1,34 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  PerformanceMetrics, 
+  QualityMetrics, 
+  PlatformStatus 
+} from '../types/metrics';
+import { theme, getTheme } from '../types/theme';
+import { useAsyncState, useToggle } from '../hooks/useCommonState';
+import { formatNumber, formatPercentage, formatRelativeTime } from '../utils/common';
 
-// Enhanced Types for Ultimate MCP Dashboard
-interface PlatformStatus {
-  name: string;
-  status: 'connected' | 'disconnected' | 'connecting' | 'error';
-  lastSeen: string;
-  version: string;
-  features: string[];
-  responseTime: number;
-  errorCount: number;
-}
-
-interface PerformanceMetrics {
-  responseTime: number;
-  uptime: number;
-  requestsPerSecond: number;
-  errorRate: number;
-  memoryUsage: number;
-  cpuUsage: number;
-}
-
-interface QualityMetrics {
-  testCoverage: number;
-  codeQuality: string;
-  securityScore: number;
-  accessibilityScore: number;
-  performanceScore: number;
-}
-
+// Enhanced Types for Ultimate MCP Dashboard - now using centralized types
 interface MCPTool {
   name: string;
   description: string;
@@ -38,75 +19,61 @@ interface MCPTool {
   status: 'active' | 'inactive' | 'error';
 }
 
-// Modern Dark Theme with Gradients
-const theme = {
-  colors: {
-    primary: '#3B82F6',
-    secondary: '#8B5CF6', 
-    success: '#10B981',
-    warning: '#F59E0B',
-    error: '#EF4444',
-    background: '#0F1419',
-    surface: '#1A1F2E',
-    surfaceHover: '#252A3A',
-    text: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    border: '#334155'
-  },
-  gradients: {
-    primary: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
-    success: 'linear-gradient(135deg, #10B981 0%, #06B6D4 100%)',
-    warning: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
-    dark: 'linear-gradient(135deg, #1A1F2E 0%, #0F1419 100%)'
-  }
-};
+// Modern Dark Theme with Gradients - now using centralized theme
+const UltimateMCPDashboard = () => {
+  const [isDarkMode, setIsDarkMode] = useToggle(true);
+  const currentTheme = getTheme(isDarkMode);
+  
+  // State management using centralized hooks
+  const platformsState = useAsyncState<PlatformStatus[]>([]);
+  const metricsState = useAsyncState<PerformanceMetrics | null>(null);
+  const qualityState = useAsyncState<QualityMetrics | null>(null);
+  const toolsState = useAsyncState<MCPTool[]>([]);
 
-// Enhanced Dashboard Component
-export const UltimateMCPDashboard: React.FC = () => {
-  const [platforms, setPlatforms] = useState<PlatformStatus[]>([]);
-  const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
-  const [quality, setQuality] = useState<QualityMetrics | null>(null);
-  const [tools, setTools] = useState<MCPTool[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'platforms' | 'tools' | 'metrics'>('overview');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Real-time Data Fetching
+  // Enhanced Dashboard Component
+export const UltimateMCPDashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'platforms' | 'tools' | 'metrics'>('overview');
+
+  // Real-time Data Fetching with centralized state management
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const [platformsRes, performanceRes, qualityRes, toolsRes] = await Promise.all([
+        fetch('/api/v1/dashboard/platforms'),
+        fetch('/api/v1/dashboard/performance'),
+        fetch('/api/v1/dashboard/quality'),
+        fetch('/api/v1/dashboard/tools')
+      ]);
+
+      const platformsData = await platformsRes.json();
+      const performanceData = await performanceRes.json();
+      const qualityData = await qualityRes.json();
+      const toolsData = await toolsRes.json();
+
+      platformsState.setData(platformsData.platforms || []);
+      metricsState.setData(performanceData.metrics);
+      qualityState.setData(qualityData.quality);
+      toolsState.setData(toolsData.tools || []);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      platformsState.setError('Failed to load platforms');
+      metricsState.setError('Failed to load metrics');
+      qualityState.setError('Failed to load quality data');
+      toolsState.setError('Failed to load tools');
+    }
+  }, [platformsState, metricsState, qualityState, toolsState]);
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [platformsRes, performanceRes, qualityRes, toolsRes] = await Promise.all([
-          fetch('/api/v1/dashboard/platforms'),
-          fetch('/api/v1/dashboard/performance'),
-          fetch('/api/v1/dashboard/quality'),
-          fetch('/api/v1/dashboard/tools')
-        ]);
-
-        const platformsData = await platformsRes.json();
-        const performanceData = await performanceRes.json();
-        const qualityData = await qualityRes.json();
-        const toolsData = await toolsRes.json();
-
-        setPlatforms(platformsData.platforms || []);
-        setPerformance(performanceData.metrics);
-        setQuality(qualityData.quality);
-        setTools(toolsData.tools || []);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-        setIsLoading(false);
-      }
-    };
-
     fetchDashboardData();
     const interval = setInterval(fetchDashboardData, 5000); // Real-time updates
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchDashboardData]);
 
   // Mock data for demonstration
   useEffect(() => {
-    if (platforms.length === 0) {
-      setPlatforms([
+    if (!platformsState.data || platformsState.data.length === 0) {
+      platformsState.setData([
         {
           name: 'ChatGPT',
           status: 'connected',
@@ -173,8 +140,11 @@ export const UltimateMCPDashboard: React.FC = () => {
       ]);
     }
 
-    if (!performance) {
-      setPerformance({
+    if (!metricsState.data) {
+      metricsState.setData({
+        timestamp: Date.now(),
+        source: 'mock',
+        version: '1.0.0',
         responseTime: 45,
         uptime: 99.97,
         requestsPerSecond: 2847,
@@ -184,8 +154,11 @@ export const UltimateMCPDashboard: React.FC = () => {
       });
     }
 
-    if (!quality) {
-      setQuality({
+    if (!qualityState.data) {
+      qualityState.setData({
+        timestamp: Date.now(),
+        source: 'mock',
+        version: '1.0.0',
         testCoverage: 97.8,
         codeQuality: 'A+',
         securityScore: 98,
@@ -194,8 +167,8 @@ export const UltimateMCPDashboard: React.FC = () => {
       });
     }
 
-    if (tools.length === 0) {
-      setTools([
+    if (!toolsState.data || toolsState.data.length === 0) {
+      toolsState.setData([
         { name: 'file_read', description: 'Read file contents', category: 'File Operations', usage: 1247, lastUsed: '2 minutes ago', status: 'active' },
         { name: 'terminal_execute', description: 'Execute terminal commands', category: 'System', usage: 986, lastUsed: '1 minute ago', status: 'active' },
         { name: 'git_clone', description: 'Clone repositories', category: 'Git Operations', usage: 543, lastUsed: '5 minutes ago', status: 'active' },
@@ -204,8 +177,7 @@ export const UltimateMCPDashboard: React.FC = () => {
         { name: 'code_analyze', description: 'Analyze code quality', category: 'Code Analysis', usage: 765, lastUsed: '3 minutes ago', status: 'active' }
       ]);
     }
-    setIsLoading(false);
-  }, [platforms.length, performance, quality, tools.length]);
+  }, [platformsState.data?.length]);
 
   // Status Color Helper
   const getStatusColor = (status: string) => {
