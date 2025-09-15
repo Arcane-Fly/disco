@@ -9,7 +9,7 @@ const PROVIDERS = {
     name: 'OpenAI',
     status: 'active',
     endpoint: 'https://api.openai.com/v1',
-    models: ['gpt-4', 'gpt-3.5-turbo'],
+    models: ['gpt-4.1-turbo', 'gpt-3.5-turbo'],
     capabilities: ['text-generation', 'embedding', 'image-generation']
   },
   Anthropic: {
