@@ -1,6 +1,6 @@
 // Export centralized types
-export * from './metrics';
-export * from './theme';
+export * from './metrics.js';
+export * from './theme.js';
 
 // Container types
 export interface ContainerSession {
