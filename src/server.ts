@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { promises as fs } from 'fs';
 import path from 'path';
+import next from 'next';
 
 // Import route handlers
 import { authRouter } from './api/auth.js';
@@ -78,6 +79,14 @@ const ensureDataDirectory = async () => {
 
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
+// Initialize Next.js app
+const nextApp = next({
+  dev: process.env.NODE_ENV !== 'production',
+  dir: path.join(process.cwd(), 'frontend')
+});
+const nextHandler = nextApp.getRequestHandler();
+await nextApp.prepare();
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET'];
@@ -503,7 +512,7 @@ app.get('/webcontainer-loader', async (_req, res) => {
  *               type: string
  *               description: HTML web interface
  */
-app.get('/', (req, res) => {
+app.get('/legacy-root', (req, res) => {
   const serviceInfo = {
     service: 'disco',
     version: '1.0.0',
@@ -1027,6 +1036,28 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
 
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
+});
+
+app.get('/', (req, res) => {
+  const serviceInfo = {
+    service: 'disco',
+    version: '1.0.0',
+    name: 'Disco MCP Server',
+    description: 'MCP (Model Control Plane) server with WebContainer integration for ChatGPT',
+    docs: '/docs',
+    openapi: '/openapi.json',
+    config: '/config',
+    capabilities: '/capabilities',
+    health: '/health',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  };
+
+  if (req.headers.accept?.includes('application/json') || req.query.format === 'json') {
+    return res.json(serviceInfo);
+  }
+
+  return nextHandler(req, res);
 });
 
 // Enhanced OAuth callback processing with browser extension interference mitigation
@@ -3517,8 +3548,8 @@ app.get('/capabilities', (_req, res) => {
  */
 app.get('/metrics', metricsHandler);
 
-// Catch-all route
-app.use('*', (_req, res) => {
+// API 404 handler
+app.use('/api', (_req, res) => {
   res.status(404).json({
     status: 'error',
     error: {
@@ -3527,6 +3558,9 @@ app.use('*', (_req, res) => {
     }
   });
 });
+
+// Next.js catch-all
+app.all('*', (req, res) => nextHandler(req, res));
 
 // Error handling middleware
 app.use(errorHandler);

@@ -24,6 +24,9 @@ pnpm-lock.yaml
 dist/
 build/
 
+# Next.js build output
+.next/
+
 # TypeScript
 *.tsbuildinfo
 
