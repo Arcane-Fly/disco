@@ -21,7 +21,7 @@ export default function Navigation() {
   const router = useRouter();
 
   const navLinks = [
-    { href: '/dashboard', label: 'Dashboard', icon: <BarChart3 className="w-4 h-4" />, protected: true },
+    { href: '/app-dashboard', label: 'Dashboard', icon: <BarChart3 className="w-4 h-4" />, protected: true },
     { href: '/webcontainer-loader', label: 'WebContainer', icon: <Terminal className="w-4 h-4" />, protected: true },
     { href: '/legacy-root', label: 'Classic', icon: <Code2 className="w-4 h-4" />, protected: false },
   ];

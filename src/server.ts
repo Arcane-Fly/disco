@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 import swaggerUi from 'swagger-ui-express';
@@ -302,6 +303,9 @@ app.use(globalLimiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cookie parsing middleware
+app.use(cookieParser());
 
 // 1) Mount favicon early to bypass validation entirely
 app.use(faviconRouter);

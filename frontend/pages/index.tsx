@@ -88,7 +88,7 @@ export default function Home() {
             <div className="hero-actions">
               {user ? (
                 <>
-                  <Link href="/dashboard" className="btn btn-primary">
+                  <Link href="/app-dashboard" className="btn btn-primary">
                     <BarChart3 className="w-5 h-5" />
                     Open Dashboard
                   </Link>
@@ -174,7 +174,7 @@ export default function Home() {
               </div>
 
               {user ? (
-                <Link href="/dashboard" className="btn btn-primary">
+                <Link href="/app-dashboard" className="btn btn-primary">
                   View Dashboard
                   <ArrowRight className="w-5 h-5" />
                 </Link>

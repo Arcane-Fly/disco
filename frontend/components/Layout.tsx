@@ -27,7 +27,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div className="footer-section">
               <h4>Interfaces</h4>
-              <a href="/dashboard">Dashboard</a>
+              <a href="/app-dashboard">Dashboard</a>
               <a href="/webcontainer-loader">WebContainer</a>
               <a href="/legacy-root">Classic UI</a>
             </div>
