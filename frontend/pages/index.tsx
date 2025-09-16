@@ -3,13 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import Link from 'next/link';
 import { 
-  Code2, 
   Github, 
   Cpu, 
   Globe, 
   Zap, 
   Shield, 
-  Users, 
   BarChart3,
   Terminal,
   ArrowRight,

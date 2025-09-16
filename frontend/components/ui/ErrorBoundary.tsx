@@ -122,4 +122,4 @@ export function withErrorBoundary<P extends object>(
   return WrappedComponent;
 }
 
-export { ErrorBoundary, DefaultErrorFallback };
+export { DefaultErrorFallback };
