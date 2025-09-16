@@ -436,7 +436,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       });
       
       // Redirect to frontend dashboard if authenticated, otherwise home
-      res.redirect(userData ? '/dashboard' : '/');
+      res.redirect(userData ? '/app-dashboard' : '/');
     }
 
   } catch (error) {
