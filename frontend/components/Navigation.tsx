@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { 
   Menu, 
   X, 
@@ -16,6 +17,7 @@ import {
 
 export default function Navigation() {
   const { user, login, logout } = useAuth();
+  const { selectionChanged, impactLight } = useHapticFeedback();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
@@ -27,6 +29,21 @@ export default function Navigation() {
   ];
 
   const visibleLinks = navLinks.filter(link => !link.protected || user);
+
+  const handleMobileMenuToggle = () => {
+    impactLight();
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleUserMenuToggle = () => {
+    selectionChanged();
+    setUserMenuOpen(!userMenuOpen);
+  };
+
+  const handleNavClick = () => {
+    selectionChanged();
+    setMobileMenuOpen(false);
+  };
 
   return (
     <nav className="navigation">
@@ -45,6 +62,7 @@ export default function Navigation() {
                 key={link.href}
                 href={link.href}
                 className={`nav-link ${router.pathname === link.href ? 'active' : ''}`}
+                onClick={handleNavClick}
               >
                 {link.icon}
                 <span>{link.label}</span>
@@ -58,7 +76,7 @@ export default function Navigation() {
               <div className="user-menu">
                 <button
                   className="user-menu-trigger"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  onClick={handleUserMenuToggle}
                 >
                   {user.avatar_url ? (
                     <img src={user.avatar_url} alt={user.username} className="user-avatar" />
@@ -103,7 +121,7 @@ export default function Navigation() {
             {/* Mobile Menu Toggle */}
             <button
               className="mobile-menu-toggle"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={handleMobileMenuToggle}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -118,7 +136,7 @@ export default function Navigation() {
                 key={link.href}
                 href={link.href}
                 className={`nav-link-mobile ${router.pathname === link.href ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleNavClick}
               >
                 {link.icon}
                 <span>{link.label}</span>
