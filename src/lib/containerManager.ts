@@ -457,7 +457,12 @@ console.log('Current directory:', process.cwd());
    * Check if container functionality is available
    */
   isContainerAvailable(): boolean {
-    return isBrowserEnvironment && !!WebContainer;
+    if (isBrowserEnvironment) {
+      return !!WebContainer;
+    } else {
+      // In server environment, check if Docker proxy is available
+      return containerProxy !== null;
+    }
   }
 
   /**

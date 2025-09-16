@@ -670,9 +670,9 @@ railway variables set ALLOWED_ORIGINS="https://chat.openai.com,https://chatgpt.c
 **Error**: Application runs out of memory
 
 **Solutions**:
-1. Enable garbage collection:
+1. Set memory limit for Node.js heap:
    ```bash
-   railway variables set NODE_OPTIONS="--expose-gc"
+   railway variables set NODE_OPTIONS="--max-old-space-size=1536"
    ```
 
 2. Adjust container limits:
@@ -715,8 +715,100 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
 
 1. **Container Pooling**: Pre-warm containers for faster startup
 2. **Caching**: Use Redis for session and data caching
-3. **Memory Management**: Enable garbage collection
+3. **Memory Management**: Configure Node.js heap limits properly
 4. **Resource Limits**: Set appropriate container limits
+
+### NODE_OPTIONS Configuration Guide
+
+#### ✅ Valid NODE_OPTIONS Flags
+
+**Memory Management (Recommended)**:
+```bash
+# Basic memory limit (recommended for most deployments)
+NODE_OPTIONS="--max-old-space-size=1536"
+
+# With additional semi-space optimization
+NODE_OPTIONS="--max-old-space-size=1536 --max-semi-space-size=64"
+
+# Enable manual garbage collection (for memory debugging)
+NODE_OPTIONS="--max-old-space-size=1536 --expose-gc"
+
+# Conservative memory usage for smaller containers
+NODE_OPTIONS="--max-old-space-size=1024 --max-semi-space-size=32"
+```
+
+**Stack Management**:
+```bash
+# Increase stack size for deep recursion
+NODE_OPTIONS="--max-old-space-size=1536 --stack-size=2048"
+
+# Limit error stack traces
+NODE_OPTIONS="--max-old-space-size=1536 --stack-trace-limit=50"
+```
+
+#### ❌ Invalid NODE_OPTIONS Flags (Common Mistakes)
+
+**These flags will cause build failures**:
+```bash
+# ❌ WRONG - These are V8 compile flags, not runtime flags
+NODE_OPTIONS="--optimize-for-size"              # Not a Node.js flag
+NODE_OPTIONS="--max-inlined-bytecode-size=256"  # V8 compile flag
+NODE_OPTIONS="--no-lazy"                        # V8 compile flag
+
+# ❌ WRONG - Deprecated or non-existent flags  
+NODE_OPTIONS="--max-heap-size=1536"             # Use --max-old-space-size instead
+NODE_OPTIONS="--max-gc-pause=100"               # Not a valid Node.js flag
+```
+
+#### 🔧 Troubleshooting NODE_OPTIONS Issues
+
+**Error: `--optimize-for-size is not allowed in NODE_OPTIONS`**
+
+This error occurs when using V8 compile-time flags as Node.js runtime flags.
+
+**Solution**:
+1. Remove the invalid flag from Railway variables:
+   ```bash
+   railway variables delete NODE_OPTIONS --service disco
+   ```
+
+2. Set a valid memory limit instead:
+   ```bash
+   railway variables set NODE_OPTIONS="--max-old-space-size=1536" --service disco
+   ```
+
+**Error: `mise failed to install node@20.x`**
+
+This typically happens during the build process when NODE_OPTIONS contains invalid flags.
+
+**Solution**:
+1. Check current NODE_OPTIONS:
+   ```bash
+   railway variables list --service disco | grep NODE_OPTIONS
+   ```
+
+2. Replace with valid configuration:
+   ```bash
+   railway variables set NODE_OPTIONS="--max-old-space-size=1536" --service disco
+   ```
+
+**Memory Optimization Guidelines**:
+- **Small apps (< 100MB)**: `--max-old-space-size=512`
+- **Medium apps (100-500MB)**: `--max-old-space-size=1024` 
+- **Large apps (500MB+)**: `--max-old-space-size=1536`
+- **Development**: Add `--expose-gc` for debugging
+
+#### 🧪 Testing NODE_OPTIONS Locally
+
+Before deploying, test your NODE_OPTIONS configuration locally:
+
+```bash
+# Test with your configuration
+NODE_OPTIONS="--max-old-space-size=1536" npm start
+
+# Validate using the built-in script
+npm run prebuild  # Runs validation automatically
+```
 
 ## Monitoring and Alerting
 

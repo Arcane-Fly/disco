@@ -61,7 +61,7 @@ const nodeTemplates: Array<{
   { type: 'file_operation', label: 'File Operation', description: 'Read, write, or manipulate files', category: 'API', defaultData: { operation: 'read' } },
   
   // AI nodes
-  { type: 'ai_prompt', label: 'AI Prompt', description: 'Process data using AI/ML models', category: 'AI', defaultData: { model: 'gpt-4' } },
+  { type: 'ai_prompt', label: 'AI Prompt', description: 'Process data using AI/ML models', category: 'AI', defaultData: { model: 'gpt-4.1-turbo' } },
   { type: 'code_generation', label: 'Code Generator', description: 'Generate code based on specifications', category: 'AI', defaultData: { language: 'typescript' } },
   
   // DevOps nodes

@@ -11,7 +11,7 @@ MAX_CONTAINERS=20 \
 CONTAINER_TIMEOUT_MINUTES=15 \
 POOL_SIZE=3 \
 MEMORY_THRESHOLD=75 \
-NODE_OPTIONS="--max-old-space-size=512" \
+NODE_OPTIONS="--max-old-space-size=1024" \
 npm start &
 SERVER_PID=$!
 

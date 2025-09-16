@@ -86,7 +86,15 @@ const nextApp = next({
   dir: path.join(process.cwd(), 'frontend')
 });
 const nextHandler = nextApp.getRequestHandler();
-await nextApp.prepare();
+
+// Prepare Next.js app - will be called during server startup or testing
+let nextPrepared = false;
+export async function prepareNextApp() {
+  if (!nextPrepared) {
+    await nextApp.prepare();
+    nextPrepared = true;
+  }
+}
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET'];
@@ -3640,7 +3648,8 @@ process.on('SIGINT', gracefulShutdown);
 
 // Start server - Railway compliance with 0.0.0.0 binding
 server.listen(port, '0.0.0.0', async () => {
-  // Ensure data directory exists before starting
+  // Prepare Next.js and ensure data directory exists before starting
+  await prepareNextApp();
   await ensureDataDirectory();
   
   console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
@@ -3669,7 +3678,13 @@ server.listen(port, '0.0.0.0', async () => {
 
 export { app, io, dataPath };
 
-// Export a createServer function for testing
+// Export functions for testing
 export function createServer() {
+  return app;
+}
+
+export async function initializeServer() {
+  await prepareNextApp();
+  await ensureDataDirectory();
   return app;
 }
