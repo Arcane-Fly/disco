@@ -34,7 +34,6 @@ import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
 
 // Import route handlers
-import { rootHandler } from './routes/root.js';
 import { metricsHandler } from './routes/metrics.js';
 
 // Import middleware
@@ -45,16 +44,13 @@ import faviconRouter from './middleware/favicon.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { performanceMonitor } from './middleware/performance.js';
 
-// Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration, performance optimizer
+// Import container manager, browser automation, Redis session manager, collaboration manager, and team collaboration
 import { containerManager } from './lib/containerManager.js';
 import { browserAutomationManager } from './lib/browserAutomation.js';
 import { redisSessionManager } from './lib/redisSession.js';
 import { specs } from './lib/openapi.js';
 import { initializeCollaborationManager } from './lib/collaborationManager.js';
 import { initializeTeamCollaborationManager } from './lib/teamCollaborationManager.js';
-import { performanceOptimizer } from './lib/performanceOptimizer.js';
-import { securityComplianceManager } from './lib/securityComplianceManager.js';
-import { mcpEnhancementEngine } from './lib/mcpEnhancementEngine.js';
 import { metricsService } from './services/metricsService.js';
 
 // Load environment variables
@@ -245,7 +241,7 @@ app.options('*', cors(corsOptions));
 
 // Serve static files with proper headers for WebContainer
 app.use('/public', express.static(path.join(process.cwd(), 'public'), {
-  setHeaders: (res, path) => {
+  setHeaders: (res, _path) => {
     // Set COEP and COOP headers for WebContainer compatibility
     res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
@@ -1107,11 +1103,8 @@ app.get('/', (req, res) => {
  *               type: string
  */
 app.get('/auth/callback', (req, res) => {
-  const { code, state: _state, error } = req.query;
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
-
+  const { code, error } = req.query;
+  
   // Enhanced security headers for OAuth callback to prevent extension interference
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
@@ -1669,7 +1662,7 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
  */
 app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { grant_type, code, redirect_uri: _redirect_uri, client_id, code_verifier } = req.body;
+    const { grant_type, code, client_id, code_verifier } = req.body;
     
     // Validate grant type
     if (grant_type !== 'authorization_code') {
@@ -1851,7 +1844,7 @@ app.post('/oauth/register', express.json(), async (req, res) => {
  */
 app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { token, token_type_hint: _token_type_hint } = req.body;
+    const { token } = req.body;
     
     if (!token) {
       return res.status(400).json({
@@ -1919,7 +1912,7 @@ app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req
  */
 app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { token, token_type_hint: _token_type_hint } = req.body;
+    const { token } = req.body;
     
     if (!token) {
       return res.status(400).json({
@@ -2237,7 +2230,7 @@ app.get('/mcp', (req, res) => {
 // Handle POST requests for JSON-RPC
 app.post('/mcp', express.json(), (req, res) => {
   try {
-    const { jsonrpc, id, method, params: _params } = req.body;
+    const { jsonrpc, id, method } = req.body;
 
     // Validate JSON-RPC format
     if (jsonrpc !== '2.0') {
@@ -2512,7 +2505,7 @@ app.post('/messages', express.json(), (req, res) => {
   
   // Reuse the same JSON-RPC logic from /mcp POST handler
   try {
-    const { jsonrpc, id, method, params: _params } = req.body;
+    const { jsonrpc, id, method } = req.body;
 
     // Validate JSON-RPC format
     if (jsonrpc !== '2.0') {
@@ -3461,7 +3454,7 @@ app.get('/status', async (_req, res) => {
         missing_api_endpoints: 'COMPLETE - All endpoints implemented with real functionality',
         redis_session_management: redisStats.connected ? 'ACTIVE' : 'CONFIGURED',
         background_worker: 'COMPLETE - Cleanup, monitoring, and maintenance tasks',
-        oauth_security: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) ? 'CONFIGURED' : 'NEEDS_SETUP'
+        oauth_security: (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) ? 'CONFIGURED' : 'NEEDS_SETUP'
       }
     };
     
@@ -3615,11 +3608,11 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // Initialize collaboration manager
-const _collaboration = initializeCollaborationManager(io);
+initializeCollaborationManager(io);
 console.log('🤝 Collaboration manager initialized');
 
 // Initialize team collaboration manager  
-const _teamCollaboration = initializeTeamCollaborationManager();
+initializeTeamCollaborationManager();
 console.log('👥 Team collaboration manager initialized');
 
 // Graceful shutdown

@@ -365,8 +365,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       });
     }
 
-    // Parse state to get redirect URL and PKCE data
-    let redirectTo = '/';
+    // Parse state to get PKCE data  
     let codeChallenge = '';
     let codeChallengeMethod = 'S256';
     let clientId = 'disco-mcp-client';
@@ -374,7 +373,6 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     if (state) {
       try {
         const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
-        redirectTo = stateData.redirectTo || '/';
         codeChallenge = stateData.codeChallenge || '';
         codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
         clientId = stateData.clientId || 'disco-mcp-client';
