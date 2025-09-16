@@ -6,20 +6,8 @@
   "build": {
     "provider": "node",
     "nodeVersion": "20.x",
-    "steps": {
-      "install": {
-        "commands": [
-          "corepack enable",
-          "yarn install --immutable"
-        ]
-      },
-      "build": {
-        "commands": [
-          "yarn build:server",
-          "yarn build:next"
-        ]
-      }
-    }
+    "buildCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable && yarn build:server && yarn build:next",
+    "installCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable"
   },
   "deploy": {
     "startCommand": "node dist/server.js",
