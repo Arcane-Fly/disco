@@ -165,10 +165,24 @@ export const useAnalytics = () => {
     storeEventLocally(noisyEvent);
   }, [isEnabled]);
 
+  // Helper to generate a secure random alphanumeric string of given length
+  function secureRandomString(length: number): string {
+    // Alphanumeric chars
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const array = new Uint8Array(length);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(array);
+    } else {
+      // fallback, never expected on modern browsers
+      for (let i = 0; i < length; i++) array[i] = Math.floor(Math.random() * chars.length);
+    }
+    return Array.from(array, x => chars[x % chars.length]).join('');
+  }
+
   const getSessionId = () => {
     let sessionId = sessionStorage.getItem('analytics-session-id');
     if (!sessionId) {
-      sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      sessionId = `session-${Date.now()}-${secureRandomString(9)}`;
       sessionStorage.setItem('analytics-session-id', sessionId);
     }
     return sessionId;
