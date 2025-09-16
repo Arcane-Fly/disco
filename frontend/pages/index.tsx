@@ -13,13 +13,19 @@ import {
   BarChart3,
   Terminal,
   ArrowRight,
-  Check
+  Check,
+  GitBranch
 } from 'lucide-react';
 
 export default function Home() {
   const { user, login } = useAuth();
 
   const features = [
+    {
+      icon: <GitBranch className="w-6 h-6" />,
+      title: "Advanced Workflow Builder",
+      description: "Visual pipeline editor with drag-and-drop nodes and real-time collaboration"
+    },
     {
       icon: <Terminal className="w-6 h-6" />,
       title: "WebContainer IDE",
@@ -37,22 +43,20 @@ export default function Home() {
     },
     {
       icon: <BarChart3 className="w-6 h-6" />,
-      title: "Performance Analytics",
-      description: "Real-time monitoring and performance optimization"
+      title: "Real-time Analytics",
+      description: "Privacy-first insights with ML-powered optimization suggestions"
     },
     {
       icon: <Shield className="w-6 h-6" />,
       title: "Secure by Design",
       description: "SOC 2 Type II ready with enterprise-grade security"
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: "Team Collaboration",
-      description: "Real-time collaboration tools for development teams"
     }
   ];
 
   const capabilities = [
+    "Advanced workflow creation",
+    "Visual pipeline editor",
+    "Real-time collaboration",
     "Container orchestration",
     "Browser automation",
     "RAG implementation",
@@ -60,7 +64,8 @@ export default function Home() {
     "File system management",
     "Git operations",
     "Performance monitoring",
-    "Security compliance"
+    "Security compliance",
+    "Privacy-first analytics"
   ];
 
   return (
@@ -92,9 +97,9 @@ export default function Home() {
                     <BarChart3 className="w-5 h-5" />
                     Open Dashboard
                   </Link>
-                  <Link href="/webcontainer-loader" className="btn btn-secondary">
-                    <Code2 className="w-5 h-5" />
-                    Launch IDE
+                  <Link href="/workflow-builder" className="btn btn-secondary">
+                    <GitBranch className="w-5 h-5" />
+                    Workflow Builder
                   </Link>
                 </>
               ) : (
@@ -174,8 +179,8 @@ export default function Home() {
               </div>
 
               {user ? (
-                <Link href="/app-dashboard" className="btn btn-primary">
-                  View Dashboard
+                <Link href="/workflow-builder" className="btn btn-primary">
+                  Launch Workflow Builder
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               ) : (
@@ -228,8 +233,8 @@ await container.launch();`}
             </p>
             <div className="cta-actions">
               {user ? (
-                <Link href="/webcontainer-loader" className="btn btn-large">
-                  Launch Development Environment
+                <Link href="/workflow-builder" className="btn btn-large">
+                  Launch Advanced Workflow Builder
                 </Link>
               ) : (
                 <button onClick={login} className="btn btn-large">

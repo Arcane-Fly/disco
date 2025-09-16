@@ -28,6 +28,8 @@ export default function Layout({ children }: LayoutProps) {
             <div className="footer-section">
               <h4>Interfaces</h4>
               <a href="/app-dashboard">Dashboard</a>
+              <a href="/workflow-builder">Workflow Builder</a>
+              <a href="/analytics">Analytics</a>
               <a href="/webcontainer-loader">WebContainer</a>
               <a href="/legacy-root">Classic UI</a>
             </div>

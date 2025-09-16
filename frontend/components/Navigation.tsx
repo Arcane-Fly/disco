@@ -14,7 +14,9 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Settings
+  Settings,
+  GitBranch,
+  TrendingUp
 } from 'lucide-react';
 
 export default function Navigation() {
@@ -26,6 +28,8 @@ export default function Navigation() {
 
   const navLinks = [
     { href: '/app-dashboard', label: 'Dashboard', icon: <BarChart3 className="w-4 h-4" />, protected: true },
+    { href: '/workflow-builder', label: 'Workflow Builder', icon: <GitBranch className="w-4 h-4" />, protected: true },
+    { href: '/analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" />, protected: true },
     { href: '/webcontainer-loader', label: 'WebContainer', icon: <Terminal className="w-4 h-4" />, protected: true },
     { href: '/legacy-root', label: 'Classic', icon: <Code2 className="w-4 h-4" />, protected: false },
   ];

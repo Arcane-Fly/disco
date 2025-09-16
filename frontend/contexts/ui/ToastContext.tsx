@@ -135,3 +135,6 @@ export function useToast() {
   }
   return context;
 }
+
+// Export alias for compatibility
+export const useNotification = useToast;
