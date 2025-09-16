@@ -69,13 +69,21 @@ export default function Profile() {
     }
   }, [gestureHandlers]);
 
+  // Helper function to generate a secure random string
+  function generateSecureApiKey(length = 20) {
+    const array = new Uint8Array(length);
+    window.crypto.getRandomValues(array);
+    // Convert to base64 for compactness and readability
+    return btoa(String.fromCharCode(...array)).replace(/[^a-zA-Z0-9]/g, '').substr(0, length);
+  }
+
   const handleGenerateApiKey = () => {
     if (!newKeyName.trim()) return;
     
     const newKey = {
       id: Date.now().toString(),
       name: newKeyName,
-      key: `dcp_live_${Math.random().toString(36).substr(2, 20)}`,
+      key: `dcp_live_${generateSecureApiKey(20)}`,
       created: new Date().toISOString().split('T')[0],
       lastUsed: 'Never'
     };
