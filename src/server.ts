@@ -55,6 +55,7 @@ import { initializeTeamCollaborationManager } from './lib/teamCollaborationManag
 import { performanceOptimizer } from './lib/performanceOptimizer.js';
 import { securityComplianceManager } from './lib/securityComplianceManager.js';
 import { mcpEnhancementEngine } from './lib/mcpEnhancementEngine.js';
+import { metricsService } from './services/metricsService.js';
 
 // Load environment variables
 dotenv.config();
@@ -3597,6 +3598,9 @@ const io = new SocketIOServer(server, {
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
+  
+  // Add client to metrics service for real-time updates
+  metricsService.addClient(socket);
   
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
