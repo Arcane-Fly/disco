@@ -30,6 +30,7 @@ import { securityRouter } from './api/security.js';
 import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
+import { sessionRouter } from './api/session.js';
 
 // Import route handlers
 import { rootHandler } from './routes/root.js';
@@ -2833,6 +2834,7 @@ app.get('/api/v1', (req: Request, res: Response) => {
   });
 });
 app.use('/api/v1/auth', authLimiter, authRouter);
+app.use('/api/v1/auth', sessionRouter); // Session endpoints (no auth required for session check)
 app.use('/api/v1/containers', authMiddleware, apiLimiter, containersRouter);
 app.use('/api/v1/files', authMiddleware, apiLimiter, filesRouter);
 app.use('/api/v1/terminal', authMiddleware, apiLimiter, terminalRouter);
