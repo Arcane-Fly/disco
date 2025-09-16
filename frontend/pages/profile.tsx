@@ -105,13 +105,21 @@ export default function Profile() {
     setShowKeys(prev => ({ ...prev, [keyId]: !prev[keyId] }));
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    addNotification({
-      type: 'success',
-      title: 'Copied to Clipboard',
-      message: 'API key has been copied to your clipboard.'
-    });
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      addNotification({
+        type: 'success',
+        title: 'Copied to Clipboard',
+        message: 'API key has been copied to your clipboard.'
+      });
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Copy Failed',
+        message: 'Failed to copy API key to clipboard. Please try again.'
+      });
+    }
   };
 
   return (
