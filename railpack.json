@@ -1,59 +1,31 @@
 {
-  "$schema": "https://schema.railpack.com",
-  "provider": "node",
-  "buildAptPackages": ["git", "curl", "build-essential", "libssl-dev", "libffi-dev", "python3-dev"],
-  "packages": {
-    "node": "20.x"
+  "version": "1",
+  "metadata": {
+    "name": "disco"
   },
-  "caches": {
-    "npm-cache": {
-      "directory": "/root/.npm",
-      "type": "shared"
-    },
-    "webcontainer-cache": {
-      "directory": "/root/.webcontainer",
-      "type": "shared"
-    }
-  },
-  "steps": {
-    "install": {
-      "commands": [
-        "corepack enable",
-        "yarn install --immutable"
-      ],
-      "caches": ["npm-cache"]
-    },
-    "build": {
-      "inputs": [
-        {
-          "step": "install"
-        }
-      ],
-      "commands": [
-        "yarn build"
-      ]
+  "build": {
+    "provider": "node",
+    "nodeVersion": "20.x",
+    "steps": {
+      "install": {
+        "commands": [
+          "corepack enable",
+          "yarn install --immutable"
+        ]
+      },
+      "build": {
+        "commands": [
+          "yarn build:server",
+          "yarn build:next"
+        ]
+      }
     }
   },
   "deploy": {
-    "base": {
-      "image": "ghcr.io/railwayapp/railpack-runtime:node-20"
-    },
     "startCommand": "node dist/server.js",
     "healthCheckPath": "/health",
     "healthCheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3,
-    "inputs": [
-      {
-        "step": "build"
-      }
-    ],
-    "aptPackages": ["git", "curl"],
-    "scaling": {
-      "minReplicas": 1,
-      "maxReplicas": 2,
-      "targetCPUPercent": 70,
-      "targetMemoryPercent": 80
-    }
+    "restartPolicyMaxRetries": 3
   }
 }
