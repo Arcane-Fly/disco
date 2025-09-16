@@ -3,13 +3,6 @@
  * This module provides the server without top-level await for testing
  */
 
-import express from 'express';
-import http from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import next from 'next';
-import path from 'path';
-import fs from 'fs/promises';
-
 // Re-export everything from the main server but without the startup code
 export * from './server.js';
 
