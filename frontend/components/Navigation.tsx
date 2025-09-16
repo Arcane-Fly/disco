@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { CompactThemeToggle } from './ui/ThemeToggle';
 import { 
   Menu, 
   X, 
@@ -12,7 +13,8 @@ import {
   Github, 
   LogOut,
   User,
-  ChevronDown
+  ChevronDown,
+  Settings
 } from 'lucide-react';
 
 export default function Navigation() {
@@ -72,6 +74,7 @@ export default function Navigation() {
 
           {/* Auth Section */}
           <div className="nav-auth">
+            <CompactThemeToggle />
             {user ? (
               <div className="user-menu">
                 <button
@@ -101,8 +104,13 @@ export default function Navigation() {
                       Profile
                     </Link>
                     <Link href="/settings" className="dropdown-item">
+                      <Settings className="w-4 h-4" />
                       Settings
                     </Link>
+                    <div className="dropdown-divider"></div>
+                    <div className="px-3 py-2">
+                      <CompactThemeToggle />
+                    </div>
                     <div className="dropdown-divider"></div>
                     <button onClick={logout} className="dropdown-item danger">
                       <LogOut className="w-4 h-4" />

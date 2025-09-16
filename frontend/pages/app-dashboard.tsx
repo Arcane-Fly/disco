@@ -1,216 +1,325 @@
-import React, { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import Layout from '../components/Layout';
+import ProtectedRoute from '../components/ProtectedRoute';
+import { ErrorBoundary } from '../components/ui/ErrorBoundary';
+import { MetricCard, PerformanceChart, UsageDistribution, ActivityChart } from '../components/ui/Analytics';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { SkeletonCard } from '../components/ui/Skeleton';
 import { 
-  BarChart3,
-  Activity,
-  Users,
+  Users, 
+  Activity, 
   Zap,
-  Server,
-  Database,
+  Cpu,
+  HardDrive,
   Clock,
+  TrendingUp,
+  Server,
   Shield,
-  Wifi,
-  WifiOff,
-  RefreshCw
+  Rocket
 } from 'lucide-react';
+
+// Generate mock data for charts
+const generatePerformanceData = () => {
+  const data: Array<{
+    time: string;
+    cpu: number;
+    memory: number;
+    network: number;
+  }> = [];
+  const now = Date.now();
+  for (let i = 23; i >= 0; i--) {
+    const time = new Date(now - i * 60 * 1000);
+    data.push({
+      time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      cpu: Math.floor(Math.random() * 40) + 30,
+      memory: Math.floor(Math.random() * 30) + 40,
+      network: Math.floor(Math.random() * 100) + 50,
+    });
+  }
+  return data;
+};
+
+const generateActivityData = () => {
+  const data: Array<{
+    date: string;
+    requests: number;
+    errors: number;
+    users: number;
+  }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    data.push({
+      date: date.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      requests: Math.floor(Math.random() * 1000) + 500,
+      errors: Math.floor(Math.random() * 50) + 10,
+      users: Math.floor(Math.random() * 200) + 100,
+    });
+  }
+  return data;
+};
+
+const usageDistributionData = [
+  { name: 'WebContainers', value: 45, color: '#8b5cf6' },
+  { name: 'API Requests', value: 25, color: '#06b6d4' },
+  { name: 'File Operations', value: 20, color: '#10b981' },
+  { name: 'Authentication', value: 10, color: '#f59e0b' },
+];
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { connected, metrics } = useWebSocket();
   const { addNotification } = useNotifications();
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [connectionNotified, setConnectionNotified] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [performanceData] = useState(generatePerformanceData);
+  const [activityData] = useState(generateActivityData);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (metrics) {
-      setLastUpdate(new Date());
-    }
-  }, [metrics]);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
-    if (connected && !connectionNotified) {
+    if (connected) {
       addNotification({
         type: 'success',
-        title: 'Real-time Updates Connected',
-        message: 'Dashboard is now receiving live metrics updates.',
-        duration: 3000
+        title: 'WebSocket Connected',
+        message: 'Real-time updates are now active'
       });
-      setConnectionNotified(true);
-    } else if (!connected && connectionNotified) {
-      addNotification({
-        type: 'warning',
-        title: 'Connection Lost',
-        message: 'Real-time updates disconnected. Showing cached data.',
-        duration: 5000
-      });
-      setConnectionNotified(false);
     }
-  }, [connected, connectionNotified, addNotification]);
+  }, [connected, addNotification]);
 
-  // Default static metrics (fallback when no real-time data)
-  const defaultMetrics = [
-    {
-      title: "Active Containers",
-      value: "5",
-      description: "Currently running",
-      icon: <Server className="w-6 h-6" />
-    },
-    {
-      title: "CPU Usage",
-      value: "42%",
-      description: "Average across all containers",
-      icon: <Activity className="w-6 h-6" />
-    },
-    {
-      title: "Memory Usage",
-      value: "2.1 GB",
-      description: "Total allocated memory",
-      icon: <Database className="w-6 h-6" />
-    },
-    {
-      title: "Uptime",
-      value: "99.9%",
-      description: "Last 30 days",
-      icon: <Clock className="w-6 h-6" />
-    },
-    {
-      title: "API Requests",
-      value: "1,247",
-      description: "Today",
-      icon: <BarChart3 className="w-6 h-6" />
-    },
-    {
-      title: "Active Sessions",
-      value: "12",
-      description: "Connected users",
-      icon: <Users className="w-6 h-6" />
-    },
-    {
-      title: "Security Score",
-      value: "A+",
-      description: "SOC 2 compliant",
-      icon: <Shield className="w-6 h-6" />
-    },
-    {
-      title: "Performance",
-      value: "Fast",
-      description: "Response time < 100ms",
-      icon: <Zap className="w-6 h-6" />
-    }
-  ];
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Use real-time metrics if available, otherwise use defaults
-  const displayMetrics = metrics ? [
-    {
-      title: "Active Containers",
-      value: metrics.activeContainers.toString(),
-      description: "Currently running",
-      icon: <Server className="w-6 h-6" />
-    },
-    {
-      title: "CPU Usage",
-      value: `${metrics.cpuUsage}%`,
-      description: "Average across all containers",
-      icon: <Activity className="w-6 h-6" />
-    },
-    {
-      title: "Memory Usage",
-      value: metrics.memoryUsage,
-      description: "Total allocated memory",
-      icon: <Database className="w-6 h-6" />
-    },
-    {
-      title: "Uptime",
-      value: metrics.uptime,
-      description: "Last 30 days",
-      icon: <Clock className="w-6 h-6" />
-    },
-    {
-      title: "API Requests",
-      value: metrics.apiRequests.toLocaleString(),
-      description: "Today",
-      icon: <BarChart3 className="w-6 h-6" />
-    },
-    {
-      title: "Active Sessions",
-      value: metrics.activeSessions.toString(),
-      description: "Connected users",
-      icon: <Users className="w-6 h-6" />
-    },
-    {
-      title: "Security Score",
-      value: metrics.securityScore,
-      description: "SOC 2 compliant",
-      icon: <Shield className="w-6 h-6" />
-    },
-    {
-      title: "Performance",
-      value: metrics.performance,
-      description: "Response time < 100ms",
-      icon: <Zap className="w-6 h-6" />
-    }
-  ] : defaultMetrics;
+  const handleQuickAction = (action: string) => {
+    addNotification({
+      type: 'info',
+      title: 'Action Started',
+      message: `${action} has been initiated`
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="space-y-6 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
       <Layout>
-        <div className="dashboard">
-          <div className="container">
-            <div className="dashboard-header">
-              <div className="dashboard-title-section">
-                <h1 className="dashboard-title">
-                  Welcome back, {user?.username || user?.name}!
-                </h1>
-                <p className="dashboard-subtitle">
-                  Here's an overview of your Disco MCP Server instance
-                </p>
-              </div>
-              <div className="dashboard-status">
-                <div className={`connection-status ${connected ? 'connected' : 'disconnected'}`}>
-                  {connected ? (
-                    <>
-                      <Wifi className="w-5 h-5" />
-                      <span>Live Updates</span>
-                    </>
-                  ) : (
-                    <>
-                      <WifiOff className="w-5 h-5" />
-                      <span>Offline</span>
-                    </>
-                  )}
+        <ErrorBoundary>
+          <div className="space-y-6 p-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">
+                    Welcome back, {user?.username || 'Developer'}! 👋
+                  </h1>
+                  <p className="text-indigo-100 text-lg">
+                    Here's what's happening with your MCP server
+                  </p>
                 </div>
-                {lastUpdate && (
-                  <div className="last-update">
-                    <RefreshCw className="w-4 h-4" />
-                    <span>Updated {lastUpdate.toLocaleTimeString()}</span>
+                <div className="mt-4 md:mt-0 flex items-center gap-4">
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                    connected 
+                      ? 'bg-green-500/20 text-green-100' 
+                      : 'bg-red-500/20 text-red-100'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${
+                      connected ? 'bg-green-400' : 'bg-red-400'
+                    } animate-pulse`}></div>
+                    <span className="text-sm font-medium">
+                      {connected ? 'Connected' : 'Disconnected'}
+                    </span>
                   </div>
-                )}
+                  <div className="flex items-center gap-2 text-indigo-100">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-mono">
+                      {currentTime.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="dashboard-grid">
-              {displayMetrics.map((metric, index) => (
-                <div key={index} className={`metric-card ${connected ? 'live' : ''}`}>
-                  <div className="metric-header">
-                    <span className="metric-title">{metric.title}</span>
-                    <div className="metric-icon">{metric.icon}</div>
+            {/* Metrics Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricCard
+                title="Active Containers"
+                value={metrics?.activeContainers || 7}
+                change={{ value: 12, type: 'increase' }}
+                icon={<Server className="w-6 h-6" />}
+                className="hover:scale-105 transition-transform duration-200"
+              />
+              <MetricCard
+                title="CPU Usage"
+                value={`${metrics?.cpuUsage || 45}%`}
+                change={{ value: 3, type: 'decrease' }}
+                icon={<Cpu className="w-6 h-6" />}
+                className="hover:scale-105 transition-transform duration-200"
+              />
+              <MetricCard
+                title="Memory Usage"
+                value={`${metrics?.memoryUsage || 62}%`}
+                change={{ value: 8, type: 'increase' }}
+                icon={<HardDrive className="w-6 h-6" />}
+                className="hover:scale-105 transition-transform duration-200"
+              />
+              <MetricCard
+                title="API Requests"
+                value={metrics?.apiRequests || '1.2K'}
+                change={{ value: 24, type: 'increase' }}
+                icon={<TrendingUp className="w-6 h-6" />}
+                className="hover:scale-105 transition-transform duration-200"
+              />
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PerformanceChart 
+                data={performanceData}
+                className="hover:shadow-lg transition-shadow duration-200"
+              />
+              <UsageDistribution 
+                data={usageDistributionData}
+                className="hover:shadow-lg transition-shadow duration-200"
+              />
+            </div>
+
+            <ActivityChart 
+              data={activityData}
+              className="hover:shadow-lg transition-shadow duration-200"
+            />
+
+            {/* Quick Actions & Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="hover:shadow-lg transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Rocket className="w-5 h-5" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col gap-2"
+                      onClick={() => handleQuickAction('Container Creation')}
+                    >
+                      <Zap className="w-6 h-6" />
+                      <span>Create Container</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col gap-2"
+                      onClick={() => handleQuickAction('Log Viewer')}
+                    >
+                      <Activity className="w-6 h-6" />
+                      <span>View Logs</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col gap-2"
+                      onClick={() => handleQuickAction('User Management')}
+                    >
+                      <Users className="w-6 h-6" />
+                      <span>Manage Users</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-20 flex-col gap-2"
+                      onClick={() => handleQuickAction('Security Scan')}
+                    >
+                      <Shield className="w-6 h-6" />
+                      <span>Security Scan</span>
+                    </Button>
                   </div>
-                  <div className="metric-value">{metric.value}</div>
-                  <div className="metric-description">{metric.description}</div>
-                  {connected && (
-                    <div className="metric-live-indicator">
-                      <div className="pulse-dot"></div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow duration-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { 
+                        action: 'Container deployed successfully',
+                        time: '2 minutes ago',
+                        type: 'success' as const
+                      },
+                      { 
+                        action: 'New user registered',
+                        time: '5 minutes ago',
+                        type: 'info' as const
+                      },
+                      { 
+                        action: 'System maintenance completed',
+                        time: '1 hour ago',
+                        type: 'warning' as const
+                      },
+                      { 
+                        action: 'Security scan passed',
+                        time: '2 hours ago',
+                        type: 'success' as const
+                      }
+                    ].map((activity, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div className={`w-3 h-3 rounded-full ${
+                          activity.type === 'success' ? 'bg-green-400' :
+                          activity.type === 'info' ? 'bg-blue-400' :
+                          activity.type === 'warning' ? 'bg-yellow-400' :
+                          'bg-gray-400'
+                        }`}></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {activity.action}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {activity.time}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </div>
+        </ErrorBoundary>
       </Layout>
     </ProtectedRoute>
   );
