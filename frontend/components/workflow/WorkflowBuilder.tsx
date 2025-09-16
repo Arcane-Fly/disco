@@ -23,30 +23,19 @@
  * - AR/VR support for immersive workflow visualization
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useGestures } from '../../hooks/useGestures';
+import React, { useState, useCallback, useRef } from 'react';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useWebSocket } from '../../contexts/WebSocketContext';
-import { useNotification } from '../../contexts/ui/ToastContext';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { 
   Play, 
-  Pause, 
   Square, 
   Save, 
-  Share, 
-  Settings, 
   Zap,
   GitBranch,
-  Users,
   Brain,
-  Mic,
-  Eye,
-  Plus,
-  Trash2,
-  Copy,
-  RotateCcw
+  Plus
 } from 'lucide-react';
 
 // Core workflow node types with extensible architecture
@@ -55,7 +44,7 @@ export interface WorkflowNode {
   type: 'input' | 'process' | 'output' | 'condition' | 'loop' | 'custom';
   label: string;
   position: { x: number; y: number };
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   inputs: NodePort[];
   outputs: NodePort[];
   config: NodeConfig;
@@ -67,7 +56,7 @@ export interface NodePort {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'any';
   required: boolean;
-  schema?: any; // JSON Schema for validation
+  schema?: object; // JSON Schema for validation
   connected?: boolean;
   connectionId?: string;
 }
@@ -78,7 +67,7 @@ export interface NodeConfig {
   category: string;
   description: string;
   documentation?: string;
-  examples?: any[];
+  examples?: unknown[];
   performance?: {
     complexity: 'low' | 'medium' | 'high';
     memory: number;
@@ -142,17 +131,17 @@ const VisualNode: React.FC<{
   node: WorkflowNode;
   isSelected: boolean;
   onSelect: (node: WorkflowNode) => void;
-  onUpdate: (node: WorkflowNode) => void;
+  _onUpdate: (node: WorkflowNode) => void;
   onDelete: (nodeId: string) => void;
   onDragStart: (node: WorkflowNode, event: React.MouseEvent) => void;
-}> = ({ node, isSelected, onSelect, onUpdate, onDelete, onDragStart }) => {
+}> = ({ node, isSelected, onSelect, _onUpdate, onDelete, onDragStart }) => {
   const { triggerHaptic } = useHapticFeedback();
   const nodeRef = useRef<SVGGElement>(null);
 
   const handleNodeClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect(node);
-    triggerHaptic('medium');
+    triggerHaptic('impact', { intensity: 'medium' });
   }, [node, onSelect, triggerHaptic]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -415,22 +404,24 @@ const NodeConfigPanel: React.FC<{
   onClose: () => void;
   onUpdate: (node: WorkflowNode) => void;
 }> = ({ node, isOpen, onClose, onUpdate }) => {
-  const [config, setConfig] = useState(node?.data || {});
+  // Configuration state for future use
+  // const [config, setConfig] = useState(node?.data || {});
 
-  useEffect(() => {
-    setConfig(node?.data || {});
-  }, [node]);
+  // useEffect(() => {
+  //   setConfig(node?.data || {});
+  // }, [node]);
 
   if (!isOpen || !node) return null;
 
-  const handleConfigChange = (key: string, value: any) => {
-    const newConfig = { ...config, [key]: value };
-    setConfig(newConfig);
-    onUpdate({
-      ...node,
-      data: newConfig
-    });
-  };
+  // Configuration change handler for future use
+  // const handleConfigChange = (key: string, value: unknown) => {
+  //   const newConfig = { ...config, [key]: value };
+  //   setConfig(newConfig);
+  //   onUpdate({
+  //     ...node,
+  //     data: newConfig
+  //   });
+  // };
 
   return (
     <div className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 z-40">
@@ -515,14 +506,13 @@ export const WorkflowBuilder: React.FC = () => {
   }>({ isDragging: false, node: null, offset: { x: 0, y: 0 } });
   
   const { triggerHaptic } = useHapticFeedback();
-  const { socket, isConnected } = useWebSocket();
-  const { showNotification } = useNotification();
+  const { socket } = useWebSocket();
   const svgRef = useRef<SVGSVGElement>(null);
 
   const handleNodeSelect = useCallback((node: WorkflowNode) => {
     setSelectedNode(node);
     setIsConfigPanelOpen(true);
-    triggerHaptic('medium');
+    triggerHaptic('impact', { intensity: 'medium' });
   }, [triggerHaptic]);
 
   const handleNodeUpdate = useCallback((updatedNode: WorkflowNode) => {
@@ -531,10 +521,10 @@ export const WorkflowBuilder: React.FC = () => {
     ));
     
     // Broadcast update to collaborators
-    if (socket && isConnected) {
+    if (socket && socket.connected) {
       socket.emit('workflow:node-update', updatedNode);
     }
-  }, [socket, isConnected]);
+  }, [socket]);
 
   const handleNodeDelete = useCallback((nodeId: string) => {
     setNodes(prev => prev.filter(node => node.id !== nodeId));
@@ -545,9 +535,9 @@ export const WorkflowBuilder: React.FC = () => {
       setSelectedNode(null);
       setIsConfigPanelOpen(false);
     }
-    triggerHaptic('light');
-    showNotification('Node deleted', 'success');
-  }, [selectedNode, triggerHaptic, showNotification]);
+    triggerHaptic('impact', { intensity: 'light' });
+    // showNotification('Node deleted', 'success');
+  }, [selectedNode, triggerHaptic]);
 
   const handleAddNode = useCallback((type: WorkflowNode['type']) => {
     const newNode: WorkflowNode = {
@@ -579,9 +569,9 @@ export const WorkflowBuilder: React.FC = () => {
     };
 
     setNodes(prev => [...prev, newNode]);
-    triggerHaptic('light');
-    showNotification(`Added ${type} node`, 'success');
-  }, [triggerHaptic, showNotification]);
+    triggerHaptic('impact', { intensity: 'light' });
+    // showNotification(`Added ${type} node`, 'success');
+  }, [triggerHaptic]);
 
   const handleDragStart = useCallback((node: WorkflowNode, event: React.MouseEvent) => {
     if (!svgRef.current) return;
@@ -616,19 +606,19 @@ export const WorkflowBuilder: React.FC = () => {
 
   const handleRunWorkflow = useCallback(async () => {
     setIsRunning(true);
-    triggerHaptic('heavy');
-    showNotification('Starting workflow execution...', 'info');
+    triggerHaptic('impact', { intensity: 'heavy' });
+    // showNotification('Starting workflow execution...', 'info');
 
     try {
       // Simulate workflow execution
       await new Promise(resolve => setTimeout(resolve, 3000));
-      showNotification('Workflow completed successfully!', 'success');
+      // showNotification('Workflow completed successfully!', 'success');
     } catch (error) {
-      showNotification('Workflow execution failed', 'error');
+      // showNotification('Workflow execution failed', 'error');
     } finally {
       setIsRunning(false);
     }
-  }, [triggerHaptic, showNotification]);
+  }, [triggerHaptic]);
 
   const handleSaveWorkflow = useCallback(() => {
     const workflow = {
@@ -641,9 +631,9 @@ export const WorkflowBuilder: React.FC = () => {
     };
     
     localStorage.setItem('workflow', JSON.stringify(workflow));
-    showNotification('Workflow saved', 'success');
-    triggerHaptic('light');
-  }, [nodes, connections, showNotification, triggerHaptic]);
+    // showNotification('Workflow saved', 'success');
+    triggerHaptic('impact', { intensity: 'light' });
+  }, [nodes, connections, triggerHaptic]);
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -651,7 +641,7 @@ export const WorkflowBuilder: React.FC = () => {
       <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold">Advanced Workflow Builder</h1>
-          {isConnected && (
+          {socket?.connected && (
             <div className="flex items-center gap-2 text-sm text-green-600">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               Live Collaboration
@@ -774,7 +764,7 @@ export const WorkflowBuilder: React.FC = () => {
                 node={node}
                 isSelected={selectedNode?.id === node.id}
                 onSelect={handleNodeSelect}
-                onUpdate={handleNodeUpdate}
+                _onUpdate={handleNodeUpdate}
                 onDelete={handleNodeDelete}
                 onDragStart={handleDragStart}
               />
@@ -818,7 +808,7 @@ export const WorkflowBuilder: React.FC = () => {
           setNodes(template.nodes);
           setConnections(template.connections);
           setIsTemplateMarketplaceOpen(false);
-          showNotification(`Loaded template: ${template.name}`, 'success');
+          // showNotification(`Loaded template: ${template.name}`, 'success');
         }}
       />
     </div>

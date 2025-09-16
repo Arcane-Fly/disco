@@ -376,7 +376,12 @@ const PerformanceMonitor: React.FC<{
     if (metrics.length === 0) return;
     
     const latest = metrics[metrics.length - 1];
-    const newAlerts = [];
+    const newAlerts: {
+      type: 'error' | 'warning';
+      metric: string;
+      value: number;
+      threshold: number;
+    }[] = [];
     
     if (latest.pageLoadTime > threshold.pageLoadTime) {
       newAlerts.push({
