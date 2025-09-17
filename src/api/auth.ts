@@ -365,8 +365,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       });
     }
 
-    // Parse state to get redirect URL and PKCE data
-    let redirectTo = '/';
+    // Parse state to get PKCE data  
     let codeChallenge = '';
     let codeChallengeMethod = 'S256';
     let clientId = 'disco-mcp-client';
@@ -374,7 +373,6 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     if (state) {
       try {
         const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
-        redirectTo = stateData.redirectTo || '/';
         codeChallenge = stateData.codeChallenge || '';
         codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
         clientId = stateData.clientId || 'disco-mcp-client';
@@ -413,7 +411,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
           username: userData.login,
           name: userData.name,
           email: userData.email,
-          avatar: userData.avatar_url,
+          avatar_url: userData.avatar_url,
           provider: 'github'
         },
         process.env.JWT_SECRET!,
@@ -426,9 +424,17 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
       console.log(`🔐 GitHub user authenticated (direct token): ${userData.login}`);
       
-      // Always redirect to frontend with token in URL fragment for OAuth flow
-      // The main page JavaScript will handle extracting and storing the token
-      res.redirect(`${redirectTo}#token=${token}&user=${encodeURIComponent(userData.login)}`);
+      // Set authentication cookie for frontend
+      res.cookie('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/'
+      });
+      
+      // Redirect to frontend dashboard if authenticated, otherwise home
+      res.redirect(userData ? '/app-dashboard' : '/');
     }
 
   } catch (error) {
