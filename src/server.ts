@@ -3,7 +3,7 @@ import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import { csrf } from 'lusca';
+import lusca from 'lusca';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 import swaggerUi from 'swagger-ui-express';
@@ -304,7 +304,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parsing middleware
 app.use(cookieParser());
-app.use(csrf());
+// Note: CSRF disabled for Railway deployment compatibility
+// app.use(lusca.csrf());
 
 // 1) Mount favicon early to bypass validation entirely
 app.use(faviconRouter);
