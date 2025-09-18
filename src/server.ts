@@ -175,10 +175,10 @@ app.use(helmet({
       frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com", "https://claude.ai"],
       connectSrc: ["'self'", "wss:", "ws:", "https://webcontainer.io"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"], // Allow WebContainer CDN
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts
       styleSrcElem: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"], // Allow Google Fonts
       workerSrc: ["'self'", "blob:"], // Required for WebContainer Workers
       childSrc: ["'self'", "blob:"]   // Required for WebContainer iframes
     },
