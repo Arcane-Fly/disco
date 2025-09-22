@@ -1,0 +1,25 @@
+name: "disco-codeql-config"
+
+# Paths to include in the analysis
+paths:
+  - "src"
+  - "frontend"
+  - "scripts"
+  - "middleware.ts"
+  - "next.config.cjs"
+
+# Paths to exclude from the analysis
+paths-ignore:
+  - "node_modules"
+  - "dist"
+  - ".next"
+  - "test"
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/*.test.js"
+  - "**/*.spec.js"
+
+# Additional queries to run (defined in workflow file)
+
+# Disable certain queries if needed
+disable-default-queries: false
