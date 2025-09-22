@@ -33,6 +33,7 @@ import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
+import { enhancedCSPMiddleware, nextjsCSPMiddleware } from './middleware/csp.js';
 
 // Import route handlers
 import { metricsHandler } from './routes/metrics.js';
@@ -169,20 +170,7 @@ if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
 
 // Security middleware with enhanced headers for WebContainer compatibility
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com", "https://claude.ai"],
-      connectSrc: ["'self'", "wss:", "ws:", "https://webcontainer.io"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"], // Allow WebContainer CDN
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts
-      styleSrcElem: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"], // Allow Google Fonts
-      workerSrc: ["'self'", "blob:"], // Required for WebContainer Workers
-      childSrc: ["'self'", "blob:"]   // Required for WebContainer iframes
-    },
-  },
+  contentSecurityPolicy: false, // Disable CSP from helmet, we'll handle it with enhanced middleware
   crossOriginEmbedderPolicy: { policy: 'credentialless' }, // Enable SharedArrayBuffer support
   crossOriginOpenerPolicy: { policy: 'same-origin' },      // Required for WebContainer
   hsts: {
@@ -191,6 +179,9 @@ app.use(helmet({
     preload: true
   }
 }));
+
+// Enhanced CSP middleware with nonce generation for Google Fonts support
+app.use(enhancedCSPMiddleware);
 
 // CORS configuration - Enhanced for Universal Platform Support
 const corsOptions = {
@@ -3570,7 +3561,7 @@ app.use('/api', (_req, res) => {
   });
 });
 
-// Next.js catch-all
+// Next.js catch-all handler
 app.all('*', (req, res) => nextHandler(req, res));
 
 // Error handling middleware
