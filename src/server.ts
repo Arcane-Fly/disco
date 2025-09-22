@@ -703,6 +703,63 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             right: 8px;
         }
         .copy-btn:hover { background: #475569; }
+        .copy-btn.copied { 
+            background: #10b981; 
+            color: white;
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+        .auth-required {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #92400e;
+            margin-left: 8px;
+        }
+        .public-endpoint {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #065f46;
+            margin-left: 8px;
+        }
+        .step-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .integration-guide {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .integration-step {
+            margin: 12px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+        }
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -722,65 +779,88 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
 
     <div class="auth-section" id="auth-section">
         <div id="login-section">
-            <h3>🔐 Authentication Required</h3>
-            <p>Login with GitHub to get your personalized configuration URLs and tokens</p>
+            <h3>🔐 Authentication Setup</h3>
+            <div class="integration-guide">
+                <h4>📋 Quick Setup Guide</h4>
+                <div class="integration-step">
+                    <span class="step-indicator">1</span>
+                    <strong>Login with GitHub</strong> to get your personal authentication token
+                </div>
+                <div class="integration-step">
+                    <span class="step-indicator">2</span>
+                    <strong>Copy configuration URLs</strong> with your token included
+                </div>
+                <div class="integration-step">
+                    <span class="step-indicator">3</span>
+                    <strong>Paste into your platform:</strong> ChatGPT.com Connectors, Claude.ai External APIs, or MCP client
+                </div>
+            </div>
             <a href="/api/v1/auth/github?redirect_to=${encodeURIComponent('/')}" class="login-btn">
-                Login with GitHub
+                🚀 Login with GitHub to Get Started
             </a>
+            <p style="margin-top: 12px; color: #64748b; font-size: 0.9rem;">
+                ✨ Your authentication token will be automatically included in all configuration URLs after login
+            </p>
         </div>
         <div id="authenticated-section" class="hidden">
-            <h3>✅ Authenticated</h3>
+            <h3>✅ Ready to Integrate</h3>
             <div class="user-info" id="user-info"></div>
-            <button onclick="logout()" class="logout-btn">Logout</button>
+            <p style="color: #059669; margin: 8px 0;">🎉 All URLs below include your authentication token and are ready to use!</p>
+            <button id="logout-btn" class="logout-btn">Logout</button>
         </div>
     </div>
 
     <div class="platform-urls">
         <h3>🌐 Platform Integration URLs</h3>
-        <p>Copy these URLs directly into ChatGPT.com connectors or Claude.ai web interface:</p>
+        <p>Copy these URLs directly into your preferred platform:</p>
         
         <div>
             <strong>ChatGPT.com Main Interface Connector URL:</strong>
+            <span class="public-endpoint">🌍 Public</span>
             <div class="platform-url">
                 <span>${domain}/openapi.json</span>
-                <button class="copy-btn" onclick="copyText('${domain}/openapi.json')">Copy</button>
+                <button class="copy-btn" data-copy-text="${domain}/openapi.json">Copy</button>
             </div>
             <small style="color: #64748b; margin-left: 12px;">For ChatGPT Plus/Pro users: Paste in Settings → Connectors → Add Connector</small>
         </div>
 
         <div>
             <strong>Claude.ai Web Interface Connector URL:</strong>
+            <span class="auth-required">🔐 Auth Required</span>
             <div class="platform-url">
                 <span>${domain}/api/v1</span>
-                <button class="copy-btn" onclick="copyText('${domain}/api/v1')">Copy</button>
+                <button class="copy-btn" data-copy-text="${domain}/api/v1">Copy</button>
             </div>
             <small style="color: #64748b; margin-left: 12px;">For Claude Pro/Team users: Paste in Settings → Integrations → External APIs</small>
         </div>
 
         <div>
             <strong>MCP HTTP Stream (Recommended):</strong>
+            <span class="auth-required">🔐 Auth Required</span>
             <div class="platform-url">
                 <span>${domain}/mcp</span>
-                <button class="copy-btn" onclick="copyText('${domain}/mcp')">Copy</button>
+                <button class="copy-btn" data-copy-text="${domain}/mcp">Copy</button>
             </div>
             <small style="color: #64748b; margin-left: 12px;">✅ MCP-compliant HTTP Stream transport (POST for JSON-RPC, GET for SSE)</small>
         </div>
 
         <div>
             <strong>MCP Legacy SSE Transport:</strong>
+            <span class="auth-required">🔐 Auth Required</span>
             <div class="platform-url">
                 <span>${domain}/sse (SSE) + ${domain}/messages (JSON-RPC)</span>
-                <button class="copy-btn" onclick="copyText('${domain}/sse')">Copy SSE</button>
-                <button class="copy-btn" onclick="copyText('${domain}/messages')">Copy Messages</button>
+                <button class="copy-btn" data-copy-text="${domain}/sse">Copy SSE</button>
+                <button class="copy-btn" data-copy-text="${domain}/messages">Copy Messages</button>
             </div>
             <small style="color: #64748b; margin-left: 12px;">✅ Backward compatibility for older MCP clients</small>
         </div>
 
         <div>
             <strong>Full URL with Authentication (Ready to Use):</strong>
+            <span class="auth-required">🔐 Auth Required</span>
             <div class="platform-url" id="full-auth-url">
                 <span id="full-url-text">${domain}/api/v1?auth=github</span>
-                <button class="copy-btn" onclick="copyText('${domain}/api/v1?auth=github')">Copy</button>
+                <button class="copy-btn" data-copy-text="${domain}/api/v1?auth=github">Copy</button>
             </div>
             <small style="color: #64748b; margin-left: 12px;">Complete URL with GitHub OAuth - paste directly into any platform</small>
         </div>
@@ -789,36 +869,42 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
     <div class="grid">
         <div class="card">
             <h3>🤖 ChatGPT Connector Setup</h3>
+            <span class="public-endpoint">🌍 Public</span>
             <p>Complete setup guide for ChatGPT.com main interface connectors</p>
             <a href="/chatgpt-connector" target="_blank">View ChatGPT Setup</a>
         </div>
 
         <div class="card">
             <h3>🧠 Claude.ai Integration Setup</h3>
+            <span class="public-endpoint">🌍 Public</span>
             <p>Complete setup guide for Claude.ai web interface external APIs</p>
             <a href="/claude-connector" target="_blank">View Claude Setup</a>
         </div>
 
         <div class="card">
             <h3>📚 API Documentation</h3>
+            <span class="public-endpoint">🌍 Public</span>
             <p>Interactive Swagger UI documentation for all API endpoints</p>
             <a href="/docs" target="_blank">Open API Docs</a>
         </div>
 
         <div class="card">
             <h3>🔧 Service Configuration</h3>
+            <span class="auth-required">🔐 Auth Required</span>
             <p>Runtime configuration and capabilities for integration</p>
             <a href="/config?format=json" target="_blank">View Config</a>
         </div>
 
         <div class="card">
             <h3>💚 Health Status</h3>
+            <span class="public-endpoint">🌍 Public</span>
             <p>Real-time service health and system metrics</p>
             <a href="/health" target="_blank">Check Health</a>
         </div>
 
         <div class="card">
             <h3>⚡ Capabilities</h3>
+            <span class="public-endpoint">🌍 Public</span>
             <p>Available MCP capabilities and supported operations</p>
             <a href="/capabilities" target="_blank">View Capabilities</a>
         </div>
@@ -834,7 +920,7 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
                 <strong>Step 1:</strong> Copy this URL and paste it in ChatGPT.com → Settings → Connectors → Add New Connector
             </div>
             <div class="code-block">
-                <button class="copy-btn" onclick="copyToClipboard('chatgpt-connector')">Copy</button>
+                <button class="copy-btn" data-copy-element="chatgpt-connector">Copy</button>
                 <pre id="chatgpt-connector">${domain}/openapi.json</pre>
             </div>
 
@@ -843,13 +929,13 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
                 <strong>Step 1:</strong> Copy this base URL and paste it in Claude.ai → Settings → External APIs
             </div>
             <div class="code-block">
-                <button class="copy-btn" onclick="copyToClipboard('claude-connector')">Copy</button>
+                <button class="copy-btn" data-copy-element="claude-connector">Copy</button>
                 <pre id="claude-connector">${domain}/api/v1 (REST)\n${domain}/api/v1/terminal (SSE)</pre>
             </div>
 
             <h4>For Warp Terminal (MCP Client):</h4>
             <div class="code-block">
-                <button class="copy-btn" onclick="copyToClipboard('warp-config')">Copy</button>
+                <button class="copy-btn" data-copy-element="warp-config">Copy</button>
                 <pre id="warp-config">{
   "servers": {
     "disco": {
@@ -866,7 +952,7 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
 
             <h4>For VSCode/IDE MCP Extension:</h4>
             <div class="code-block">
-                <button class="copy-btn" onclick="copyToClipboard('vscode-config')">Copy</button>
+                <button class="copy-btn" data-copy-element="vscode-config">Copy</button>
                 <pre id="vscode-config">{
   "mcpServers": {
     "disco": {
@@ -885,7 +971,7 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
 
             <h4>Environment Variables (for shell/script usage):</h4>
             <div class="code-block">
-                <button class="copy-btn" onclick="copyToClipboard('env-vars')">Copy</button>
+                <button class="copy-btn" data-copy-element="env-vars">Copy</button>
                 <pre id="env-vars"># Add to your shell profile or .env file
 export DISCO_MCP_URL="${domain}"
 export DISCO_MCP_TOKEN="YOUR_JWT_TOKEN_HERE"
@@ -911,7 +997,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
 
             <h4>Sample MCP Configuration (Login Required for Real Tokens):</h4>
             <div class="code-block">
-                <button class="copy-btn" onclick="copyToClipboard('sample-config')">Copy</button>
+                <button class="copy-btn" data-copy-element="sample-config">Copy</button>
                 <pre id="sample-config">{
   "servers": {
     "disco": {
@@ -1008,12 +1094,13 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             const fullUrlElement = document.getElementById('full-url-text');
             if (fullUrlElement && currentToken) {
                 const baseUrl = '${domain}/api/v1';
-                fullUrlElement.textContent = baseUrl + '?token=' + currentToken;
+                const urlWithToken = baseUrl + '?token=' + currentToken;
+                fullUrlElement.textContent = urlWithToken;
                 
-                // Update the copy button functionality
+                // Update the copy button data attribute
                 const fullUrlCopyBtn = fullUrlElement.parentElement.querySelector('.copy-btn');
                 if (fullUrlCopyBtn) {
-                    fullUrlCopyBtn.setAttribute('onclick', 'copyText(\\'' + baseUrl + '?token=' + currentToken + '\\')');
+                    fullUrlCopyBtn.setAttribute('data-copy-text', urlWithToken);
                 }
             }
         }
@@ -1029,24 +1116,94 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);
             const text = element.textContent;
+            const btn = element.parentElement.querySelector('.copy-btn');
+            
             navigator.clipboard.writeText(text).then(() => {
-                const btn = element.parentElement.querySelector('.copy-btn');
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => { btn.textContent = originalText; }, 2000);
+                showCopyFeedback(btn);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showCopyFeedback(btn);
             });
+        }
+
+        function copyTextWithFeedback(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyFeedback(button);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showCopyFeedback(button);
+            });
+        }
+
+        function showCopyFeedback(button) {
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            button.classList.add('copied');
+            setTimeout(() => { 
+                button.textContent = originalText; 
+                button.classList.remove('copied');
+            }, 2000);
         }
 
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
                 // Find the button that was clicked and update it
-                event.target.textContent = 'Copied!';
-                setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
+                if (event && event.target) {
+                    showCopyFeedback(event.target);
+                }
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (event && event.target) {
+                    showCopyFeedback(event.target);
+                }
             });
         }
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', checkAuth);
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Setup copy button event listeners
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const copyText = this.getAttribute('data-copy-text');
+                    const copyElement = this.getAttribute('data-copy-element');
+                    
+                    if (copyText) {
+                        copyTextWithFeedback(this, copyText);
+                    } else if (copyElement) {
+                        copyToClipboard(copyElement);
+                    }
+                });
+            });
+
+            // Setup logout button
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
+        }
     </script>
 </body>
 </html>`;
@@ -1389,15 +1546,8 @@ app.get('/openapi.json', (_req, res) => {
   res.json(specs);
 });
 
-// Redirect `/docs` without a trailing slash to `/docs/`.
-// Without this redirect, navigating to `/docs` directly may bypass the
-// Swagger middleware and result in a 404 response. By issuing a 301
-// redirect to `/docs/`, we ensure the Swagger UI loads consistently.
-app.get('/docs', (req, res) => {
-  res.redirect(301, '/docs/');
-});
-
-// Swagger UI Documentation - TypeScript workaround for type compatibility
+// Swagger UI Documentation - serve directly on /docs without redirect conflicts
+// The swaggerUi.serve middleware handles both /docs and /docs/ automatically
 (app as any).use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Disco MCP Server API Documentation',
