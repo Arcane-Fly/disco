@@ -315,8 +315,13 @@ export const securityInputValidationMiddleware = (req: Request, res: Response, n
   
   // Skip validation for OAuth/discovery endpoints that must accept normal browser headers
   const oauthExcludedPaths = [
-    '/v1/auth/github',                           // Note: path without /api prefix (middleware applied to /api)
-    '/v1/auth/github/callback',
+    '/v1/auth',                                  // Auth status endpoint - needs normal browser headers
+    '/v1/auth/github',                           // OAuth initiation  
+    '/v1/auth/github/callback',                  // OAuth callback
+    '/v1/auth/session',                          // Session validation - needs normal browser headers
+    '/v1/auth/logout',                           // Logout - needs normal browser headers
+    '/auth/session',                             // Next.js session endpoint
+    '/auth/logout',                              // Next.js logout endpoint
     '/.well-known/oauth-authorization-server',  // This is a root path
     '/.well-known/oauth-protected-resource',    // This is a root path  
     '/oauth/token'                              // This is a root path

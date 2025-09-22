@@ -2,6 +2,7 @@
   "name": "mcp-server",
   "version": "1.0.0",
   "description": "MCP (Model Control Plane) server that integrates with ChatGPT through Railway deployment with WebContainers",
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
     "prebuild": "node scripts/validate-env.js",

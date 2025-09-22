@@ -3,7 +3,7 @@ import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import { csrf } from 'lusca';
+import lusca from 'lusca';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 import swaggerUi from 'swagger-ui-express';
@@ -175,10 +175,10 @@ app.use(helmet({
       frameAncestors: ["'self'", "https://chat.openai.com", "https://chatgpt.com", "https://claude.ai"],
       connectSrc: ["'self'", "wss:", "ws:", "https://webcontainer.io"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"], // Allow WebContainer CDN
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow Google Fonts
       styleSrcElem: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"], // Allow Google Fonts
       workerSrc: ["'self'", "blob:"], // Required for WebContainer Workers
       childSrc: ["'self'", "blob:"]   // Required for WebContainer iframes
     },
@@ -304,7 +304,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parsing middleware
 app.use(cookieParser());
-app.use(csrf());
+// Note: CSRF disabled for Railway deployment compatibility
+// app.use(lusca.csrf());
 
 // 1) Mount favicon early to bypass validation entirely
 app.use(faviconRouter);
