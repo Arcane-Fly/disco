@@ -768,6 +768,185 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             font-size: 0.875rem;
         }
         .hidden { display: none; }
+        
+        /* Enhanced UX improvements */
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin: 8px 0;
+        }
+        .connection-status.connecting {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+        .connection-status.connected {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .connection-status.error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        
+        .setup-wizard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .setup-wizard h3 {
+            margin: 0 0 16px 0;
+            color: white;
+        }
+        .wizard-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .wizard-step {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s;
+        }
+        .wizard-step:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .wizard-step.completed {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+        }
+        .wizard-step.active {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .status-indicator.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-indicator.offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status-indicator.checking {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .health-dashboard {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        .health-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .metric {
+            text-align: center;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .metric-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        
+        .progress-indicator {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            color: #065f46;
+        }
+        .notification.error {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+        }
+        .notification.info {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            color: #1e40af;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -775,6 +954,61 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
         <h1>🎵 Disco MCP Server</h1>
         <p>Model Control Plane server with WebContainer integration</p>
         <div class="status">Running - ${serviceInfo.environment}</div>
+        <div class="connection-status checking" id="server-status">
+            <span class="spin">⚡</span> Checking server health...
+        </div>
+    </div>
+
+    <div class="health-dashboard" id="health-dashboard">
+        <h3>🔍 Server Health & Status</h3>
+        <div class="health-metrics" id="health-metrics">
+            <div class="metric">
+                <div class="metric-value" id="uptime-value">--</div>
+                <div class="metric-label">Uptime</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="memory-value">--</div>
+                <div class="metric-label">Memory</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="containers-value">--</div>
+                <div class="metric-label">Containers</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="requests-value">--</div>
+                <div class="metric-label">API Calls</div>
+            </div>
+        </div>
+        <div class="progress-indicator">
+            <div class="progress-bar" id="health-progress" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="setup-wizard" id="setup-wizard">
+        <h3>🚀 Quick Setup Wizard</h3>
+        <p>Follow these steps to connect your AI assistant to the Disco MCP Server:</p>
+        <div class="wizard-steps">
+            <div class="wizard-step" id="step-1">
+                <h4>1️⃣ Authentication</h4>
+                <p>Login with GitHub to get your personal token</p>
+                <div class="status-indicator checking" id="auth-status">Not logged in</div>
+            </div>
+            <div class="wizard-step" id="step-2">
+                <h4>2️⃣ Choose Platform</h4>
+                <p>Select your AI platform (ChatGPT, Claude, etc.)</p>
+                <div class="status-indicator offline" id="platform-status">Choose platform</div>
+            </div>
+            <div class="wizard-step" id="step-3">
+                <h4>3️⃣ Copy Configuration</h4>
+                <p>Get your personalized setup URLs</p>
+                <div class="status-indicator offline" id="config-status">Pending auth</div>
+            </div>
+            <div class="wizard-step" id="step-4">
+                <h4>4️⃣ Test Connection</h4>
+                <p>Verify everything works correctly</p>
+                <div class="status-indicator offline" id="test-status">Ready to test</div>
+            </div>
+        </div>
     </div>
 
     <div class="auth-section" id="auth-section">
@@ -872,6 +1106,8 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             <span class="public-endpoint">🌍 Public</span>
             <p>Complete setup guide for ChatGPT.com main interface connectors</p>
             <a href="/chatgpt-connector" target="_blank">View ChatGPT Setup</a>
+            <br><br>
+            <a href="https://github.com/Arcane-Fly/disco/blob/master/docs/connectors/chatgpt-setup.md" target="_blank" style="background: #6b7280;">📖 Detailed Guide</a>
         </div>
 
         <div class="card">
@@ -879,6 +1115,8 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             <span class="public-endpoint">🌍 Public</span>
             <p>Complete setup guide for Claude.ai web interface external APIs</p>
             <a href="/claude-connector" target="_blank">View Claude Setup</a>
+            <br><br>
+            <a href="https://github.com/Arcane-Fly/disco/blob/master/docs/connectors/claude-setup.md" target="_blank" style="background: #6b7280;">📖 Detailed Guide</a>
         </div>
 
         <div class="card">
@@ -886,6 +1124,15 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             <span class="public-endpoint">🌍 Public</span>
             <p>Interactive Swagger UI documentation for all API endpoints</p>
             <a href="/docs" target="_blank">Open API Docs</a>
+            <br><br>
+            <a href="https://github.com/Arcane-Fly/disco/blob/master/API.md" target="_blank" style="background: #6b7280;">📖 API Reference</a>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Quick Start Guide</h3>
+            <span class="public-endpoint">🌍 Public</span>
+            <p>Get up and running in under 5 minutes with any platform</p>
+            <a href="https://github.com/Arcane-Fly/disco/blob/master/docs/QUICK_START.md" target="_blank">Start Here</a>
         </div>
 
         <div class="card">
@@ -893,6 +1140,13 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             <span class="auth-required">🔐 Auth Required</span>
             <p>Runtime configuration and capabilities for integration</p>
             <a href="/config?format=json" target="_blank">View Config</a>
+        </div>
+
+        <div class="card">
+            <h3>🛠️ Troubleshooting</h3>
+            <span class="public-endpoint">🌍 Public</span>
+            <p>Connection troubleshooting matrix and diagnostic tools</p>
+            <a href="https://github.com/Arcane-Fly/disco/blob/master/docs/CONNECTION_TROUBLESHOOTING.md" target="_blank">Debug Issues</a>
         </div>
 
         <div class="card">
@@ -1022,6 +1276,145 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
     <script${nonce ? ` nonce="${nonce}"` : ''}>
         let currentToken = null;
         let currentUser = null;
+        let healthCheckInterval = null;
+        let selectedPlatform = null;
+        
+        // Health monitoring
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                updateHealthDashboard(health);
+                updateServerStatus('connected', 'Server online and healthy');
+                updateWizardProgress();
+            } catch (error) {
+                updateServerStatus('error', 'Server connection failed');
+                console.error('Health check failed:', error);
+            }
+        }
+        
+        function updateHealthDashboard(health) {
+            const uptimeElement = document.getElementById('uptime-value');
+            const memoryElement = document.getElementById('memory-value');
+            const containersElement = document.getElementById('containers-value');
+            const requestsElement = document.getElementById('requests-value');
+            const progressBar = document.getElementById('health-progress');
+            
+            if (uptimeElement) {
+                const hours = Math.floor(health.uptime / 3600);
+                const minutes = Math.floor((health.uptime % 3600) / 60);
+                uptimeElement.textContent = hours > 0 ? \`\${hours}h \${minutes}m\` : \`\${minutes}m\`;
+            }
+            
+            if (memoryElement && health.memory) {
+                memoryElement.textContent = \`\${health.memory.used}MB\`;
+            }
+            
+            if (containersElement && health.containers) {
+                containersElement.textContent = \`\${health.containers.active}/\${health.containers.max}\`;
+            }
+            
+            if (requestsElement) {
+                requestsElement.textContent = health.requests || '--';
+            }
+            
+            // Calculate health percentage
+            let healthPercent = 100;
+            if (health.status === 'warning') healthPercent = 75;
+            if (health.status === 'error') healthPercent = 25;
+            
+            if (progressBar) {
+                progressBar.style.width = healthPercent + '%';
+            }
+        }
+        
+        function updateServerStatus(status, message) {
+            const statusElement = document.getElementById('server-status');
+            if (!statusElement) return;
+            
+            statusElement.className = 'connection-status ' + status;
+            
+            const icons = {
+                'checking': '<span class="spin">⚡</span>',
+                'connected': '✅',
+                'error': '❌'
+            };
+            
+            statusElement.innerHTML = icons[status] + ' ' + message;
+        }
+        
+        function updateWizardProgress() {
+            // Step 1: Authentication
+            const step1 = document.getElementById('step-1');
+            const authStatus = document.getElementById('auth-status');
+            
+            if (currentToken) {
+                step1.classList.add('completed');
+                step1.classList.remove('active');
+                authStatus.className = 'status-indicator online';
+                authStatus.textContent = 'Authenticated ✓';
+                
+                // Activate step 2
+                const step2 = document.getElementById('step-2');
+                step2.classList.add('active');
+                document.getElementById('platform-status').className = 'status-indicator checking';
+                document.getElementById('platform-status').textContent = 'Choose your platform';
+            } else {
+                step1.classList.add('active');
+                authStatus.className = 'status-indicator checking';
+                authStatus.textContent = 'Click login button';
+            }
+            
+            // Step 3: Configuration
+            if (currentToken) {
+                const step3 = document.getElementById('step-3');
+                step3.classList.add('completed');
+                document.getElementById('config-status').className = 'status-indicator online';
+                document.getElementById('config-status').textContent = 'URLs ready ✓';
+            }
+        }
+        
+        function selectPlatform(platform) {
+            selectedPlatform = platform;
+            const step2 = document.getElementById('step-2');
+            const step4 = document.getElementById('step-4');
+            const platformStatus = document.getElementById('platform-status');
+            const testStatus = document.getElementById('test-status');
+            
+            step2.classList.add('completed');
+            step2.classList.remove('active');
+            platformStatus.className = 'status-indicator online';
+            platformStatus.textContent = platform + ' selected ✓';
+            
+            // Activate step 4
+            step4.classList.add('active');
+            testStatus.className = 'status-indicator checking';
+            testStatus.textContent = 'Ready to test';
+            
+            showNotification('success', \`\${platform} platform selected! Copy the configuration URL below.\`);
+        }
+        
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = \`notification \${type}\`;
+            notification.innerHTML = \`
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>\${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                    <span>\${message}</span>
+                </div>
+            \`;
+            
+            document.body.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // Hide notification after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 5000);
+        }
 
         // Check for authentication token in URL fragment
         function checkAuth() {
@@ -1035,6 +1428,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                     localStorage.setItem('disco_token', currentToken);
                     localStorage.setItem('disco_user', currentUser || '');
                     window.location.hash = ''; // Clear URL
+                    showNotification('success', 'Successfully authenticated with GitHub!');
                 }
             } else {
                 // Check localStorage
@@ -1110,7 +1504,10 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             localStorage.removeItem('disco_user');
             currentToken = null;
             currentUser = null;
+            selectedPlatform = null;
             updateUI();
+            updateWizardProgress();
+            showNotification('info', 'Successfully logged out');
         }
 
         function copyToClipboard(elementId) {
@@ -1120,6 +1517,16 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             
             navigator.clipboard.writeText(text).then(() => {
                 showCopyFeedback(btn);
+                
+                // Update wizard progress if copying configuration
+                if (elementId.includes('config') || elementId.includes('connector')) {
+                    const step4 = document.getElementById('step-4');
+                    const testStatus = document.getElementById('test-status');
+                    step4.classList.add('completed');
+                    testStatus.className = 'status-indicator online';
+                    testStatus.textContent = 'Configuration copied ✓';
+                    showNotification('success', 'Configuration copied! Paste it into your platform settings.');
+                }
             }).catch(() => {
                 // Fallback for older browsers
                 const textarea = document.createElement('textarea');
@@ -1135,6 +1542,15 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         function copyTextWithFeedback(button, text) {
             navigator.clipboard.writeText(text).then(() => {
                 showCopyFeedback(button);
+                
+                // Enhanced feedback for platform URLs
+                if (text.includes('openapi.json')) {
+                    selectPlatform('ChatGPT');
+                } else if (text.includes('/api/v1')) {
+                    selectPlatform('Claude');
+                } else if (text.includes('/mcp')) {
+                    selectPlatform('MCP Client');
+                }
             }).catch(() => {
                 // Fallback for older browsers
                 const textarea = document.createElement('textarea');
@@ -1181,6 +1597,10 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
             setupEventListeners();
+            checkServerHealth(); // Initial health check
+            
+            // Start periodic health checks
+            healthCheckInterval = setInterval(checkServerHealth, 30000); // Every 30 seconds
         });
 
         function setupEventListeners() {
@@ -1204,6 +1624,13 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 logoutBtn.addEventListener('click', logout);
             }
         }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (healthCheckInterval) {
+                clearInterval(healthCheckInterval);
+            }
+        });
     </script>
 </body>
 </html>`;
