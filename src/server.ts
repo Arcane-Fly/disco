@@ -33,7 +33,7 @@ import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
-import { enhancedCSPMiddleware, nextjsCSPMiddleware } from './middleware/csp.js';
+import { enhancedCSPMiddleware, nextjsCSPMiddleware, CSPRequest } from './middleware/csp.js';
 
 // Import route handlers
 import { metricsHandler } from './routes/metrics.js';
@@ -431,10 +431,20 @@ app.get('/mcp-manifest.json', async (_req, res) => {
  *             schema:
  *               type: string
  */
-app.get('/webcontainer-loader', async (_req, res) => {
+app.get('/webcontainer-loader', async (req: CSPRequest, res) => {
   try {
     const loaderPath = path.join(process.cwd(), 'public', 'webcontainer-loader.html');
-    const loaderContent = await fs.readFile(loaderPath, 'utf-8');
+    let loaderContent = await fs.readFile(loaderPath, 'utf-8');
+    
+    // Get nonce from CSP middleware
+    const nonce = req.nonce || '';
+    
+    // Inject nonce into style and script tags
+    if (nonce) {
+      loaderContent = loaderContent
+        .replace('<style>', `<style nonce="${nonce}">`)
+        .replace('<script type="module">', `<script type="module" nonce="${nonce}">`);
+    }
     
     // Set headers required for WebContainer SharedArrayBuffer support
     res.setHeader('Content-Type', 'text/html');
@@ -516,7 +526,7 @@ app.get('/webcontainer-loader', async (_req, res) => {
  *               type: string
  *               description: HTML web interface
  */
-app.get('/legacy-root', (req, res) => {
+app.get('/legacy-root', (req: CSPRequest, res) => {
   const serviceInfo = {
     service: 'disco',
     version: '1.0.0',
@@ -541,6 +551,9 @@ app.get('/legacy-root', (req, res) => {
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
     : `http://localhost:${port}`;
 
+  // Get nonce from CSP middleware
+  const nonce = req.nonce || '';
+
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -548,7 +561,7 @@ app.get('/legacy-root', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Disco MCP Server</title>
-    <style>
+    <style${nonce ? ` nonce="${nonce}"` : ''}>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 1000px; 
@@ -920,7 +933,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         <p>Version ${serviceInfo.version} • ${serviceInfo.timestamp}</p>
     </div>
 
-    <script>
+    <script${nonce ? ` nonce="${nonce}"` : ''}>
         let currentToken = null;
         let currentUser = null;
 
