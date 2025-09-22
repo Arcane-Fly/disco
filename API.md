@@ -524,6 +524,99 @@ class MCPClient {
     return response.json();
   }
 }
+
+// Practical usage example
+const client = new MCPClient('https://disco-mcp.up.railway.app', 'your-api-key');
+
+async function developmentWorkflow() {
+  // Authenticate
+  await client.authenticate();
+  
+  // Create a development container
+  const container = await client.createContainer();
+  const containerId = container.data.containerId;
+  
+  // Clone a repository
+  await client.executeCommand(containerId, 'git clone https://github.com/user/project.git');
+  
+  // Install dependencies
+  await client.executeCommand(containerId, 'cd project && npm install');
+  
+  // Run tests
+  const testResult = await client.executeCommand(containerId, 'cd project && npm test');
+  console.log('Test results:', testResult.data.output);
+  
+  // Start development server
+  await client.executeCommand(containerId, 'cd project && npm run dev');
+}
+```
+
+### React/Frontend Integration
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function MCPTerminal() {
+  const [container, setContainer] = useState(null);
+  const [output, setOutput] = useState([]);
+  const [command, setCommand] = useState('');
+
+  useEffect(() => {
+    // Initialize container on component mount
+    initializeContainer();
+  }, []);
+
+  const initializeContainer = async () => {
+    const response = await fetch('/api/v1/containers', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('mcp_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    const data = await response.json();
+    setContainer(data.data.containerId);
+  };
+
+  const executeCommand = async () => {
+    if (!container || !command) return;
+
+    const response = await fetch(`/api/v1/terminal/${container}/execute`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('mcp_token')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ command })
+    });
+
+    const result = await response.json();
+    setOutput(prev => [...prev, { command, output: result.data.output }]);
+    setCommand('');
+  };
+
+  return (
+    <div className="terminal">
+      <div className="output">
+        {output.map((entry, i) => (
+          <div key={i}>
+            <div className="command">$ {entry.command}</div>
+            <div className="result">{entry.output}</div>
+          </div>
+        ))}
+      </div>
+      <div className="input">
+        <input
+          value={command}
+          onChange={(e) => setCommand(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && executeCommand()}
+          placeholder="Enter command..."
+        />
+        <button onClick={executeCommand}>Execute</button>
+      </div>
+    </div>
+  );
+}
 ```
 
 ### Python
@@ -563,3 +656,68 @@ class MCPClient:
 ```
 
 This API documentation provides a complete reference for integrating with the MCP Server WebContainer platform.
+
+## Platform-Specific Configuration Examples
+
+### Claude Desktop MCP Client
+
+```json
+{
+  "servers": {
+    "disco": {
+      "url": "https://disco-mcp.up.railway.app/mcp",
+      "transport": "http-stream",
+      "auth": {
+        "type": "bearer",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      },
+      "capabilities": [
+        "tools",
+        "resources", 
+        "prompts",
+        "sampling",
+        "completions"
+      ]
+    }
+  }
+}
+```
+
+### ChatGPT.com Connector Configuration
+
+```json
+{
+  "connector_url": "https://disco-mcp.up.railway.app/openapi.json",
+  "platform": "ChatGPT.com Main Interface",
+  "authentication": "automatic_oauth"
+}
+```
+
+### Claude.ai External API Setup
+
+```json
+{
+  "name": "Disco MCP Server",
+  "base_url": "https://disco-mcp.up.railway.app/mcp", 
+  "authentication": {
+    "type": "bearer",
+    "token": "your-jwt-token-here"
+  },
+  "headers": {
+    "Content-Type": "application/json",
+    "Mcp-Session-Id": "optional-session-id"
+  }
+}
+```
+
+### Direct API Integration
+
+```bash
+# Environment setup
+export MCP_BASE_URL="https://disco-mcp.up.railway.app"
+export MCP_TOKEN="your-jwt-token"
+
+# Quick API test
+curl -H "Authorization: Bearer $MCP_TOKEN" \
+  "$MCP_BASE_URL/api/v1/containers"
+```
