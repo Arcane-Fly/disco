@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import DemoBanner from '../components/DemoBanner';
@@ -10,11 +12,16 @@ import {
   Cpu,
   HardDrive,
   TrendingUp,
-  Clock
+  Clock,
+  Zap,
+  Shield,
+  BarChart3
 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { connected, metrics } = useWebSocket();
+  const { addNotification } = useNotifications();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -25,112 +32,233 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (connected && user) {
+      addNotification({
+        type: 'success',
+        title: 'WebSocket Connected',
+        message: 'Real-time updates are now active'
+      });
+    }
+  }, [connected, addNotification, user]);
+
+  const handleQuickAction = (action: string) => {
+    if (user) {
+      addNotification({
+        type: 'info',
+        title: 'Action Started',
+        message: `${action} has been initiated`
+      });
+    } else {
+      addNotification({
+        type: 'warning',
+        title: 'Demo Mode',
+        message: `${action} requires authentication. Please sign in to use this feature.`
+      });
+    }
+  };
+
   return (
     <ProtectedRoute demoMode={true}>
       <Layout>
-        <div className="space-y-6 p-6">
-          {/* Demo Banner for unauthenticated users */}
-          {!user && (
-            <DemoBanner 
-              title="Dashboard"
-              description="This is a demo version of the dashboard with sample data."
-            />
-          )}
+        <div className="dashboard">
+          <div className="container">
+            {/* Demo Banner for unauthenticated users */}
+            {!user && (
+              <DemoBanner 
+                title="Dashboard"
+                description="This is a demo version of the dashboard with sample data."
+              />
+            )}
 
-          {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">
+            {/* Dashboard Header */}
+            <div className="dashboard-header">
+              <div className="dashboard-title-section">
+                <h1 className="dashboard-title">
                   Welcome back, {user?.username || 'Demo User'}! 👋
                 </h1>
-                <p className="text-indigo-100 text-lg">
+                <p className="dashboard-subtitle">
                   Here's what's happening with your MCP server
                 </p>
               </div>
-              <div className="mt-4 md:mt-0 flex items-center gap-4">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-100">
-                  <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-                  <span className="text-sm font-medium">
-                    {user ? 'Connected' : 'Demo Mode'}
-                  </span>
+              <div className="dashboard-status">
+                <div className={`connection-status ${connected && user ? 'connected' : 'disconnected'}`}>
+                  <div className="pulse-dot"></div>
+                  <span>{connected && user ? 'Connected' : user ? 'Disconnected' : 'Demo Mode'}</span>
                 </div>
-                <div className="flex items-center gap-2 text-indigo-100">
+                <div className="last-update">
                   <Clock className="w-4 h-4" />
-                  <span className="text-sm font-mono">
-                    {currentTime.toLocaleTimeString()}
-                  </span>
+                  <span>{currentTime.toLocaleTimeString()}</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Metrics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Active Containers</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">7</p>
+            {/* Metrics Grid */}
+            <div className="dashboard-grid">
+              <div className={`metric-card ${connected && user ? 'live' : ''}`}>
+                <div className="metric-header">
+                  <h3 className="metric-title">Active Containers</h3>
+                  <Server className="metric-icon" />
                 </div>
-                <Server className="w-6 h-6 text-blue-500" />
+                <div className="metric-value">{metrics?.activeContainers || 7}</div>
+                <p className="metric-description">
+                  WebContainers currently running
+                </p>
+                {connected && user && <div className="metric-live-indicator"><div className="pulse-dot"></div></div>}
               </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">CPU Usage</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">45%</p>
-                </div>
-                <Cpu className="w-6 h-6 text-green-500" />
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Memory Usage</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">62%</p>
-                </div>
-                <HardDrive className="w-6 h-6 text-orange-500" />
-              </div>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">API Requests</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">1.2K</p>
-                </div>
-                <TrendingUp className="w-6 h-6 text-purple-500" />
-              </div>
-            </div>
-          </div>
 
-          {/* Sample Dashboard Content */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Platform Overview
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {user 
-                ? "Welcome to your personalized dashboard with real-time data and full functionality."
-                : "This is a demo dashboard showing sample data. Sign in with GitHub to access your real data and full platform features."
-              }
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <Activity className="w-5 h-5 text-blue-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Recent Activity</span>
+              <div className={`metric-card ${connected && user ? 'live' : ''}`}>
+                <div className="metric-header">
+                  <h3 className="metric-title">CPU Usage</h3>
+                  <Cpu className="metric-icon" />
+                </div>
+                <div className="metric-value">{metrics?.cpuUsage || 45}%</div>
+                <p className="metric-description">
+                  Average CPU utilization
+                </p>
+                {connected && user && <div className="metric-live-indicator"><div className="pulse-dot"></div></div>}
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <Users className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">User Management</span>
+
+              <div className={`metric-card ${connected && user ? 'live' : ''}`}>
+                <div className="metric-header">
+                  <h3 className="metric-title">Memory Usage</h3>
+                  <HardDrive className="metric-icon" />
+                </div>
+                <div className="metric-value">{metrics?.memoryUsage || 62}%</div>
+                <p className="metric-description">
+                  System memory consumption
+                </p>
+                {connected && user && <div className="metric-live-indicator"><div className="pulse-dot"></div></div>}
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <Server className="w-5 h-5 text-purple-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Container Status</span>
+
+              <div className={`metric-card ${connected && user ? 'live' : ''}`}>
+                <div className="metric-header">
+                  <h3 className="metric-title">API Requests</h3>
+                  <TrendingUp className="metric-icon" />
+                </div>
+                <div className="metric-value">{metrics?.apiRequests || '1.2K'}</div>
+                <p className="metric-description">
+                  Requests in the last hour
+                </p>
+                {connected && user && <div className="metric-live-indicator"><div className="pulse-dot"></div></div>}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="metric-card">
+                <div className="metric-header">
+                  <h3 className="metric-title">Quick Actions</h3>
+                  <Zap className="metric-icon" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => handleQuickAction('Container Creation')}
+                    style={{ width: '100%', justifyContent: 'flex-start' }}
+                  >
+                    <Server className="w-4 h-4" />
+                    Create Container
+                  </button>
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => handleQuickAction('Log Viewer')}
+                    style={{ width: '100%', justifyContent: 'flex-start' }}
+                  >
+                    <Activity className="w-4 h-4" />
+                    View Logs
+                  </button>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="metric-card">
+                <div className="metric-header">
+                  <h3 className="metric-title">Recent Activity</h3>
+                  <Activity className="metric-icon" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
+                  {[
+                    { action: 'Container deployed', time: '2m ago', type: 'success' },
+                    { action: 'User registered', time: '5m ago', type: 'info' },
+                    { action: 'System updated', time: '1h ago', type: 'warning' }
+                  ].map((activity, index) => (
+                    <div key={index} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 'var(--space-xs)',
+                      padding: 'var(--space-xs)',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem'
+                    }}>
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: activity.type === 'success' ? 'var(--success)' : 
+                                   activity.type === 'info' ? 'var(--primary)' : '#f59e0b'
+                      }}></div>
+                      <span style={{ flex: 1, color: 'var(--white)' }}>{activity.action}</span>
+                      <span style={{ color: 'var(--gray)', fontSize: '0.8rem' }}>{activity.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Platform Overview */}
+              <div className="metric-card" style={{ gridColumn: '1 / -1' }}>
+                <div className="metric-header">
+                  <h3 className="metric-title">Platform Overview</h3>
+                  <BarChart3 className="metric-icon" />
+                </div>
+                <p style={{ 
+                  color: 'var(--gray-light)', 
+                  marginBottom: 'var(--space-md)',
+                  lineHeight: 1.6 
+                }}>
+                  {user 
+                    ? "Welcome to your personalized dashboard with real-time data and full functionality."
+                    : "This is a demo dashboard showing sample data. Sign in with GitHub to access your real data and full platform features."
+                  }
+                </p>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                  gap: 'var(--space-md)' 
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 'var(--space-sm)',
+                    padding: 'var(--space-sm)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '8px'
+                  }}>
+                    <Activity className="w-5 h-5" style={{ color: 'var(--primary-light)' }} />
+                    <span style={{ color: 'var(--white)', fontSize: '0.875rem' }}>Recent Activity</span>
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 'var(--space-sm)',
+                    padding: 'var(--space-sm)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '8px'
+                  }}>
+                    <Users className="w-5 h-5" style={{ color: 'var(--success)' }} />
+                    <span style={{ color: 'var(--white)', fontSize: '0.875rem' }}>User Management</span>
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 'var(--space-sm)',
+                    padding: 'var(--space-sm)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '8px'
+                  }}>
+                    <Shield className="w-5 h-5" style={{ color: 'var(--secondary)' }} />
+                    <span style={{ color: 'var(--white)', fontSize: '0.875rem' }}>Security & Compliance</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
