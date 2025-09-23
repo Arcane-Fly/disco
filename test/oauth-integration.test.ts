@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import escape from 'escape-html';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -107,23 +108,23 @@ const createFullTestApp = () => {
 <body>
     <h1>Authorize ChatGPT Access</h1>
     <p>ChatGPT is requesting access to your Disco MCP Server</p>
-    <p>Requested scopes: ${requestedScope}</p>
+    <p>Requested scopes: ${escape(requestedScope)}</p>
     <form method="post" action="/oauth/authorize">
-        <input type="hidden" name="client_id" value="${client_id}">
-        <input type="hidden" name="redirect_uri" value="${redirect_uri}">
-        <input type="hidden" name="response_type" value="${response_type}">
-        <input type="hidden" name="scope" value="${requestedScope}">
-        <input type="hidden" name="state" value="${state || ''}">
-        <input type="hidden" name="code_challenge" value="${code_challenge}">
-        <input type="hidden" name="code_challenge_method" value="${code_challenge_method}">
-        <input type="hidden" name="user_id" value="${userId}">
+        <input type="hidden" name="client_id" value="${escape(client_id)}">
+        <input type="hidden" name="redirect_uri" value="${escape(redirect_uri)}">
+        <input type="hidden" name="response_type" value="${escape(response_type)}">
+        <input type="hidden" name="scope" value="${escape(requestedScope)}">
+        <input type="hidden" name="state" value="${escape(state || '')}">
+        <input type="hidden" name="code_challenge" value="${escape(code_challenge)}">
+        <input type="hidden" name="code_challenge_method" value="${escape(code_challenge_method)}">
+        <input type="hidden" name="user_id" value="${escape(userId)}">
         <input type="hidden" name="action" value="approve">
         <button type="submit">Authorize</button>
     </form>
     <form method="post" action="/oauth/authorize">
-        <input type="hidden" name="client_id" value="${client_id}">
-        <input type="hidden" name="redirect_uri" value="${redirect_uri}">
-        <input type="hidden" name="state" value="${state || ''}">
+        <input type="hidden" name="client_id" value="${escape(client_id)}">
+        <input type="hidden" name="redirect_uri" value="${escape(redirect_uri)}">
+        <input type="hidden" name="state" value="${escape(state || '')}">
         <input type="hidden" name="action" value="deny">
         <button type="submit">Deny</button>
     </form>
