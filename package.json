@@ -86,7 +86,8 @@
     "uuid": "^9.0.1",
     "winston": "^3.17.0",
     "ws": "^8.14.2",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "escape-html": "^1.0.3"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10",
