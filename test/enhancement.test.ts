@@ -14,17 +14,15 @@ describe('Enhancement System Integration', () => {
 
   beforeAll(async () => {
     app = await createTestServer();
-    
+
     // Get auth token for testing
-    const authResponse = await request(app)
-      .post('/api/v1/auth/github/callback')
-      .send({
-        code: 'test-code',
-        state: 'test-state',
-        client_id: 'test-client',
-        redirect_uri: 'http://localhost:3000/callback'
-      });
-    
+    const authResponse = await request(app).post('/api/v1/auth/github/callback').send({
+      code: 'test-code',
+      state: 'test-state',
+      client_id: 'test-client',
+      redirect_uri: 'http://localhost:3000/callback',
+    });
+
     if (authResponse.body.data?.token) {
       authToken = authResponse.body.data.token;
     } else {
@@ -64,7 +62,7 @@ describe('Enhancement System Integration', () => {
         .post('/api/v1/enhancement/execute')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          dryRun: true
+          dryRun: true,
         });
 
       expect(response.status).toBe(200);
@@ -81,7 +79,7 @@ describe('Enhancement System Integration', () => {
         .post('/api/v1/enhancement/execute')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          dryRun: false
+          dryRun: false,
         });
 
       expect(response.status).toBe(200);
@@ -101,7 +99,7 @@ describe('Enhancement System Integration', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           strategies: ['advanced-caching', 'request-batching'],
-          dryRun: true
+          dryRun: true,
         });
 
       expect(response.status).toBe(200);
@@ -121,7 +119,7 @@ describe('Enhancement System Integration', () => {
       expect(response.body).toHaveProperty('recommendations');
       expect(Array.isArray(response.body.opportunities)).toBe(true);
       expect(Array.isArray(response.body.recommendations)).toBe(true);
-      
+
       if (response.body.opportunities.length > 0) {
         const opportunity = response.body.opportunities[0];
         expect(opportunity).toHaveProperty('area');
@@ -195,7 +193,7 @@ describe('Enhancement System Integration', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           type: 'cache',
-          intensity: 'moderate'
+          intensity: 'moderate',
         });
 
       expect(response.status).toBe(200);
@@ -212,7 +210,7 @@ describe('Enhancement System Integration', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           type: 'memory',
-          intensity: 'light'
+          intensity: 'light',
         });
 
       expect(response.status).toBe(200);
@@ -228,7 +226,7 @@ describe('Enhancement System Integration', () => {
         .send({
           type: 'all',
           intensity: 'aggressive',
-          duration: 60
+          duration: 60,
         });
 
       expect(response.status).toBe(200);
@@ -245,7 +243,7 @@ describe('Enhancement System Integration', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           type: 'invalid-type',
-          intensity: 'moderate'
+          intensity: 'moderate',
         });
 
       expect(response.status).toBe(400);
@@ -255,8 +253,7 @@ describe('Enhancement System Integration', () => {
 
   describe('Error Handling', () => {
     test('should handle unauthorized requests', async () => {
-      const response = await request(app)
-        .get('/api/v1/enhancement/status');
+      const response = await request(app).get('/api/v1/enhancement/status');
 
       expect(response.status).toBe(401);
     });
@@ -302,7 +299,7 @@ describe('Enhancement System Integration', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
-      
+
       if (response.body.performanceOptimizer?.metrics) {
         const metrics = response.body.performanceOptimizer.metrics;
         expect(metrics).toHaveProperty('totalUsersAnalyzed');
@@ -328,7 +325,7 @@ describe('Enhancement System Integration', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           type: 'containers',
-          intensity: 'moderate'
+          intensity: 'moderate',
         });
 
       expect(optimizeResponse.status).toBe(200);
@@ -371,7 +368,7 @@ describe('Enhancement Engine Core Functionality', () => {
 
   test('should execute enhancement strategies', async () => {
     const result = await mcpEnhancementEngine.executeEnhancementStrategy();
-    
+
     expect(result).toHaveProperty('implemented');
     expect(result).toHaveProperty('deferred');
     expect(result).toHaveProperty('failed');
@@ -384,10 +381,10 @@ describe('Enhancement Engine Core Functionality', () => {
 
   test('should analyze innovation opportunities', async () => {
     const opportunities = await mcpEnhancementEngine.analyzeInnovationOpportunities();
-    
+
     expect(Array.isArray(opportunities)).toBe(true);
     expect(opportunities.length).toBeGreaterThan(0);
-    
+
     if (opportunities.length > 0) {
       const opp = opportunities[0];
       expect(opp).toHaveProperty('area');
@@ -398,7 +395,7 @@ describe('Enhancement Engine Core Functionality', () => {
 
   test('should generate performance report', () => {
     const report = mcpEnhancementEngine.generatePerformanceReport();
-    
+
     expect(report).toHaveProperty('currentMetrics');
     expect(report).toHaveProperty('improvements');
     expect(report).toHaveProperty('recommendations');
@@ -411,7 +408,7 @@ describe('Enhancement Engine Core Functionality', () => {
     const active = mcpEnhancementEngine.getActiveOptimizations();
     const implemented = mcpEnhancementEngine.getImplementedStrategies();
     const opportunities = mcpEnhancementEngine.getInnovationOpportunities();
-    
+
     expect(Array.isArray(active)).toBe(true);
     expect(Array.isArray(implemented)).toBe(true);
     expect(Array.isArray(opportunities)).toBe(true);
@@ -422,30 +419,31 @@ describe('Enhancement Engine Core Functionality', () => {
 describe('Performance Benchmarks', () => {
   test('should demonstrate performance improvements', async () => {
     const startTime = Date.now();
-    
+
     // Simulate some operations that would benefit from optimization
-    const promises = Array.from({ length: 100 }, (_, i) => 
-      new Promise(resolve => setTimeout(resolve, Math.random() * 10))
+    const promises = Array.from(
+      { length: 100 },
+      (_, i) => new Promise(resolve => setTimeout(resolve, Math.random() * 10))
     );
-    
+
     await Promise.all(promises);
-    
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
-    
+
     // This test ensures the system can handle concurrent operations
     expect(executionTime).toBeLessThan(5000); // Should complete within 5 seconds
   });
 
   test('should maintain low memory usage during optimization', async () => {
     const memBefore = process.memoryUsage();
-    
+
     // Execute enhancement strategy
     await mcpEnhancementEngine.executeEnhancementStrategy();
-    
+
     const memAfter = process.memoryUsage();
     const memoryIncrease = memAfter.heapUsed - memBefore.heapUsed;
-    
+
     // Memory increase should be reasonable (less than 100MB)
     expect(memoryIncrease).toBeLessThan(100 * 1024 * 1024);
   }, 30000);

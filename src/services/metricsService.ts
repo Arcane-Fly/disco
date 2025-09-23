@@ -19,10 +19,10 @@ class MetricsService {
   addClient(socket: Socket) {
     this.clients.add(socket);
     console.log(`📊 Metrics client connected: ${socket.id}`);
-    
+
     // Send initial metrics immediately
     this.sendMetricsToClient(socket);
-    
+
     // Start metrics broadcasting if this is the first client
     if (this.clients.size === 1) {
       this.startMetricsBroadcast();
@@ -36,7 +36,7 @@ class MetricsService {
   removeClient(socket: Socket) {
     this.clients.delete(socket);
     console.log(`📊 Metrics client disconnected: ${socket.id}`);
-    
+
     // Stop metrics broadcasting if no clients
     if (this.clients.size === 0) {
       this.stopMetricsBroadcast();
@@ -76,7 +76,7 @@ class MetricsService {
       activeSessions: Math.max(1, sessionsBase),
       securityScore: 'A+',
       performance: cpuUsage < 70 ? 'Fast' : cpuUsage < 85 ? 'Good' : 'Slow',
-      timestamp: baseTime
+      timestamp: baseTime,
     };
   }
 
@@ -94,14 +94,14 @@ class MetricsService {
 
     try {
       const metrics = await this.generateMetrics();
-      
+
       // Broadcast to all connected clients
       this.clients.forEach(socket => {
         if (socket.connected) {
           socket.emit('metrics-update', metrics);
         }
       });
-      
+
       console.log(`📊 Broadcasted metrics to ${this.clients.size} clients`);
     } catch (error) {
       console.error('Error broadcasting metrics:', error);

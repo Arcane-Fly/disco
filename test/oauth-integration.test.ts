@@ -17,28 +17,29 @@ const createFullTestApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  
+
   // Mock JWT secret for testing
   process.env.JWT_SECRET = 'test-secret-key';
-  
+
   // Mock OAuth authorize endpoint (full implementation test)
   app.get('/oauth/authorize', authorizeRateLimiter, async (req, res) => {
     try {
-      const { 
-        client_id, 
-        redirect_uri, 
-        response_type, 
-        scope, 
-        state, 
-        code_challenge, 
-        code_challenge_method = 'S256' 
+      const {
+        client_id,
+        redirect_uri,
+        response_type,
+        scope,
+        state,
+        code_challenge,
+        code_challenge_method = 'S256',
       } = req.query;
 
       // Validate required parameters
       if (!client_id || !redirect_uri || !response_type || !code_challenge) {
         return res.status(400).json({
           error: 'invalid_request',
-          error_description: 'Missing required parameters: client_id, redirect_uri, response_type, code_challenge'
+          error_description:
+            'Missing required parameters: client_id, redirect_uri, response_type, code_challenge',
         });
       }
 
@@ -46,20 +47,20 @@ const createFullTestApp = () => {
       if (response_type !== 'code') {
         return res.status(400).json({
           error: 'unsupported_response_type',
-          error_description: 'Only authorization_code flow is supported'
+          error_description: 'Only authorization_code flow is supported',
         });
       }
 
       // Validate redirect URI for ChatGPT
       const allowedRedirectUris = [
         'https://chat.openai.com/oauth/callback',
-        'https://chatgpt.com/oauth/callback'
+        'https://chatgpt.com/oauth/callback',
       ];
-      
+
       if (!allowedRedirectUris.includes(redirect_uri as string)) {
         return res.status(400).json({
           error: 'invalid_request',
-          error_description: 'Invalid redirect_uri. Must be a ChatGPT callback URL.'
+          error_description: 'Invalid redirect_uri. Must be a ChatGPT callback URL.',
         });
       }
 
@@ -67,7 +68,7 @@ const createFullTestApp = () => {
       const authHeader = req.headers.authorization;
       const tempAuthCookie = req.cookies?.['temp-auth-token'];
       let userId = null;
-      
+
       if (authHeader && authHeader.startsWith('Bearer ')) {
         try {
           const token = authHeader.substring(7);
@@ -92,7 +93,7 @@ const createFullTestApp = () => {
         return res.status(401).json({
           error: 'authentication_required',
           error_description: 'User authentication required',
-          login_url: '/api/v1/auth/github'
+          login_url: '/api/v1/auth/github',
         });
       }
 
@@ -135,12 +136,11 @@ const createFullTestApp = () => {
       res.setHeader('X-Frame-Options', 'DENY');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.send(consentHtml);
-
     } catch (error) {
       console.error('OAuth authorize error:', error);
       res.status(500).json({
         error: 'server_error',
-        error_description: 'Authorization request failed'
+        error_description: 'Authorization request failed',
       });
     }
   });
@@ -148,15 +148,15 @@ const createFullTestApp = () => {
   // Mock OAuth authorize POST handler (consent response)
   app.post('/oauth/authorize', async (req, res) => {
     try {
-      const { 
-        client_id, 
-        redirect_uri, 
-        scope, 
-        state, 
-        code_challenge, 
-        code_challenge_method, 
-        user_id, 
-        action 
+      const {
+        client_id,
+        redirect_uri,
+        scope,
+        state,
+        code_challenge,
+        code_challenge_method,
+        user_id,
+        action,
       } = req.body;
 
       // Handle denial
@@ -174,14 +174,13 @@ const createFullTestApp = () => {
         scope: scope || 'mcp:tools mcp:resources',
         codeChallenge: code_challenge,
         codeChallengeMethod: code_challenge_method || 'S256',
-        clientId: client_id
+        clientId: client_id,
       };
 
       // Redirect to ChatGPT with authorization code
       const callbackUrl = `${redirect_uri}?code=${authCode}&state=${encodeURIComponent(state || '')}`;
-      
-      res.redirect(callbackUrl);
 
+      res.redirect(callbackUrl);
     } catch (error) {
       console.error('OAuth authorize POST error:', error);
       const errorUrl = `${req.body.redirect_uri}?error=server_error&error_description=Authorization processing failed&state=${encodeURIComponent(req.body.state || '')}`;
@@ -193,30 +192,30 @@ const createFullTestApp = () => {
   app.post('/oauth/token', async (req, res) => {
     try {
       const { grant_type, code, client_id, code_verifier } = req.body;
-      
+
       if (grant_type !== 'authorization_code') {
         return res.status(400).json({
           error: 'unsupported_grant_type',
-          error_description: 'Only authorization_code grant type is supported'
+          error_description: 'Only authorization_code grant type is supported',
         });
       }
-      
+
       if (!code || !code_verifier) {
         return res.status(400).json({
           error: 'invalid_request',
-          error_description: 'Missing required parameters: code, code_verifier'
+          error_description: 'Missing required parameters: code, code_verifier',
         });
       }
-      
+
       // Mock PKCE verification (simplified)
       const authData = global.testAuthData;
       if (!authData) {
         return res.status(400).json({
           error: 'invalid_grant',
-          error_description: 'Authorization code is invalid or expired'
+          error_description: 'Authorization code is invalid or expired',
         });
       }
-      
+
       // Generate access token
       const tokenPayload = {
         sub: authData.userId,
@@ -224,27 +223,26 @@ const createFullTestApp = () => {
         aud: authData.clientId,
         iss: 'test-server',
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600
+        exp: Math.floor(Date.now() / 1000) + 3600,
       };
-      
+
       const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET!);
-      
+
       res.json({
         access_token: accessToken,
         token_type: 'Bearer',
         expires_in: 3600,
-        scope: authData.scope
+        scope: authData.scope,
       });
-      
     } catch (error) {
       console.error('OAuth token exchange error:', error);
       res.status(500).json({
         error: 'server_error',
-        error_description: 'Internal server error during token exchange'
+        error_description: 'Internal server error during token exchange',
       });
     }
   });
-  
+
   return app;
 };
 
@@ -271,7 +269,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           scope: 'mcp:tools mcp:resources',
           state: 'random-state-value',
           code_challenge: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
-          code_challenge_method: 'S256'
+          code_challenge_method: 'S256',
         })
         .expect(401);
 
@@ -281,11 +279,9 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
 
     test('should show consent UI when user is authenticated', async () => {
       // Create a temporary auth token
-      const tempToken = jwt.sign(
-        { sub: 'github:testuser', temp: true },
-        process.env.JWT_SECRET!,
-        { expiresIn: '10m' }
-      );
+      const tempToken = jwt.sign({ sub: 'github:testuser', temp: true }, process.env.JWT_SECRET!, {
+        expiresIn: '10m',
+      });
 
       const response = await request(app)
         .get('/oauth/authorize')
@@ -297,7 +293,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           scope: 'mcp:tools mcp:resources',
           state: 'random-state-value',
           code_challenge: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
-          code_challenge_method: 'S256'
+          code_challenge_method: 'S256',
         })
         .expect(200);
 
@@ -319,7 +315,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           code_challenge: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
           code_challenge_method: 'S256',
           user_id: 'github:testuser',
-          action: 'approve'
+          action: 'approve',
         })
         .expect(302);
 
@@ -336,7 +332,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           client_id: 'chatgpt-connector',
           redirect_uri: 'https://chat.openai.com/oauth/callback',
           state: 'random-state-value',
-          action: 'deny'
+          action: 'deny',
         })
         .expect(302);
 
@@ -358,7 +354,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           code_challenge: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
           code_challenge_method: 'S256',
           user_id: 'github:testuser',
-          action: 'approve'
+          action: 'approve',
         })
         .expect(302);
 
@@ -376,7 +372,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           grant_type: 'authorization_code',
           code: authCode,
           client_id: 'chatgpt-connector',
-          code_verifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' // This would be the original verifier
+          code_verifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk', // This would be the original verifier
         })
         .expect(200);
 
@@ -397,7 +393,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
         .post('/oauth/token')
         .send({
           grant_type: 'client_credentials', // Invalid
-          code: 'invalid-code'
+          code: 'invalid-code',
         })
         .expect(400);
 
@@ -409,7 +405,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
         .post('/oauth/token')
         .send({
           grant_type: 'authorization_code',
-          code: 'test-code'
+          code: 'test-code',
           // Missing code_verifier
         })
         .expect(400);
@@ -421,11 +417,9 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
 
   describe('PKCE Security Validation', () => {
     test('should support S256 code challenge method', async () => {
-      const tempToken = jwt.sign(
-        { sub: 'github:testuser', temp: true },
-        process.env.JWT_SECRET!,
-        { expiresIn: '10m' }
-      );
+      const tempToken = jwt.sign({ sub: 'github:testuser', temp: true }, process.env.JWT_SECRET!, {
+        expiresIn: '10m',
+      });
 
       const response = await request(app)
         .get('/oauth/authorize')
@@ -435,7 +429,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
           redirect_uri: 'https://chat.openai.com/oauth/callback',
           response_type: 'code',
           code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-          code_challenge_method: 'S256'
+          code_challenge_method: 'S256',
         })
         .expect(200);
 
@@ -448,7 +442,7 @@ describe('Complete ChatGPT OAuth 2.0 Integration Flow', () => {
         .query({
           client_id: 'chatgpt-connector',
           redirect_uri: 'https://chat.openai.com/oauth/callback',
-          response_type: 'code'
+          response_type: 'code',
           // Missing code_challenge
         })
         .expect(400);

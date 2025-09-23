@@ -108,16 +108,16 @@ const router = Router();
 router.get('/metrics', authMiddleware, async (req: Request, res: Response) => {
   try {
     const metrics = performanceOptimizer.getOptimizationMetrics();
-    
+
     res.json({
       ...metrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Performance metrics error:', error);
     res.status(500).json({
       error: 'Failed to retrieve performance metrics',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -172,67 +172,71 @@ router.get('/metrics', authMiddleware, async (req: Request, res: Response) => {
 router.post('/usage-patterns', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { startTime, endTime, resourceUsage } = req.body;
-    
+
     // Validate request data
     if (!startTime || !endTime || !resourceUsage) {
       return res.status(400).json({
-        error: 'Missing required fields: startTime, endTime, resourceUsage'
+        error: 'Missing required fields: startTime, endTime, resourceUsage',
       });
     }
-    
+
     const start = new Date(startTime);
     const end = new Date(endTime);
-    
+
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
-        error: 'Invalid date format for startTime or endTime'
+        error: 'Invalid date format for startTime or endTime',
       });
     }
-    
+
     if (end <= start) {
       return res.status(400).json({
-        error: 'endTime must be after startTime'
+        error: 'endTime must be after startTime',
       });
     }
-    
+
     // Validate resource usage
     if (typeof resourceUsage.cpu !== 'number' || typeof resourceUsage.memory !== 'number') {
       return res.status(400).json({
-        error: 'resourceUsage must contain numeric cpu and memory values'
+        error: 'resourceUsage must contain numeric cpu and memory values',
       });
     }
-    
-    if (resourceUsage.cpu < 0 || resourceUsage.cpu > 100 || 
-        resourceUsage.memory < 0 || resourceUsage.memory > 100) {
+
+    if (
+      resourceUsage.cpu < 0 ||
+      resourceUsage.cpu > 100 ||
+      resourceUsage.memory < 0 ||
+      resourceUsage.memory > 100
+    ) {
       return res.status(400).json({
-        error: 'Resource usage values must be between 0 and 100'
+        error: 'Resource usage values must be between 0 and 100',
       });
     }
 
     // Record the usage pattern
     if (!req.user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
     performanceOptimizer.recordUsagePattern(req.user.userId, {
       startTime: start,
       endTime: end,
-      resourceUsage
+      resourceUsage,
     });
 
     res.json({
       message: 'Usage pattern recorded successfully',
       userId: req.user.userId,
       sessionDuration: Math.round((end.getTime() - start.getTime()) / (1000 * 60)), // minutes
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Usage pattern recording error:', error);
     res.status(500).json({
       error: 'Failed to record usage pattern',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -275,7 +279,7 @@ router.post('/usage-patterns', authMiddleware, async (req: Request, res: Respons
 router.post('/scaling/analyze', authMiddleware, async (req: Request, res: Response) => {
   try {
     const actions = await performanceOptimizer.analyzeAndScale();
-    
+
     const executedActions = actions.filter(a => a.priority > 0.8).length;
     const deferredActions = actions.filter(a => a.priority <= 0.8).length;
 
@@ -285,17 +289,17 @@ router.post('/scaling/analyze', authMiddleware, async (req: Request, res: Respon
         // Round numerical values for cleaner response
         priority: Math.round(action.priority * 1000) / 1000,
         estimatedCost: Math.round(action.estimatedCost * 100) / 100,
-        estimatedBenefit: Math.round(action.estimatedBenefit * 100) / 100
+        estimatedBenefit: Math.round(action.estimatedBenefit * 100) / 100,
       })),
       executedActions,
       deferredActions,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Scaling analysis error:', error);
     res.status(500).json({
       error: 'Failed to perform scaling analysis',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -332,19 +336,19 @@ router.post('/scaling/analyze', authMiddleware, async (req: Request, res: Respon
 router.post('/prewarming/analyze', authMiddleware, async (req: Request, res: Response) => {
   try {
     await performanceOptimizer.analyzeUsagePatternsAndPrewarm();
-    
+
     const metrics = performanceOptimizer.getOptimizationMetrics();
 
     res.json({
       message: 'Prewarming analysis completed successfully',
       rulesApplied: metrics.totalPrewarmingRules,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Prewarming analysis error:', error);
     res.status(500).json({
       error: 'Failed to perform prewarming analysis',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -390,13 +394,13 @@ router.post('/optimize', authMiddleware, async (req: Request, res: Response) => 
     res.json({
       ...results,
       performanceGains: Math.round(results.performanceGains * 1000) / 1000, // Round to 3 decimal places
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Resource optimization error:', error);
     res.status(500).json({
       error: 'Failed to perform resource optimization',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -450,22 +454,25 @@ router.post('/optimize', authMiddleware, async (req: Request, res: Response) => 
 router.post('/container/priority', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { priority = 'normal' } = req.body;
-    
+
     // Validate priority
     if (!['high', 'normal', 'low'].includes(priority)) {
       return res.status(400).json({
-        error: 'Invalid priority level. Must be: high, normal, or low'
+        error: 'Invalid priority level. Must be: high, normal, or low',
       });
     }
 
     if (!req.user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
     const startTime = Date.now();
-    const containerId = await performanceOptimizer.getContainerWithPriority(req.user.userId, priority);
+    const containerId = await performanceOptimizer.getContainerWithPriority(
+      req.user.userId,
+      priority
+    );
     const allocationTime = Date.now() - startTime;
 
     if (!containerId) {
@@ -473,7 +480,7 @@ router.post('/container/priority', authMiddleware, async (req: Request, res: Res
         error: 'No containers available',
         priority,
         allocationTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -481,13 +488,13 @@ router.post('/container/priority', authMiddleware, async (req: Request, res: Res
       containerId,
       priority,
       allocationTime,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Priority container allocation error:', error);
     res.status(500).json({
       error: 'Failed to allocate priority container',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -541,7 +548,7 @@ router.post('/container/priority', authMiddleware, async (req: Request, res: Res
 router.get('/status', authMiddleware, async (req: Request, res: Response) => {
   try {
     const metrics = performanceOptimizer.getOptimizationMetrics();
-    
+
     // Determine overall system status
     let status = 'healthy';
     if (metrics.averageContainerUtilization > 90) {
@@ -557,18 +564,18 @@ router.get('/status', authMiddleware, async (req: Request, res: Response) => {
         patternAnalysis: metrics.totalUsersAnalyzed > 0 ? 'active' : 'disabled',
         autoScaling: metrics.scalingActionsToday > 0 ? 'active' : 'active', // Always consider active if enabled
         resourceOptimization: 'active',
-        containerPooling: 'active'
+        containerPooling: 'active',
       },
       lastOptimization: new Date().toISOString(), // In real implementation, track actual last optimization
       uptime: Math.floor(process.uptime()),
       metrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Performance status error:', error);
     res.status(500).json({
       error: 'Failed to retrieve performance status',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });

@@ -221,7 +221,7 @@ function test() {}`;
 
     test('should handle whitespace-only differences', async () => {
       const baseContent = 'function test() {\n  return 1;\n}';
-      const localContent = 'function test() {\n    return 1;\n}';  // Different indentation
+      const localContent = 'function test() {\n    return 1;\n}'; // Different indentation
       const remoteContent = 'function test() {\n  return 1;\n}';
 
       const result = await resolver.resolveConflict(

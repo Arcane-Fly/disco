@@ -19,7 +19,7 @@ class RedisSessionManager {
    */
   private async initializeRedis(): Promise<void> {
     const redisUrl = process.env.REDIS_URL;
-    
+
     if (!redisUrl) {
       console.log('📝 Redis URL not configured, using in-memory sessions');
       return;
@@ -29,11 +29,11 @@ class RedisSessionManager {
       this.client = createClient({
         url: redisUrl,
         socket: {
-          reconnectStrategy: (retries) => Math.min(retries * 50, 500)
-        }
+          reconnectStrategy: retries => Math.min(retries * 50, 500),
+        },
       });
 
-      this.client.on('error', (err) => {
+      this.client.on('error', err => {
         console.error('Redis Client Error:', err);
         this.connected = false;
       });
@@ -49,7 +49,6 @@ class RedisSessionManager {
       });
 
       await this.client.connect();
-      
     } catch (error) {
       console.error('❌ Failed to connect to Redis:', error);
       this.client = null;
@@ -80,12 +79,11 @@ class RedisSessionManager {
         createdAt: session.createdAt.toISOString(),
         lastActive: session.lastActive.toISOString(),
         status: session.status,
-        url: session.url
+        url: session.url,
         // Note: We don't serialize the WebContainer instance
       };
 
       await this.client!.setEx(key, this.sessionExpiry, JSON.stringify(sessionData));
-      
     } catch (error) {
       console.error('Failed to store session in Redis:', error);
       throw error;
@@ -103,7 +101,7 @@ class RedisSessionManager {
     try {
       const key = this.keyPrefix + sessionId;
       const sessionData = await this.client!.get(key);
-      
+
       if (!sessionData) {
         return null;
       }
@@ -115,9 +113,8 @@ class RedisSessionManager {
         createdAt: new Date(parsed.createdAt),
         lastActive: new Date(parsed.lastActive),
         status: parsed.status,
-        url: parsed.url
+        url: parsed.url,
       };
-      
     } catch (error) {
       console.error('Failed to get session from Redis:', error);
       return null;
@@ -256,24 +253,24 @@ class RedisSessionManager {
       return {
         connected: false,
         totalSessions: 0,
-        error: 'Redis not available'
+        error: 'Redis not available',
       };
     }
 
     try {
       const pattern = this.keyPrefix + '*';
       const keys = await this.client!.keys(pattern);
-      
+
       return {
         connected: true,
         totalSessions: keys.length,
-        redisUrl: process.env.REDIS_URL ? 'configured' : 'not configured'
+        redisUrl: process.env.REDIS_URL ? 'configured' : 'not configured',
       };
     } catch (error) {
       return {
         connected: false,
         totalSessions: 0,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -283,7 +280,7 @@ class RedisSessionManager {
    */
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     if (!this.connected || !this.client) return;
-    
+
     try {
       if (ttlSeconds) {
         await this.client.setEx(key, ttlSeconds, value);
@@ -300,7 +297,7 @@ class RedisSessionManager {
    */
   async get(key: string): Promise<string | null> {
     if (!this.connected || !this.client) return null;
-    
+
     try {
       return await this.client.get(key);
     } catch (error) {
@@ -314,7 +311,7 @@ class RedisSessionManager {
    */
   async sAdd(key: string, member: string): Promise<void> {
     if (!this.connected || !this.client) return;
-    
+
     try {
       await this.client.sAdd(key, member);
     } catch (error) {
@@ -327,7 +324,7 @@ class RedisSessionManager {
    */
   async sMembers(key: string): Promise<string[]> {
     if (!this.connected || !this.client) return [];
-    
+
     try {
       return await this.client.sMembers(key);
     } catch (error) {
@@ -341,7 +338,7 @@ class RedisSessionManager {
    */
   async sRem(key: string, member: string): Promise<void> {
     if (!this.connected || !this.client) return;
-    
+
     try {
       await this.client.sRem(key, member);
     } catch (error) {

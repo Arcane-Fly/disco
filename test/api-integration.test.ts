@@ -22,7 +22,7 @@ describe('API Integration Tests', () => {
     process.env.ALLOWED_ORIGINS = 'http://localhost:8081';
     process.env.NODE_ENV = 'test';
     process.env.DOCKER_HOST = process.env.CI ? 'tcp://docker:2375' : '/var/run/docker.sock';
-    
+
     const result = await createServer();
     app = result.app;
     server = result.server;
@@ -34,13 +34,13 @@ describe('API Integration Tests', () => {
     const authResponse = await request(app)
       .post('/api/v1/auth/token')
       .send({ apiKey: 'test-api-key' });
-    
+
     authToken = authResponse.body.token;
   }, 30000);
 
   afterAll(async () => {
     if (server) {
-      await new Promise((resolve) => server.close(resolve));
+      await new Promise(resolve => server.close(resolve));
     }
   });
 
@@ -51,13 +51,13 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           template: 'node',
-          name: 'test-container'
+          name: 'test-container',
         });
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('sessionId');
       expect(response.body).toHaveProperty('status');
-      
+
       sessionId = response.body.sessionId;
     }, 30000);
 
@@ -86,7 +86,7 @@ describe('API Integration Tests', () => {
         .post(`/api/v1/containers/${sessionId}/exec`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          command: 'echo "Hello from container"'
+          command: 'echo "Hello from container"',
         });
 
       expect(response.status).toBe(200);
@@ -103,7 +103,7 @@ describe('API Integration Tests', () => {
         .send({
           sessionId,
           path: 'test.txt',
-          content: 'Hello World'
+          content: 'Hello World',
         });
 
       expect(response.status).toBe(200);
@@ -116,7 +116,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .query({
           sessionId,
-          path: 'test.txt'
+          path: 'test.txt',
         });
 
       expect(response.status).toBe(200);
@@ -129,7 +129,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .query({
           sessionId,
-          path: '/'
+          path: '/',
         });
 
       expect(response.status).toBe(200);
@@ -143,7 +143,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           sessionId,
-          path: 'test.txt'
+          path: 'test.txt',
         });
 
       expect(response.status).toBe(200);
@@ -158,7 +158,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           sessionId,
-          command: 'ls -la'
+          command: 'ls -la',
         });
 
       expect(response.status).toBe(200);
@@ -173,7 +173,7 @@ describe('API Integration Tests', () => {
         .send({
           sessionId,
           command: 'node',
-          args: ['--version']
+          args: ['--version'],
         });
 
       expect(response.status).toBe(200);
@@ -188,7 +188,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           sessionId,
-          path: '/repo'
+          path: '/repo',
         });
 
       expect(response.status).toBe(200);
@@ -201,7 +201,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .query({
           sessionId,
-          path: '/repo'
+          path: '/repo',
         });
 
       expect(response.status).toBe(200);
@@ -212,8 +212,7 @@ describe('API Integration Tests', () => {
 
   describe('Security & Rate Limiting', () => {
     test('should reject requests without authentication', async () => {
-      const response = await request(app)
-        .get('/api/v1/containers');
+      const response = await request(app).get('/api/v1/containers');
 
       expect(response.status).toBe(401);
     });
@@ -227,15 +226,13 @@ describe('API Integration Tests', () => {
     });
 
     test('should enforce rate limiting', async () => {
-      const requests = Array(11).fill(null).map(() => 
-        request(app)
-          .get('/api/v1/health')
-          .set('X-Forwarded-For', '192.168.1.100')
-      );
+      const requests = Array(11)
+        .fill(null)
+        .map(() => request(app).get('/api/v1/health').set('X-Forwarded-For', '192.168.1.100'));
 
       const responses = await Promise.all(requests);
       const rateLimited = responses.some(r => r.status === 429);
-      
+
       expect(rateLimited).toBe(true);
     });
 
@@ -246,7 +243,7 @@ describe('API Integration Tests', () => {
         .send({
           sessionId: 'invalid',
           path: '../../../etc/passwd', // Path traversal attempt
-          content: 'malicious'
+          content: 'malicious',
         });
 
       expect(response.status).toBe(400);
@@ -255,8 +252,7 @@ describe('API Integration Tests', () => {
 
   describe('WebSocket Support', () => {
     test('should provide WebSocket configuration', async () => {
-      const response = await request(app)
-        .get('/api/v1/config');
+      const response = await request(app).get('/api/v1/config');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('websocketUrl');
@@ -265,8 +261,7 @@ describe('API Integration Tests', () => {
 
   describe('Health & Monitoring', () => {
     test('should return health status', async () => {
-      const response = await request(app)
-        .get('/api/v1/health');
+      const response = await request(app).get('/api/v1/health');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('status', 'healthy');
@@ -274,8 +269,7 @@ describe('API Integration Tests', () => {
     });
 
     test('should return capabilities', async () => {
-      const response = await request(app)
-        .get('/api/v1/capabilities');
+      const response = await request(app).get('/api/v1/capabilities');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('features');
@@ -317,19 +311,21 @@ describe('API Integration Tests', () => {
 
   describe('Performance Tests', () => {
     test('should handle concurrent container creations', async () => {
-      const promises = Array(3).fill(null).map((_, i) => 
-        request(app)
-          .post('/api/v1/containers/create')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            template: 'node',
-            name: `concurrent-${i}`
-          })
-      );
+      const promises = Array(3)
+        .fill(null)
+        .map((_, i) =>
+          request(app)
+            .post('/api/v1/containers/create')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              template: 'node',
+              name: `concurrent-${i}`,
+            })
+        );
 
       const responses = await Promise.all(promises);
       const allSuccessful = responses.every(r => r.status === 200);
-      
+
       expect(allSuccessful).toBe(true);
 
       // Cleanup
@@ -358,7 +354,7 @@ describe('API Integration Tests', () => {
         .send({
           sessionId: testSessionId,
           path: 'large.txt',
-          content: largeContent
+          content: largeContent,
         });
 
       expect(writeResponse.status).toBe(200);
@@ -368,7 +364,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .query({
           sessionId: testSessionId,
-          path: 'large.txt'
+          path: 'large.txt',
         });
 
       expect(readResponse.status).toBe(200);
@@ -388,7 +384,7 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           sessionId: 'non-existent',
-          command: 'ls'
+          command: 'ls',
         });
 
       expect(response.status).toBe(404);
@@ -400,7 +396,7 @@ describe('API Integration Tests', () => {
         .post('/api/v1/containers/create')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
-          template: 'invalid-template'
+          template: 'invalid-template',
         });
 
       expect(response.status).toBe(400);
@@ -408,22 +404,23 @@ describe('API Integration Tests', () => {
 
     test('should handle container limit exceeded', async () => {
       // Try to create more containers than allowed
-      const promises = Array(10).fill(null).map((_, i) => 
-        request(app)
-          .post('/api/v1/containers/create')
-          .set('Authorization', `Bearer ${authToken}`)
-          .send({
-            template: 'node',
-            name: `limit-test-${i}`
-          })
-      );
+      const promises = Array(10)
+        .fill(null)
+        .map((_, i) =>
+          request(app)
+            .post('/api/v1/containers/create')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              template: 'node',
+              name: `limit-test-${i}`,
+            })
+        );
 
       const responses = await Promise.all(promises);
-      const hasLimitError = responses.some(r => 
-        r.status === 429 || 
-        (r.status === 400 && r.body.error?.includes('limit'))
+      const hasLimitError = responses.some(
+        r => r.status === 429 || (r.status === 400 && r.body.error?.includes('limit'))
       );
-      
+
       expect(hasLimitError).toBe(true);
 
       // Cleanup created containers

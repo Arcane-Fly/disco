@@ -3,7 +3,7 @@ import { containerManager } from '../src/lib/containerManager';
 
 /**
  * Strategic UX Enhancement Tests
- * 
+ *
  * This test suite validates the strategic UI/UX improvements outlined in the
  * Strategic Intensification Plan, including accessibility validation,
  * performance monitoring, and semantic analysis capabilities.
@@ -30,7 +30,7 @@ describe('Strategic UX Enhancements', () => {
       fill: jest.fn(),
       scrollIntoViewIfNeeded: jest.fn(),
       tagName: jest.fn(),
-      evaluateHandle: jest.fn()
+      evaluateHandle: jest.fn(),
     };
 
     // Mock browser session
@@ -42,8 +42,8 @@ describe('Strategic UX Enhancements', () => {
       lastUsed: new Date(),
       config: {
         viewport: { width: 1920, height: 1080 },
-        headless: true
-      }
+        headless: true,
+      },
     };
 
     // Mock the getSession method
@@ -58,17 +58,18 @@ describe('Strategic UX Enhancements', () => {
     test('should perform enhanced UI automation with accessibility validation', async () => {
       // Setup mock responses for accessibility validation
       mockPage.$.mockResolvedValue({
-        getAttribute: jest.fn()
+        getAttribute: jest
+          .fn()
           .mockResolvedValueOnce('Test Button') // aria-label
           .mockResolvedValueOnce(null) // aria-labelledby
           .mockResolvedValueOnce(null), // aria-describedby
         tagName: jest.fn().mockResolvedValue('BUTTON'),
         evaluate: jest.fn().mockResolvedValue({
           color: 'rgb(255, 255, 255)',
-          backgroundColor: 'rgb(0, 123, 255)'
+          backgroundColor: 'rgb(0, 123, 255)',
         }),
         scrollIntoViewIfNeeded: jest.fn(),
-        click: jest.fn()
+        click: jest.fn(),
       });
 
       const actions = [
@@ -79,9 +80,9 @@ describe('Strategic UX Enhancements', () => {
             accessibility: true,
             performance: false,
             semantics: false,
-            usability: false
-          }
-        }
+            usability: false,
+          },
+        },
       ];
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -104,10 +105,10 @@ describe('Strategic UX Enhancements', () => {
         tagName: jest.fn().mockResolvedValue('BUTTON'),
         evaluate: jest.fn().mockResolvedValue({
           color: 'rgb(128, 128, 128)',
-          backgroundColor: 'rgb(255, 255, 255)'
+          backgroundColor: 'rgb(255, 255, 255)',
         }),
         scrollIntoViewIfNeeded: jest.fn(),
-        click: jest.fn()
+        click: jest.fn(),
       });
 
       const actions = [
@@ -118,9 +119,9 @@ describe('Strategic UX Enhancements', () => {
             accessibility: true,
             performance: false,
             semantics: false,
-            usability: false
-          }
-        }
+            usability: false,
+          },
+        },
       ];
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -142,13 +143,13 @@ describe('Strategic UX Enhancements', () => {
         interactiveTime: 400,
         firstContentfulPaint: 300,
         cumulativeLayoutShift: 0.05,
-        largestContentfulPaint: 500
+        largestContentfulPaint: 500,
       });
 
       mockPage.$.mockResolvedValue({
         scrollIntoViewIfNeeded: jest.fn(),
         click: jest.fn(),
-        fill: jest.fn()
+        fill: jest.fn(),
       });
 
       const actions = [
@@ -160,9 +161,9 @@ describe('Strategic UX Enhancements', () => {
             accessibility: false,
             performance: true,
             semantics: false,
-            usability: false
-          }
-        }
+            usability: false,
+          },
+        },
       ];
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -193,9 +194,9 @@ describe('Strategic UX Enhancements', () => {
             accessibility: false,
             performance: false,
             semantics: false,
-            usability: true
-          }
-        }
+            usability: true,
+          },
+        },
       ];
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -217,16 +218,18 @@ describe('Strategic UX Enhancements', () => {
         passed: true,
         similarity: 0.98,
         differences: 2,
-        screenshotPath: '/tmp/test-screenshot.png'
+        screenshotPath: '/tmp/test-screenshot.png',
       });
 
       // Mock page accessibility validation
       mockPage.$$.mockImplementation((selector: string) => {
-        if (selector === 'img') return [{ getAttribute: jest.fn().mockResolvedValue('Test image') }];
-        if (selector === 'h1, h2, h3, h4, h5, h6') return [
-          { tagName: jest.fn().mockResolvedValue('H1') },
-          { tagName: jest.fn().mockResolvedValue('H2') }
-        ];
+        if (selector === 'img')
+          return [{ getAttribute: jest.fn().mockResolvedValue('Test image') }];
+        if (selector === 'h1, h2, h3, h4, h5, h6')
+          return [
+            { tagName: jest.fn().mockResolvedValue('H1') },
+            { tagName: jest.fn().mockResolvedValue('H2') },
+          ];
         if (selector === 'input, select, textarea') return [];
         return [];
       });
@@ -243,7 +246,7 @@ describe('Strategic UX Enhancements', () => {
         interactiveTime: 500,
         firstContentfulPaint: 400,
         cumulativeLayoutShift: 0.02,
-        largestContentfulPaint: 600
+        largestContentfulPaint: 600,
       });
 
       mockPage.textContent.mockResolvedValue('Sample page content for semantic analysis');
@@ -256,7 +259,7 @@ describe('Strategic UX Enhancements', () => {
           threshold: 0.95,
           validateAccessibility: true,
           analyzeSemantics: true,
-          comparePerformance: true
+          comparePerformance: true,
         }
       );
 
@@ -274,15 +277,16 @@ describe('Strategic UX Enhancements', () => {
         passed: true,
         similarity: 0.99,
         differences: 1,
-        screenshotPath: '/tmp/test-screenshot.png'
+        screenshotPath: '/tmp/test-screenshot.png',
       });
 
       // Mock page with accessibility violations
       mockPage.$$.mockImplementation((selector: string) => {
-        if (selector === 'img') return [
-          { getAttribute: jest.fn().mockResolvedValue(null) }, // Missing alt text
-          { getAttribute: jest.fn().mockResolvedValue('Valid alt text') }
-        ];
+        if (selector === 'img')
+          return [
+            { getAttribute: jest.fn().mockResolvedValue(null) }, // Missing alt text
+            { getAttribute: jest.fn().mockResolvedValue('Valid alt text') },
+          ];
         if (selector === 'h1, h2, h3, h4, h5, h6') return []; // No headings
         return [];
       });
@@ -301,7 +305,7 @@ describe('Strategic UX Enhancements', () => {
 
       expect(result.accessibilityValidation?.compliant).toBe(false);
       expect(result.accessibilityValidation?.issues.length).toBeGreaterThan(0);
-      
+
       const issueTypes = result.accessibilityValidation?.issues.map(issue => issue.type);
       expect(issueTypes).toContain('missing-alt-text');
       expect(issueTypes).toContain('missing-main-landmark');
@@ -313,17 +317,17 @@ describe('Strategic UX Enhancements', () => {
         passed: true,
         similarity: 0.97,
         differences: 3,
-        screenshotPath: '/tmp/test-screenshot.png'
+        screenshotPath: '/tmp/test-screenshot.png',
       });
 
       // Mock current performance metrics (slower than baseline)
       mockPage.evaluate.mockResolvedValue({
         responseTime: 800, // Slower than baseline 500ms
-        renderTime: 400,   // Slower than baseline 200ms
+        renderTime: 400, // Slower than baseline 200ms
         interactiveTime: 1200,
         firstContentfulPaint: 700,
         cumulativeLayoutShift: 0.15,
-        largestContentfulPaint: 1000
+        largestContentfulPaint: 1000,
       });
 
       const result = await enhancedUXAutomationManager.performAdvancedVisualRegression(
@@ -347,9 +351,9 @@ describe('Strategic UX Enhancements', () => {
             accessibility: true,
             performance: true,
             semantics: true,
-            usability: true
-          }
-        }
+            usability: true,
+          },
+        },
       ];
 
       // Mock comprehensive responses
@@ -358,8 +362,8 @@ describe('Strategic UX Enhancements', () => {
         tagName: jest.fn().mockResolvedValue('BUTTON'),
         evaluate: jest.fn().mockResolvedValue({
           color: 'rgb(0, 0, 0)',
-          backgroundColor: 'rgb(255, 255, 255)'
-        })
+          backgroundColor: 'rgb(255, 255, 255)',
+        }),
       });
 
       mockPage.evaluate.mockResolvedValue({
@@ -368,7 +372,7 @@ describe('Strategic UX Enhancements', () => {
         interactiveTime: 300,
         firstContentfulPaint: 250,
         cumulativeLayoutShift: 0.01,
-        largestContentfulPaint: 400
+        largestContentfulPaint: 400,
       });
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -389,18 +393,15 @@ describe('Strategic UX Enhancements', () => {
       const testScenarios = [
         { accessibility: 100, performance: 95, usability: 90, expected: 95 },
         { accessibility: 80, performance: 85, usability: 75, expected: 80 },
-        { accessibility: 60, performance: 70, usability: 65, expected: 65 }
+        { accessibility: 60, performance: 70, usability: 65, expected: 65 },
       ];
 
       for (const scenario of testScenarios) {
         // This would test the internal scoring calculation
         // In a real implementation, we'd create a method to calculate composite scores
-        const compositeScore = (
-          scenario.accessibility * 0.4 +
-          scenario.performance * 0.3 +
-          scenario.usability * 0.3
-        );
-        
+        const compositeScore =
+          scenario.accessibility * 0.4 + scenario.performance * 0.3 + scenario.usability * 0.3;
+
         expect(compositeScore).toBeCloseTo(scenario.expected, 0);
       }
     });
@@ -426,9 +427,9 @@ describe('Strategic UX Enhancements', () => {
       // Mock session with no pages
       const emptySession = {
         ...mockSession,
-        pages: new Map()
+        pages: new Map(),
       };
-      
+
       jest.spyOn(enhancedUXAutomationManager, 'getSession').mockResolvedValue(emptySession);
 
       const actions = [{ type: 'click' as const, selector: '#test' }];
@@ -449,13 +450,13 @@ describe('Strategic UX Enhancements', () => {
         }
         return {
           scrollIntoViewIfNeeded: jest.fn(),
-          click: jest.fn()
+          click: jest.fn(),
         };
       });
 
       const actions = [
         { type: 'click' as const, selector: '#failing-element' },
-        { type: 'click' as const, selector: '#working-element' }
+        { type: 'click' as const, selector: '#working-element' },
       ];
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -474,7 +475,7 @@ describe('Strategic UX Enhancements', () => {
     test('should demonstrate enhanced automation capabilities', async () => {
       // This test validates that our strategic enhancements provide
       // significantly more value than basic automation
-      
+
       const basicAction = { type: 'click' as const, selector: '#basic-button' };
       const enhancedAction = {
         type: 'click' as const,
@@ -483,13 +484,13 @@ describe('Strategic UX Enhancements', () => {
           accessibility: true,
           performance: true,
           semantics: true,
-          usability: true
+          usability: true,
         },
         analysis: {
           userJourney: true,
           conversionFunnel: false,
-          behaviorPattern: false
-        }
+          behaviorPattern: false,
+        },
       };
 
       // Mock enhanced capabilities
@@ -498,10 +499,10 @@ describe('Strategic UX Enhancements', () => {
         tagName: jest.fn().mockResolvedValue('BUTTON'),
         evaluate: jest.fn().mockResolvedValue({
           color: 'rgb(255, 255, 255)',
-          backgroundColor: 'rgb(0, 123, 255)'
+          backgroundColor: 'rgb(0, 123, 255)',
         }),
         scrollIntoViewIfNeeded: jest.fn(),
-        click: jest.fn()
+        click: jest.fn(),
       });
 
       mockPage.evaluate.mockResolvedValue({
@@ -510,12 +511,16 @@ describe('Strategic UX Enhancements', () => {
         interactiveTime: 270,
         firstContentfulPaint: 220,
         cumulativeLayoutShift: 0.005,
-        largestContentfulPaint: 350
+        largestContentfulPaint: 350,
       });
 
       const [basicResult, enhancedResult] = await Promise.all([
-        enhancedUXAutomationManager.performIntelligentUIAutomation(sessionId, pageId, [basicAction]),
-        enhancedUXAutomationManager.performIntelligentUIAutomation(sessionId, pageId, [enhancedAction])
+        enhancedUXAutomationManager.performIntelligentUIAutomation(sessionId, pageId, [
+          basicAction,
+        ]),
+        enhancedUXAutomationManager.performIntelligentUIAutomation(sessionId, pageId, [
+          enhancedAction,
+        ]),
       ]);
 
       // Basic result should have minimal data
@@ -536,10 +541,10 @@ describe('Strategic UX Enhancements', () => {
 
     test('should provide strategic recommendations for improvement', async () => {
       // Test that our system can identify and recommend improvements
-      
+
       const analysisAction = {
         type: 'analyze' as const,
-        validation: { accessibility: true, performance: true, semantics: true, usability: true }
+        validation: { accessibility: true, performance: true, semantics: true, usability: true },
       };
 
       // Mock page with various issues for analysis
@@ -551,7 +556,7 @@ describe('Strategic UX Enhancements', () => {
         interactiveTime: 2000,
         firstContentfulPaint: 1200,
         cumulativeLayoutShift: 0.3,
-        largestContentfulPaint: 2500
+        largestContentfulPaint: 2500,
       });
 
       const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -563,7 +568,7 @@ describe('Strategic UX Enhancements', () => {
       const analysis = results[0];
       expect(analysis.semanticValidation).toBeDefined();
       expect(analysis.semanticValidation?.semanticScore).toBeLessThan(1.0);
-      
+
       // Performance issues should be detected
       if (analysis.performanceMetrics) {
         expect(analysis.performanceMetrics.responseTime).toBeGreaterThan(1000);
@@ -578,7 +583,7 @@ describe('Strategic UX Enhancements', () => {
 describe('Strategic UX API Integration', () => {
   // These tests would require more setup with actual Express app
   // and would test the API endpoints we created
-  
+
   test('should be ready for API integration testing', () => {
     // Placeholder for API integration tests
     // These would test the actual API endpoints with real HTTP requests
@@ -604,7 +609,7 @@ describe('Strategic Enhancement Performance', () => {
       evaluate: jest.fn(),
       scrollIntoViewIfNeeded: jest.fn(),
       click: jest.fn(),
-      waitForTimeout: jest.fn()
+      waitForTimeout: jest.fn(),
     };
 
     // Mock browser session
@@ -616,8 +621,8 @@ describe('Strategic Enhancement Performance', () => {
       lastUsed: new Date(),
       config: {
         viewport: { width: 1920, height: 1080 },
-        headless: true
-      }
+        headless: true,
+      },
     };
 
     // Mock the getSession method
@@ -626,32 +631,32 @@ describe('Strategic Enhancement Performance', () => {
 
   test('should complete accessibility validation within acceptable time limits', async () => {
     const startTime = Date.now();
-    
+
     // Mock fast responses
     mockPage.$.mockResolvedValue({
       getAttribute: jest.fn().mockResolvedValue('Fast test'),
       tagName: jest.fn().mockResolvedValue('BUTTON'),
       evaluate: jest.fn().mockResolvedValue({
         color: 'rgb(0, 0, 0)',
-        backgroundColor: 'rgb(255, 255, 255)'
+        backgroundColor: 'rgb(255, 255, 255)',
       }),
       scrollIntoViewIfNeeded: jest.fn(),
-      click: jest.fn()
+      click: jest.fn(),
     });
 
     const actions = [
       {
         type: 'click' as const,
         selector: '#performance-test',
-        validation: { accessibility: true, performance: false, semantics: false, usability: false }
-      }
+        validation: { accessibility: true, performance: false, semantics: false, usability: false },
+      },
     ];
 
     await enhancedUXAutomationManager.performIntelligentUIAutomation(sessionId, pageId, actions);
-    
+
     const duration = Date.now() - startTime;
     expect(duration).toBeLessThan(1000); // Should complete within 1 second
   });
 });
 
-export { }; // Make this a module
+export {}; // Make this a module

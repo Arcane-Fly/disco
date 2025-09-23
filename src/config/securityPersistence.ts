@@ -21,7 +21,9 @@ export function resolveSecurityDataDir(): string {
   return common; // will ultimately fall back to project ./data/security if needed
 }
 
-export async function findWritableDir(candidates: string[]): Promise<{ dir: string | null; tried: string[] }> {
+export async function findWritableDir(
+  candidates: string[]
+): Promise<{ dir: string | null; tried: string[] }> {
   const tried: string[] = [];
   for (const c of candidates) {
     if (!c) continue;

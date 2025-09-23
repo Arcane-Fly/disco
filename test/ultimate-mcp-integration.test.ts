@@ -26,9 +26,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
 
   describe('🔗 Platform Connector Endpoints', () => {
     test('ChatGPT connector provides OpenAPI-compatible configuration', async () => {
-      const response = await request(app)
-        .get('/chatgpt-connector')
-        .expect(200);
+      const response = await request(app).get('/chatgpt-connector').expect(200);
 
       expect(response.body).toHaveProperty('openapi');
       expect(response.body.openapi).toBe('3.0.0');
@@ -39,9 +37,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Claude connector provides MCP-compliant configuration', async () => {
-      const response = await request(app)
-        .get('/claude-connector')
-        .expect(200);
+      const response = await request(app).get('/claude-connector').expect(200);
 
       expect(response.body).toHaveProperty('name', 'disco-mcp-ultimate');
       expect(response.body).toHaveProperty('version', '2.0.0');
@@ -54,9 +50,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('VS Code connector provides extension-compatible configuration', async () => {
-      const response = await request(app)
-        .get('/vscode-connector')
-        .expect(200);
+      const response = await request(app).get('/vscode-connector').expect(200);
 
       expect(response.body).toHaveProperty('name', 'disco-mcp-vscode');
       expect(response.body).toHaveProperty('displayName');
@@ -67,9 +61,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Cursor connector provides Composer integration', async () => {
-      const response = await request(app)
-        .get('/cursor-connector')
-        .expect(200);
+      const response = await request(app).get('/cursor-connector').expect(200);
 
       expect(response.body.cursor_mcp_config).toBeDefined();
       expect(response.body.cursor_mcp_config.capabilities.composer_integration).toBeDefined();
@@ -77,9 +69,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Warp Terminal connector provides agent mode configuration', async () => {
-      const response = await request(app)
-        .get('/warp-connector')
-        .expect(200);
+      const response = await request(app).get('/warp-connector').expect(200);
 
       expect(response.body.warp_mcp_integration).toBeDefined();
       expect(response.body.warp_mcp_integration.agent_mode.enabled).toBe(true);
@@ -87,9 +77,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('JetBrains connector provides plugin configuration', async () => {
-      const response = await request(app)
-        .get('/jetbrains-connector')
-        .expect(200);
+      const response = await request(app).get('/jetbrains-connector').expect(200);
 
       expect(response.body.jetbrains_plugin_config).toBeDefined();
       expect(response.body.jetbrains_plugin_config.id).toBe('com.disco.mcp.jetbrains');
@@ -97,9 +85,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Zed connector provides slash command integration', async () => {
-      const response = await request(app)
-        .get('/zed-connector')
-        .expect(200);
+      const response = await request(app).get('/zed-connector').expect(200);
 
       expect(response.body.zed_extension_config).toBeDefined();
       expect(response.body.zed_extension_config.slash_commands).toBeDefined();
@@ -109,9 +95,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
 
   describe('📊 Enhanced Dashboard API', () => {
     test('Platforms endpoint returns real-time status', async () => {
-      const response = await request(app)
-        .get('/api/v1/dashboard/platforms')
-        .expect(200);
+      const response = await request(app).get('/api/v1/dashboard/platforms').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.platforms).toBeInstanceOf(Array);
@@ -128,9 +112,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Performance endpoint returns comprehensive metrics', async () => {
-      const response = await request(app)
-        .get('/api/v1/dashboard/performance')
-        .expect(200);
+      const response = await request(app).get('/api/v1/dashboard/performance').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.metrics).toBeDefined();
@@ -141,9 +123,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Quality metrics endpoint returns assessment data', async () => {
-      const response = await request(app)
-        .get('/api/v1/dashboard/quality')
-        .expect(200);
+      const response = await request(app).get('/api/v1/dashboard/quality').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.quality).toBeDefined();
@@ -153,9 +133,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Tools endpoint returns usage statistics', async () => {
-      const response = await request(app)
-        .get('/api/v1/dashboard/tools')
-        .expect(200);
+      const response = await request(app).get('/api/v1/dashboard/tools').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.tools).toBeInstanceOf(Array);
@@ -164,9 +142,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Health endpoint returns system status', async () => {
-      const response = await request(app)
-        .get('/api/v1/dashboard/health')
-        .expect(200);
+      const response = await request(app).get('/api/v1/dashboard/health').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.health.status).toBe('healthy');
@@ -177,9 +153,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
 
   describe('🎨 Enhanced UI Dashboard', () => {
     test('UI endpoint serves modern dashboard interface', async () => {
-      const response = await request(app)
-        .get('/ui')
-        .expect(200);
+      const response = await request(app).get('/ui').expect(200);
 
       expect(response.text).toContain('Disco MCP Ultimate');
       expect(response.text).toContain('1000x Enhanced Quality');
@@ -191,14 +165,12 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
 
   describe('📋 Enhanced MCP Manifest', () => {
     test('MCP manifest includes all platform capabilities', async () => {
-      const response = await request(app)
-        .get('/mcp-manifest.json')
-        .expect(200);
+      const response = await request(app).get('/mcp-manifest.json').expect(200);
 
       expect(response.body.name).toBe('disco-mcp-ultimate');
       expect(response.body.version).toBe('2.0.0');
       expect(response.body.description).toContain('1000x Enhanced Quality');
-      
+
       // Enhanced capabilities
       expect(response.body.capabilities.tools).toBe(true);
       expect(response.body.capabilities.resources).toBe(true);
@@ -222,9 +194,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Enhanced tools are properly defined', async () => {
-      const response = await request(app)
-        .get('/mcp-manifest.json')
-        .expect(200);
+      const response = await request(app).get('/mcp-manifest.json').expect(200);
 
       const tools = response.body.tools;
       expect(tools).toBeInstanceOf(Array);
@@ -249,11 +219,9 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
   describe('⚡ Performance Validation', () => {
     test('Response times meet 1000x improvement targets', async () => {
       const startTime = Date.now();
-      
-      await request(app)
-        .get('/health')
-        .expect(200);
-        
+
+      await request(app).get('/health').expect(200);
+
       const responseTime = Date.now() - startTime;
       expect(responseTime).toBeLessThan(100); // Sub-100ms target
     });
@@ -263,14 +231,14 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
         '/chatgpt-connector',
         '/claude-connector',
         '/vscode-connector',
-        '/cursor-connector'
+        '/cursor-connector',
       ];
 
       for (const endpoint of endpoints) {
         const startTime = Date.now();
         await request(app).get(endpoint).expect(200);
         const responseTime = Date.now() - startTime;
-        
+
         expect(responseTime).toBeLessThan(50); // Even faster for connectors
       }
     });
@@ -279,14 +247,14 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
       const endpoints = [
         '/api/v1/dashboard/platforms',
         '/api/v1/dashboard/performance',
-        '/api/v1/dashboard/quality'
+        '/api/v1/dashboard/quality',
       ];
 
       for (const endpoint of endpoints) {
         const startTime = Date.now();
         await request(app).get(endpoint).expect(200);
         const responseTime = Date.now() - startTime;
-        
+
         expect(responseTime).toBeLessThan(200); // API endpoints under 200ms
       }
     });
@@ -304,9 +272,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Security headers are properly set', async () => {
-      const response = await request(app)
-        .get('/ui')
-        .expect(200);
+      const response = await request(app).get('/ui').expect(200);
 
       // Check security headers
       expect(response.headers).toHaveProperty('x-content-type-options');
@@ -325,13 +291,11 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
         '/jetbrains-connector',
         '/zed-connector',
         '/sdk-config',
-        '/quality-metrics'
+        '/quality-metrics',
       ];
 
       for (const endpoint of connectorEndpoints) {
-        await request(app)
-          .get(endpoint)
-          .expect(200);
+        await request(app).get(endpoint).expect(200);
       }
     });
 
@@ -342,14 +306,12 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
         '/api/v1/dashboard/quality',
         '/api/v1/dashboard/tools',
         '/api/v1/dashboard/health',
-        '/api/v1/dashboard/activity'
+        '/api/v1/dashboard/activity',
       ];
 
       for (const endpoint of dashboardEndpoints) {
-        const response = await request(app)
-          .get(endpoint)
-          .expect(200);
-        
+        const response = await request(app).get(endpoint).expect(200);
+
         expect(response.body.success).toBe(true);
       }
     });
@@ -357,9 +319,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
 
   describe('📈 Business Impact Validation', () => {
     test('1000x improvement metrics are achieved', async () => {
-      const qualityResponse = await request(app)
-        .get('/api/v1/dashboard/quality')
-        .expect(200);
+      const qualityResponse = await request(app).get('/api/v1/dashboard/quality').expect(200);
 
       const performanceResponse = await request(app)
         .get('/api/v1/dashboard/performance')
@@ -376,13 +336,19 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
     });
 
     test('Universal platform support is implemented', async () => {
-      const platformsResponse = await request(app)
-        .get('/api/v1/dashboard/platforms')
-        .expect(200);
+      const platformsResponse = await request(app).get('/api/v1/dashboard/platforms').expect(200);
 
       const platforms = platformsResponse.body.platforms;
-      const expectedPlatforms = ['ChatGPT', 'Claude', 'VS Code', 'Cursor', 'Warp Terminal', 'JetBrains', 'Zed'];
-      
+      const expectedPlatforms = [
+        'ChatGPT',
+        'Claude',
+        'VS Code',
+        'Cursor',
+        'Warp Terminal',
+        'JetBrains',
+        'Zed',
+      ];
+
       for (const expectedPlatform of expectedPlatforms) {
         const platform = platforms.find((p: any) => p.name === expectedPlatform);
         expect(platform).toBeDefined();
@@ -397,9 +363,7 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
 // Performance benchmarking
 describe('🏆 Performance Benchmarks', () => {
   test('Concurrent request handling', async () => {
-    const promises = Array.from({ length: 10 }, () =>
-      request(app).get('/health').expect(200)
-    );
+    const promises = Array.from({ length: 10 }, () => request(app).get('/health').expect(200));
 
     const startTime = Date.now();
     await Promise.all(promises);
@@ -411,7 +375,7 @@ describe('🏆 Performance Benchmarks', () => {
 
   test('Memory usage optimization', async () => {
     const initialMemory = process.memoryUsage().heapUsed;
-    
+
     // Make multiple requests
     for (let i = 0; i < 50; i++) {
       await request(app).get('/api/v1/dashboard/platforms');
@@ -425,4 +389,4 @@ describe('🏆 Performance Benchmarks', () => {
   });
 });
 
-export { };
+export {};

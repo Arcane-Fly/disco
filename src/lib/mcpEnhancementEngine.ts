@@ -6,8 +6,6 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
-import { performanceOptimizer } from './performanceOptimizer.js';
-import { containerManager } from './containerManager.js';
 
 export interface EnhancementMetrics {
   performanceGain: number;
@@ -49,14 +47,17 @@ export class MCPEnhancementEngine extends EventEmitter {
   private metrics: EnhancementMetrics[] = [];
   private innovations: InnovationOpportunity[] = [];
   private activeOptimizations = new Set<string>();
-  
+
+  // Future enhancement: baseline metrics for comparison
+  /*
   private readonly baselineMetrics = {
     responseTime: 0,
     throughput: 0,
     errorRate: 0,
     resourceUtilization: 0,
-    userSatisfaction: 0
+    userSatisfaction: 0,
   };
+  */
 
   constructor() {
     super();
@@ -78,18 +79,18 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 8.0,
       implementation: this.implementAdvancedCaching.bind(this),
       validation: this.validateCachingPerformance.bind(this),
-      rollback: this.rollbackCaching.bind(this)
+      rollback: this.rollbackCaching.bind(this),
     });
 
     this.addStrategy({
       id: 'request-batching',
       name: 'Smart Request Batching & Deduplication',
       category: 'performance',
-      priority: 0.90,
+      priority: 0.9,
       expectedGain: 5.0,
       implementation: this.implementRequestBatching.bind(this),
       validation: this.validateBatchingEfficiency.bind(this),
-      rollback: this.rollbackBatching.bind(this)
+      rollback: this.rollbackBatching.bind(this),
     });
 
     this.addStrategy({
@@ -100,7 +101,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 6.0,
       implementation: this.implementConnectionPooling.bind(this),
       validation: this.validatePoolingEfficiency.bind(this),
-      rollback: this.rollbackPooling.bind(this)
+      rollback: this.rollbackPooling.bind(this),
     });
 
     // AI & Intelligence Enhancement Strategies
@@ -112,7 +113,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 7.0,
       implementation: this.implementPredictivePreloading.bind(this),
       validation: this.validatePreloadingAccuracy.bind(this),
-      rollback: this.rollbackPreloading.bind(this)
+      rollback: this.rollbackPreloading.bind(this),
     });
 
     this.addStrategy({
@@ -123,7 +124,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 4.5,
       implementation: this.implementIntelligentRouting.bind(this),
       validation: this.validateRoutingOptimization.bind(this),
-      rollback: this.rollbackRouting.bind(this)
+      rollback: this.rollbackRouting.bind(this),
     });
 
     // Reliability & Self-Healing Strategies
@@ -135,7 +136,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 9.0,
       implementation: this.implementSelfHealing.bind(this),
       validation: this.validateSelfHealingEffectiveness.bind(this),
-      rollback: this.rollbackSelfHealing.bind(this)
+      rollback: this.rollbackSelfHealing.bind(this),
     });
 
     this.addStrategy({
@@ -146,7 +147,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 6.5,
       implementation: this.implementCircuitBreaker.bind(this),
       validation: this.validateCircuitBreakerResilience.bind(this),
-      rollback: this.rollbackCircuitBreaker.bind(this)
+      rollback: this.rollbackCircuitBreaker.bind(this),
     });
 
     // User Experience Enhancement Strategies
@@ -154,11 +155,11 @@ export class MCPEnhancementEngine extends EventEmitter {
       id: 'progressive-loading',
       name: 'Progressive Loading with Smart Prioritization',
       category: 'ux',
-      priority: 0.80,
+      priority: 0.8,
       expectedGain: 3.5,
       implementation: this.implementProgressiveLoading.bind(this),
       validation: this.validateUserExperience.bind(this),
-      rollback: this.rollbackProgressiveLoading.bind(this)
+      rollback: this.rollbackProgressiveLoading.bind(this),
     });
 
     this.addStrategy({
@@ -169,7 +170,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 4.0,
       implementation: this.implementEnhancedCollaboration.bind(this),
       validation: this.validateCollaborationEfficiency.bind(this),
-      rollback: this.rollbackCollaboration.bind(this)
+      rollback: this.rollbackCollaboration.bind(this),
     });
 
     // Security Enhancement Strategies
@@ -181,7 +182,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 8.5,
       implementation: this.implementZeroTrustSecurity.bind(this),
       validation: this.validateSecurityPosture.bind(this),
-      rollback: this.rollbackSecurity.bind(this)
+      rollback: this.rollbackSecurity.bind(this),
     });
 
     // Cost Optimization Strategies
@@ -193,7 +194,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       expectedGain: 5.5,
       implementation: this.implementResourceOptimization.bind(this),
       validation: this.validateCostReduction.bind(this),
-      rollback: this.rollbackResourceOptimization.bind(this)
+      rollback: this.rollbackResourceOptimization.bind(this),
     });
   }
 
@@ -207,15 +208,16 @@ export class MCPEnhancementEngine extends EventEmitter {
     totalGain: number;
   }> {
     console.log('🔄 Executing comprehensive MCP enhancement strategy...');
-    
+
     const implemented: string[] = [];
     const deferred: string[] = [];
     const failed: string[] = [];
     let totalGain = 0;
 
     // Sort strategies by priority and expected gain
-    const sortedStrategies = Array.from(this.strategies.values())
-      .sort((a, b) => (b.priority * b.expectedGain) - (a.priority * a.expectedGain));
+    const sortedStrategies = Array.from(this.strategies.values()).sort(
+      (a, b) => b.priority * b.expectedGain - a.priority * a.expectedGain
+    );
 
     for (const strategy of sortedStrategies) {
       if (this.activeOptimizations.has(strategy.id)) {
@@ -224,26 +226,28 @@ export class MCPEnhancementEngine extends EventEmitter {
 
       try {
         console.log(`⚡ Implementing: ${strategy.name} (Expected gain: ${strategy.expectedGain}x)`);
-        
+
         this.activeOptimizations.add(strategy.id);
         const startTime = performance.now();
-        
+
         await strategy.implementation();
-        
+
         const implementationTime = performance.now() - startTime;
         const isValid = await strategy.validation();
-        
+
         if (isValid) {
           implemented.push(strategy.id);
           totalGain += strategy.expectedGain;
-          
+
           this.emit('strategy-implemented', {
             strategy: strategy.name,
             gain: strategy.expectedGain,
-            implementationTime
+            implementationTime,
           });
-          
-          console.log(`✅ Successfully implemented: ${strategy.name} (+${strategy.expectedGain}x improvement)`);
+
+          console.log(
+            `✅ Successfully implemented: ${strategy.name} (+${strategy.expectedGain}x improvement)`
+          );
         } else {
           console.log(`⚠️ Validation failed for: ${strategy.name} - Rolling back...`);
           await strategy.rollback();
@@ -254,7 +258,7 @@ export class MCPEnhancementEngine extends EventEmitter {
         console.error(`❌ Failed to implement: ${strategy.name}`, error);
         failed.push(strategy.id);
         this.activeOptimizations.delete(strategy.id);
-        
+
         try {
           await strategy.rollback();
         } catch (rollbackError) {
@@ -270,7 +274,7 @@ export class MCPEnhancementEngine extends EventEmitter {
       userExperienceScore: this.calculateUXScore(implemented),
       costOptimization: this.calculateCostOptimization(implemented),
       securityEnhancement: this.calculateSecurityEnhancement(implemented),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     console.log(`🎯 Enhancement execution complete:
@@ -287,7 +291,7 @@ export class MCPEnhancementEngine extends EventEmitter {
    */
   async analyzeInnovationOpportunities(): Promise<InnovationOpportunity[]> {
     console.log('🔍 Analyzing innovation opportunities...');
-    
+
     const opportunities: InnovationOpportunity[] = [
       {
         area: 'AI-Powered Code Generation',
@@ -296,7 +300,7 @@ export class MCPEnhancementEngine extends EventEmitter {
         potentialGain: 6.5,
         implementationComplexity: 8,
         businessImpact: 9,
-        timeline: 30
+        timeline: 30,
       },
       {
         area: 'Quantum-Inspired Optimization',
@@ -305,7 +309,7 @@ export class MCPEnhancementEngine extends EventEmitter {
         potentialGain: 7.0,
         implementationComplexity: 9,
         businessImpact: 8,
-        timeline: 60
+        timeline: 60,
       },
       {
         area: 'Edge Computing Integration',
@@ -314,7 +318,7 @@ export class MCPEnhancementEngine extends EventEmitter {
         potentialGain: 6.5,
         implementationComplexity: 7,
         businessImpact: 8,
-        timeline: 45
+        timeline: 45,
       },
       {
         area: 'Blockchain-Based Resource Verification',
@@ -323,7 +327,7 @@ export class MCPEnhancementEngine extends EventEmitter {
         potentialGain: 6.5,
         implementationComplexity: 8,
         businessImpact: 6,
-        timeline: 90
+        timeline: 90,
       },
       {
         area: 'Neural Network Container Orchestration',
@@ -332,23 +336,27 @@ export class MCPEnhancementEngine extends EventEmitter {
         potentialGain: 6.5,
         implementationComplexity: 9,
         businessImpact: 9,
-        timeline: 75
-      }
+        timeline: 75,
+      },
     ];
 
     // Prioritize opportunities using McKinsey-style impact/effort matrix
     const prioritizedOpportunities = opportunities
       .map(opp => ({
         ...opp,
-        priority: (opp.potentialGain * opp.businessImpact) / (opp.implementationComplexity * opp.timeline / 30)
+        priority:
+          (opp.potentialGain * opp.businessImpact) /
+          ((opp.implementationComplexity * opp.timeline) / 30),
       }))
       .sort((a, b) => (b as any).priority - (a as any).priority);
 
     this.innovations = prioritizedOpportunities;
-    
+
     console.log(`💡 Identified ${opportunities.length} innovation opportunities:`);
     prioritizedOpportunities.slice(0, 3).forEach((opp, index) => {
-      console.log(`  ${index + 1}. ${opp.area} (Potential: +${opp.potentialGain}x, Timeline: ${opp.timeline} days)`);
+      console.log(
+        `  ${index + 1}. ${opp.area} (Potential: +${opp.potentialGain}x, Timeline: ${opp.timeline} days)`
+      );
     });
 
     return prioritizedOpportunities;
@@ -365,14 +373,24 @@ export class MCPEnhancementEngine extends EventEmitter {
   } {
     const latestMetrics = this.metrics[this.metrics.length - 1];
     const baselineMetrics = this.metrics[0] || latestMetrics;
-    
+
     const improvements = {
-      performance: ((latestMetrics?.performanceGain || 1) / (baselineMetrics?.performanceGain || 1)) || 1,
-      scalability: ((latestMetrics?.scalabilityImprovement || 1) / (baselineMetrics?.scalabilityImprovement || 1)) || 1,
-      reliability: ((latestMetrics?.reliabilityIncrease || 1) / (baselineMetrics?.reliabilityIncrease || 1)) || 1,
-      userExperience: ((latestMetrics?.userExperienceScore || 1) / (baselineMetrics?.userExperienceScore || 1)) || 1,
-      costOptimization: ((latestMetrics?.costOptimization || 1) / (baselineMetrics?.costOptimization || 1)) || 1,
-      security: ((latestMetrics?.securityEnhancement || 1) / (baselineMetrics?.securityEnhancement || 1)) || 1
+      performance:
+        (latestMetrics?.performanceGain || 1) / (baselineMetrics?.performanceGain || 1) || 1,
+      scalability:
+        (latestMetrics?.scalabilityImprovement || 1) /
+          (baselineMetrics?.scalabilityImprovement || 1) || 1,
+      reliability:
+        (latestMetrics?.reliabilityIncrease || 1) / (baselineMetrics?.reliabilityIncrease || 1) ||
+        1,
+      userExperience:
+        (latestMetrics?.userExperienceScore || 1) / (baselineMetrics?.userExperienceScore || 1) ||
+        1,
+      costOptimization:
+        (latestMetrics?.costOptimization || 1) / (baselineMetrics?.costOptimization || 1) || 1,
+      security:
+        (latestMetrics?.securityEnhancement || 1) / (baselineMetrics?.securityEnhancement || 1) ||
+        1,
     };
 
     const recommendations = this.generateStrategicRecommendations(improvements);
@@ -386,11 +404,11 @@ export class MCPEnhancementEngine extends EventEmitter {
         userExperienceScore: 0,
         costOptimization: 0,
         securityEnhancement: 0,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       },
       improvements,
       recommendations,
-      strategicInsights
+      strategicInsights,
     };
   }
 
@@ -499,17 +517,39 @@ export class MCPEnhancementEngine extends EventEmitter {
   }
 
   // Rollback Methods (implement as needed)
-  private async rollbackCaching(): Promise<void> { /* Rollback logic */ }
-  private async rollbackBatching(): Promise<void> { /* Rollback logic */ }
-  private async rollbackPooling(): Promise<void> { /* Rollback logic */ }
-  private async rollbackPreloading(): Promise<void> { /* Rollback logic */ }
-  private async rollbackRouting(): Promise<void> { /* Rollback logic */ }
-  private async rollbackSelfHealing(): Promise<void> { /* Rollback logic */ }
-  private async rollbackCircuitBreaker(): Promise<void> { /* Rollback logic */ }
-  private async rollbackProgressiveLoading(): Promise<void> { /* Rollback logic */ }
-  private async rollbackCollaboration(): Promise<void> { /* Rollback logic */ }
-  private async rollbackSecurity(): Promise<void> { /* Rollback logic */ }
-  private async rollbackResourceOptimization(): Promise<void> { /* Rollback logic */ }
+  private async rollbackCaching(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackBatching(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackPooling(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackPreloading(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackRouting(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackSelfHealing(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackCircuitBreaker(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackProgressiveLoading(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackCollaboration(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackSecurity(): Promise<void> {
+    /* Rollback logic */
+  }
+  private async rollbackResourceOptimization(): Promise<void> {
+    /* Rollback logic */
+  }
 
   // Helper Methods
   private addStrategy(strategy: MCPOptimizationStrategy): void {
@@ -525,50 +565,50 @@ export class MCPEnhancementEngine extends EventEmitter {
   }
 
   private calculateScalabilityImprovement(implemented: string[]): number {
-    return implemented.filter(id => 
-      this.strategies.get(id)?.category === 'scalability'
-    ).length * 2.5;
+    return (
+      implemented.filter(id => this.strategies.get(id)?.category === 'scalability').length * 2.5
+    );
   }
 
   private calculateReliabilityIncrease(implemented: string[]): number {
-    return implemented.filter(id => 
-      this.strategies.get(id)?.category === 'reliability'
-    ).length * 3.0;
+    return (
+      implemented.filter(id => this.strategies.get(id)?.category === 'reliability').length * 3.0
+    );
   }
 
   private calculateUXScore(implemented: string[]): number {
-    return implemented.filter(id => 
-      this.strategies.get(id)?.category === 'ux'
-    ).length * 2.0;
+    return implemented.filter(id => this.strategies.get(id)?.category === 'ux').length * 2.0;
   }
 
   private calculateCostOptimization(implemented: string[]): number {
-    return implemented.filter(id => 
-      this.strategies.get(id)?.category === 'cost'
-    ).length * 1.5;
+    return implemented.filter(id => this.strategies.get(id)?.category === 'cost').length * 1.5;
   }
 
   private calculateSecurityEnhancement(implemented: string[]): number {
-    return implemented.filter(id => 
-      this.strategies.get(id)?.category === 'security'
-    ).length * 3.5;
+    return implemented.filter(id => this.strategies.get(id)?.category === 'security').length * 3.5;
   }
 
   private generateStrategicRecommendations(improvements: { [key: string]: number }): string[] {
     const recommendations: string[] = [];
-    
+
     if (improvements.performance < 5) {
-      recommendations.push('Focus on performance optimization - implement advanced caching and request batching');
+      recommendations.push(
+        'Focus on performance optimization - implement advanced caching and request batching'
+      );
     }
-    
+
     if (improvements.scalability < 3) {
-      recommendations.push('Invest in scalability improvements - implement connection pooling and load balancing');
+      recommendations.push(
+        'Invest in scalability improvements - implement connection pooling and load balancing'
+      );
     }
-    
+
     if (improvements.reliability < 4) {
-      recommendations.push('Enhance system reliability - implement self-healing and circuit breaker patterns');
+      recommendations.push(
+        'Enhance system reliability - implement self-healing and circuit breaker patterns'
+      );
     }
-    
+
     return recommendations;
   }
 
@@ -578,23 +618,29 @@ export class MCPEnhancementEngine extends EventEmitter {
       'AI-powered optimization strategies show highest ROI potential',
       'Real-time collaboration enhancements will significantly improve user satisfaction',
       'Security improvements are critical for enterprise adoption',
-      'Cost optimization through dynamic resource management is achievable'
+      'Cost optimization through dynamic resource management is achievable',
     ];
-    
+
     return insights;
   }
 
   private startContinuousImprovement(): void {
     // Run enhancement analysis every hour
-    setInterval(() => {
-      this.analyzeInnovationOpportunities().catch(console.error);
-    }, 60 * 60 * 1000);
-    
+    setInterval(
+      () => {
+        this.analyzeInnovationOpportunities().catch(console.error);
+      },
+      60 * 60 * 1000
+    );
+
     // Generate performance reports every 30 minutes
-    setInterval(() => {
-      const report = this.generatePerformanceReport();
-      this.emit('performance-report', report);
-    }, 30 * 60 * 1000);
+    setInterval(
+      () => {
+        const report = this.generatePerformanceReport();
+        this.emit('performance-report', report);
+      },
+      30 * 60 * 1000
+    );
   }
 
   getInnovationOpportunities(): InnovationOpportunity[] {

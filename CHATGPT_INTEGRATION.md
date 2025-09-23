@@ -7,6 +7,7 @@ This document provides step-by-step instructions for verifying that the Disco MC
 After deploying to Railway, verify these endpoints:
 
 ### 1. Discovery Endpoints ✅
+
 ```bash
 # Root service discovery
 curl https://disco-mcp.up.railway.app/
@@ -19,6 +20,7 @@ curl https://disco-mcp.up.railway.app/capabilities
 ```
 
 ### 2. ChatGPT Plugin Manifests ✅
+
 ```bash
 # OpenAI plugin manifest
 curl https://disco-mcp.up.railway.app/.well-known/ai-plugin.json
@@ -31,10 +33,12 @@ curl https://disco-mcp.up.railway.app/openapi.json
 ```
 
 ### 3. Documentation Interfaces ✅
+
 - **Swagger UI**: https://disco-mcp.up.railway.app/docs
 - **API Reference**: https://disco-mcp.up.railway.app/openapi.json
 
 ### 4. CORS and Security Headers ✅
+
 ```bash
 # Test CORS preflight for ChatGPT
 curl -X OPTIONS \
@@ -48,6 +52,7 @@ curl -I https://disco-mcp.up.railway.app/
 ```
 
 Expected headers:
+
 - `Access-Control-Allow-Origin: https://chat.openai.com`
 - `Content-Security-Policy: frame-ancestors 'self' https://chat.openai.com https://chatgpt.com`
 - Rate limiting headers
@@ -97,6 +102,7 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 ## Success Criteria
 
 ### ✅ All Implemented
+
 - [x] Root discovery endpoint returns service information
 - [x] OpenAPI documentation served at `/docs` and `/openapi.json`
 - [x] ChatGPT plugin manifest at `/.well-known/ai-plugin.json`
@@ -110,6 +116,7 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 ### Response Examples
 
 **Root Discovery** (`GET /`):
+
 ```json
 {
   "service": "disco",
@@ -127,6 +134,7 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 ```
 
 **Configuration** (`GET /config`):
+
 ```json
 {
   "websocket": "wss://disco-mcp.up.railway.app/socket.io",
@@ -141,6 +149,7 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 ```
 
 **Plugin Manifest** (`GET /.well-known/ai-plugin.json`):
+
 ```json
 {
   "schema_version": "v1",
@@ -184,6 +193,7 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 ### Monitoring
 
 Monitor these metrics post-deployment:
+
 - Request volume to discovery endpoints
 - CORS preflight success rate
 - Authentication success rate

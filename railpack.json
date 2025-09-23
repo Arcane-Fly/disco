@@ -5,9 +5,6 @@
     "node": "22.11.0",
     "yarn": "4.9.2"
   },
-  "build": {
-    "commands": ["yarn build"]
-  },
   "install": [
     {
       "command": "python -m venv /app/.venv",

@@ -16,13 +16,11 @@ describe('OAuth Authentication', () => {
       // Clear OAuth environment variables for this test
       const originalClientId = process.env.GITHUB_CLIENT_ID;
       const originalClientSecret = process.env.GITHUB_CLIENT_SECRET;
-      
+
       delete process.env.GITHUB_CLIENT_ID;
       delete process.env.GITHUB_CLIENT_SECRET;
 
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.github_oauth.available).toBe(false);
@@ -40,9 +38,7 @@ describe('OAuth Authentication', () => {
       process.env.GITHUB_CLIENT_ID = 'your-github-client-id';
       process.env.GITHUB_CLIENT_SECRET = 'your-github-client-secret';
 
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.github_oauth.available).toBe(false);
@@ -55,9 +51,7 @@ describe('OAuth Authentication', () => {
       process.env.GITHUB_CLIENT_ID = 'a1b2c3d4e5f6g7h8i9j0';
       process.env.GITHUB_CLIENT_SECRET = 'real-github-client-secret-value';
 
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       expect(response.body.status).toBe('success');
       expect(response.body.data.github_oauth.available).toBe(true);
@@ -67,13 +61,15 @@ describe('OAuth Authentication', () => {
     });
 
     test('should include OAuth discovery endpoints', async () => {
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       expect(response.body.data.oauth_discovery).toBeDefined();
-      expect(response.body.data.oauth_discovery.authorization_server).toBe('/.well-known/oauth-authorization-server');
-      expect(response.body.data.oauth_discovery.protected_resource).toBe('/.well-known/oauth-protected-resource');
+      expect(response.body.data.oauth_discovery.authorization_server).toBe(
+        '/.well-known/oauth-authorization-server'
+      );
+      expect(response.body.data.oauth_discovery.protected_resource).toBe(
+        '/.well-known/oauth-protected-resource'
+      );
     });
   });
 
@@ -83,9 +79,7 @@ describe('OAuth Authentication', () => {
       delete process.env.GITHUB_CLIENT_ID;
       delete process.env.GITHUB_CLIENT_SECRET;
 
-      const response = await request(app)
-        .get('/api/v1/auth/github')
-        .expect(503);
+      const response = await request(app).get('/api/v1/auth/github').expect(503);
 
       expect(response.body.status).toBe('error');
       expect(response.body.error.message).toContain('GitHub OAuth not configured');
@@ -96,9 +90,7 @@ describe('OAuth Authentication', () => {
       process.env.GITHUB_CLIENT_ID = 'your-github-client-id';
       process.env.GITHUB_CLIENT_SECRET = 'your-github-client-secret';
 
-      const response = await request(app)
-        .get('/api/v1/auth/github')
-        .expect(503);
+      const response = await request(app).get('/api/v1/auth/github').expect(503);
 
       expect(response.body.status).toBe('error');
       expect(response.body.error.message).toContain('placeholder values');
@@ -109,9 +101,7 @@ describe('OAuth Authentication', () => {
       process.env.GITHUB_CLIENT_ID = 'a1b2c3d4e5f6g7h8i9j0';
       process.env.GITHUB_CLIENT_SECRET = 'real-github-client-secret-value';
 
-      const response = await request(app)
-        .get('/api/v1/auth/github')
-        .expect(302);
+      const response = await request(app).get('/api/v1/auth/github').expect(302);
 
       expect(response.headers.location).toContain('github.com/login/oauth/authorize');
       expect(response.headers.location).toContain('client_id=a1b2c3d4e5f6g7h8i9j0');

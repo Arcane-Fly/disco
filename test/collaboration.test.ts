@@ -1,5 +1,8 @@
 import { Server as SocketIOServer } from 'socket.io';
-import { CollaborationManager, initializeCollaborationManager } from '../src/lib/collaborationManager';
+import {
+  CollaborationManager,
+  initializeCollaborationManager,
+} from '../src/lib/collaborationManager';
 import { createServer } from 'http';
 
 describe('Collaboration Manager', () => {

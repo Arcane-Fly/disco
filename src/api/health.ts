@@ -99,7 +99,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const envInfo = containerManager.getEnvironmentInfo();
     const uptime = process.uptime();
     const memoryUsage = process.memoryUsage();
-    
+
     const health = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -111,7 +111,7 @@ router.get('/', async (_req: Request, res: Response) => {
         used: Math.round(memoryUsage.heapUsed / 1024 / 1024),
         total: Math.round(memoryUsage.heapTotal / 1024 / 1024),
         external: Math.round(memoryUsage.external / 1024 / 1024),
-        rss: Math.round(memoryUsage.rss / 1024 / 1024)
+        rss: Math.round(memoryUsage.rss / 1024 / 1024),
       },
       containers: {
         active: stats.activeSessions,
@@ -121,13 +121,13 @@ router.get('/', async (_req: Request, res: Response) => {
         environment: envInfo.environment,
         webcontainer_supported: envInfo.webContainerSupported,
         webcontainer_loaded: envInfo.webContainerLoaded,
-        functionality_available: envInfo.containerFunctionalityAvailable
+        functionality_available: envInfo.containerFunctionalityAvailable,
       },
       services: {
         webcontainer: envInfo.containerFunctionalityAvailable ? 'enabled' : 'disabled',
         redis: process.env.REDIS_URL ? 'enabled' : 'disabled',
-        github: process.env.GITHUB_CLIENT_ID ? 'enabled' : 'disabled'
-      }
+        github: process.env.GITHUB_CLIENT_ID ? 'enabled' : 'disabled',
+      },
     };
 
     // Check if system is under stress
@@ -140,15 +140,14 @@ router.get('/', async (_req: Request, res: Response) => {
     }
 
     const statusCode = health.status === 'healthy' ? 200 : 503;
-    
-    res.status(statusCode).json(health);
 
+    res.status(statusCode).json(health);
   } catch (error) {
     console.error('Health check error:', error);
     res.status(503).json({
       status: 'error',
       timestamp: new Date().toISOString(),
-      error: 'Health check failed'
+      error: 'Health check failed',
     });
   }
 });
@@ -160,13 +159,13 @@ router.get('/', async (_req: Request, res: Response) => {
 router.get('/ready', async (_req: Request, res: Response) => {
   try {
     const envInfo = containerManager.getEnvironmentInfo();
-    
+
     // Check if essential services are available
     const checks = {
       server: true,
       environment: envInfo.environment,
       webcontainer_supported: envInfo.webContainerSupported,
-      jwt: !!process.env.JWT_SECRET
+      jwt: !!process.env.JWT_SECRET,
     };
 
     // In server environment, WebContainer not being available is expected and OK
@@ -176,22 +175,21 @@ router.get('/ready', async (_req: Request, res: Response) => {
       res.json({
         status: 'ready',
         timestamp: new Date().toISOString(),
-        checks
+        checks,
       });
     } else {
       res.status(503).json({
         status: 'not ready',
         timestamp: new Date().toISOString(),
-        checks
+        checks,
       });
     }
-
   } catch (error) {
     console.error('Readiness check error:', error);
     res.status(503).json({
       status: 'not ready',
       timestamp: new Date().toISOString(),
-      error: 'Readiness check failed'
+      error: 'Readiness check failed',
     });
   }
 });
@@ -210,22 +208,21 @@ router.get('/live', async (_req: Request, res: Response) => {
       res.json({
         status: 'alive',
         timestamp: new Date().toISOString(),
-        uptime: Math.floor(process.uptime())
+        uptime: Math.floor(process.uptime()),
       });
     } else {
       res.status(503).json({
         status: 'not alive',
         timestamp: new Date().toISOString(),
-        reason: 'Memory usage too high'
+        reason: 'Memory usage too high',
       });
     }
-
   } catch (error) {
     console.error('Liveness check error:', error);
     res.status(503).json({
       status: 'not alive',
       timestamp: new Date().toISOString(),
-      error: 'Liveness check failed'
+      error: 'Liveness check failed',
     });
   }
 });
@@ -238,7 +235,7 @@ router.get('/metrics', async (_req: Request, res: Response) => {
   try {
     const stats = containerManager.getStats();
     const memoryUsage = process.memoryUsage();
-    
+
     const metrics = {
       timestamp: new Date().toISOString(),
       uptime_seconds: Math.floor(process.uptime()),
@@ -250,15 +247,14 @@ router.get('/metrics', async (_req: Request, res: Response) => {
       containers_max_total: stats.maxContainers,
       containers_pool_ready_total: stats.poolReady,
       containers_pool_initializing_total: stats.poolInitializing,
-      containers_by_user: stats.sessionsByUser
+      containers_by_user: stats.sessionsByUser,
     };
 
     res.json(metrics);
-
   } catch (error) {
     console.error('Metrics error:', error);
     res.status(500).json({
-      error: 'Failed to collect metrics'
+      error: 'Failed to collect metrics',
     });
   }
 });

@@ -166,7 +166,7 @@ router.get('/audit-logs', authMiddleware, async (req: Request, res: Response) =>
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
@@ -174,7 +174,7 @@ router.get('/audit-logs', authMiddleware, async (req: Request, res: Response) =>
     // For now, allow all authenticated users to view logs
 
     const { startDate, endDate, userId, action, limit = 100 } = req.query;
-    
+
     const filters: any = {};
     if (startDate) filters.startDate = new Date(startDate as string);
     if (endDate) filters.endDate = new Date(endDate as string);
@@ -185,29 +185,28 @@ router.get('/audit-logs', authMiddleware, async (req: Request, res: Response) =>
     const limitedLogs = allLogs.slice(0, parseInt(limit as string, 10));
 
     // Log the audit log access
-    await securityComplianceManager.logSecurityEvent(
-      req, 
-      'audit_log_access', 
-      'audit_logs', 
-      { filters, resultCount: limitedLogs.length }
-    );
+    await securityComplianceManager.logSecurityEvent(req, 'audit_log_access', 'audit_logs', {
+      filters,
+      resultCount: limitedLogs.length,
+    });
 
     res.json({
       logs: limitedLogs.map(log => ({
         ...log,
         // Remove sensitive information from response
-        requestBody: log.compliance.dataClassification === 'restricted' ? '[CLASSIFIED]' : log.requestBody,
-        responseBody: undefined // Never return response bodies in audit log API
+        requestBody:
+          log.compliance.dataClassification === 'restricted' ? '[CLASSIFIED]' : log.requestBody,
+        responseBody: undefined, // Never return response bodies in audit log API
       })),
       total: allLogs.length,
       filtered: limitedLogs.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Audit logs retrieval error:', error);
     res.status(500).json({
       error: 'Failed to retrieve audit logs',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -262,12 +261,12 @@ router.get('/incidents', authMiddleware, async (req: Request, res: Response) => 
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
     const { resolved, severity } = req.query;
-    
+
     let incidents = securityComplianceManager.getSecurityIncidents(
       resolved !== undefined ? resolved === 'true' : undefined
     );
@@ -282,26 +281,26 @@ router.get('/incidents', authMiddleware, async (req: Request, res: Response) => 
       critical: incidents.filter(i => i.severity === 'critical').length,
       high: incidents.filter(i => i.severity === 'high').length,
       medium: incidents.filter(i => i.severity === 'medium').length,
-      low: incidents.filter(i => i.severity === 'low').length
+      low: incidents.filter(i => i.severity === 'low').length,
     };
 
     await securityComplianceManager.logSecurityEvent(
-      req, 
-      'security_incidents_access', 
-      'security_incidents', 
+      req,
+      'security_incidents_access',
+      'security_incidents',
       { filters: { resolved, severity }, resultCount: incidents.length }
     );
 
     res.json({
       incidents,
       summary,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Security incidents retrieval error:', error);
     res.status(500).json({
       error: 'Failed to retrieve security incidents',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -344,57 +343,61 @@ router.get('/incidents', authMiddleware, async (req: Request, res: Response) => 
  *       404:
  *         description: Incident not found
  */
-router.post('/incidents/:incidentId/resolve', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
-    if (!user?.userId) {
-      return res.status(401).json({
-        error: 'User authentication required'
+router.post(
+  '/incidents/:incidentId/resolve',
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user?.userId) {
+        return res.status(401).json({
+          error: 'User authentication required',
+        });
+      }
+
+      const { incidentId } = req.params;
+      const { resolution } = req.body;
+
+      if (!resolution || typeof resolution !== 'string') {
+        return res.status(400).json({
+          error: 'Resolution description is required',
+        });
+      }
+
+      const success = await securityComplianceManager.resolveSecurityIncident(
+        incidentId,
+        resolution,
+        user.userId
+      );
+
+      if (!success) {
+        return res.status(404).json({
+          error: 'Security incident not found',
+        });
+      }
+
+      await securityComplianceManager.logSecurityEvent(
+        req,
+        'security_incident_resolved',
+        'security_incident',
+        { incidentId, resolution }
+      );
+
+      res.json({
+        message: 'Security incident resolved successfully',
+        incidentId,
+        resolvedBy: user.userId,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Security incident resolution error:', error);
+      res.status(500).json({
+        error: 'Failed to resolve security incident',
+        timestamp: new Date().toISOString(),
       });
     }
-
-    const { incidentId } = req.params;
-    const { resolution } = req.body;
-
-    if (!resolution || typeof resolution !== 'string') {
-      return res.status(400).json({
-        error: 'Resolution description is required'
-      });
-    }
-
-    const success = await securityComplianceManager.resolveSecurityIncident(
-      incidentId,
-      resolution,
-      user.userId
-    );
-
-    if (!success) {
-      return res.status(404).json({
-        error: 'Security incident not found'
-      });
-    }
-
-    await securityComplianceManager.logSecurityEvent(
-      req, 
-      'security_incident_resolved', 
-      'security_incident', 
-      { incidentId, resolution }
-    );
-
-    res.json({
-      message: 'Security incident resolved successfully',
-      incidentId,
-      resolvedBy: user.userId,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Security incident resolution error:', error);
-    res.status(500).json({
-      error: 'Failed to resolve security incident',
-      timestamp: new Date().toISOString()
-    });
   }
-});
+);
 
 /**
  * @swagger
@@ -425,28 +428,28 @@ router.get('/compliance/reports', authMiddleware, async (req: Request, res: Resp
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
     const reports = securityComplianceManager.getComplianceReports();
 
     await securityComplianceManager.logSecurityEvent(
-      req, 
-      'compliance_reports_access', 
-      'compliance_reports', 
+      req,
+      'compliance_reports_access',
+      'compliance_reports',
       { reportCount: reports.length }
     );
 
     res.json({
       reports,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Compliance reports retrieval error:', error);
     res.status(500).json({
       error: 'Failed to retrieve compliance reports',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -497,7 +500,7 @@ router.post('/compliance/generate-report', authMiddleware, async (req: Request, 
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
@@ -505,14 +508,14 @@ router.post('/compliance/generate-report', authMiddleware, async (req: Request, 
 
     if (!type || !startDate || !endDate) {
       return res.status(400).json({
-        error: 'Report type, start date, and end date are required'
+        error: 'Report type, start date, and end date are required',
       });
     }
 
     const validTypes = ['soc2', 'gdpr', 'hipaa', 'daily', 'weekly', 'monthly'];
     if (!validTypes.includes(type)) {
       return res.status(400).json({
-        error: `Invalid report type. Must be one of: ${validTypes.join(', ')}`
+        error: `Invalid report type. Must be one of: ${validTypes.join(', ')}`,
       });
     }
 
@@ -521,22 +524,22 @@ router.post('/compliance/generate-report', authMiddleware, async (req: Request, 
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
-        error: 'Invalid date format for startDate or endDate'
+        error: 'Invalid date format for startDate or endDate',
       });
     }
 
     if (end <= start) {
       return res.status(400).json({
-        error: 'endDate must be after startDate'
+        error: 'endDate must be after startDate',
       });
     }
 
     const report = await securityComplianceManager.generateComplianceReport(type, start, end);
 
     await securityComplianceManager.logSecurityEvent(
-      req, 
-      'compliance_report_generated', 
-      'compliance_report', 
+      req,
+      'compliance_report_generated',
+      'compliance_report',
       { reportType: type, period: { start, end }, reportId: report.id }
     );
 
@@ -545,7 +548,7 @@ router.post('/compliance/generate-report', authMiddleware, async (req: Request, 
     console.error('Compliance report generation error:', error);
     res.status(500).json({
       error: 'Failed to generate compliance report',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -606,7 +609,7 @@ router.post('/zero-trust/validate', authMiddleware, async (req: Request, res: Re
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
@@ -614,21 +617,25 @@ router.post('/zero-trust/validate', authMiddleware, async (req: Request, res: Re
 
     if (!resource || !action) {
       return res.status(400).json({
-        error: 'Resource and action are required'
+        error: 'Resource and action are required',
       });
     }
 
-    const validation = await securityComplianceManager.validateZeroTrustAccess(req, resource, action);
+    const validation = await securityComplianceManager.validateZeroTrustAccess(
+      req,
+      resource,
+      action
+    );
 
     res.json({
       ...validation,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Zero-trust validation error:', error);
     res.status(500).json({
       error: 'Failed to perform zero-trust validation',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -688,28 +695,28 @@ router.get('/metrics', authMiddleware, async (req: Request, res: Response) => {
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
     const metrics = securityComplianceManager.getSecurityMetrics();
 
     await securityComplianceManager.logSecurityEvent(
-      req, 
-      'security_metrics_access', 
-      'security_metrics', 
+      req,
+      'security_metrics_access',
+      'security_metrics',
       { metricsRequested: Object.keys(metrics) }
     );
 
     res.json({
       ...metrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Security metrics error:', error);
     res.status(500).json({
       error: 'Failed to retrieve security metrics',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -762,18 +769,18 @@ router.get('/status', authMiddleware, async (req: Request, res: Response) => {
     const user = (req as any).user;
     if (!user?.userId) {
       return res.status(401).json({
-        error: 'User authentication required'
+        error: 'User authentication required',
       });
     }
 
     const metrics = securityComplianceManager.getSecurityMetrics();
     const unresolvedIncidents = securityComplianceManager.getSecurityIncidents(false);
-    
+
     // Determine overall status
     let status = 'healthy';
     const criticalIncidents = unresolvedIncidents.filter(i => i.severity === 'critical').length;
     const highIncidents = unresolvedIncidents.filter(i => i.severity === 'high').length;
-    
+
     if (criticalIncidents > 0) {
       status = 'critical';
     } else if (highIncidents > 2 || unresolvedIncidents.length > 10) {
@@ -786,19 +793,19 @@ router.get('/status', authMiddleware, async (req: Request, res: Response) => {
         auditLogging: metrics.auditLogs.total > 0 ? 'active' : 'inactive',
         incidentManagement: 'active',
         complianceReporting: metrics.compliance.reports > 0 ? 'active' : 'inactive',
-        zeroTrust: metrics.compliance.zeroTrustEnabled ? 'active' : 'inactive'
+        zeroTrust: metrics.compliance.zeroTrustEnabled ? 'active' : 'inactive',
       },
       uptime: Math.floor(process.uptime()),
       lastAudit: new Date().toISOString(), // In production, track actual last audit
       unresolvedIncidents: unresolvedIncidents.length,
       complianceStatus: metrics.compliance.lastStatus,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     await securityComplianceManager.logSecurityEvent(
-      req, 
-      'security_status_check', 
-      'security_status', 
+      req,
+      'security_status_check',
+      'security_status',
       { status, unresolvedIncidents: unresolvedIncidents.length }
     );
 
@@ -807,7 +814,7 @@ router.get('/status', authMiddleware, async (req: Request, res: Response) => {
     console.error('Security status error:', error);
     res.status(500).json({
       error: 'Failed to retrieve security status',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });

@@ -19,25 +19,29 @@ export const logger = winston.createLogger({
   defaultMeta: { service: 'disco-mcp' },
   transports: [
     new winston.transports.Console({
-      stderrLevels: ['error']
-    })
-  ]
+      stderrLevels: ['error'],
+    }),
+  ],
 });
 
 // Add file transports in production
 if (process.env.NODE_ENV === 'production') {
-  logger.add(new winston.transports.File({
-    filename: 'logs/error.log',
-    level: 'error',
-    maxsize: 5242880, // 5MB
-    maxFiles: 5
-  }));
-  
-  logger.add(new winston.transports.File({
-    filename: 'logs/combined.log',
-    maxsize: 5242880, // 5MB
-    maxFiles: 5
-  }));
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    })
+  );
+
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    })
+  );
 }
 
 // Helper functions for common logging patterns
@@ -45,23 +49,23 @@ export const loggers = {
   worker: {
     info: (message: string, meta?: any) => logger.info(`[WORKER] ${message}`, meta),
     error: (message: string, error?: any) => logger.error(`[WORKER] ${message}`, { error }),
-    warn: (message: string, meta?: any) => logger.warn(`[WORKER] ${message}`, meta)
+    warn: (message: string, meta?: any) => logger.warn(`[WORKER] ${message}`, meta),
   },
   git: {
     info: (message: string, meta?: any) => logger.info(`[GIT] ${message}`, meta),
     error: (message: string, error?: any) => logger.error(`[GIT] ${message}`, { error }),
-    warn: (message: string, meta?: any) => logger.warn(`[GIT] ${message}`, meta)
+    warn: (message: string, meta?: any) => logger.warn(`[GIT] ${message}`, meta),
   },
   container: {
     info: (message: string, meta?: any) => logger.info(`[CONTAINER] ${message}`, meta),
     error: (message: string, error?: any) => logger.error(`[CONTAINER] ${message}`, { error }),
-    warn: (message: string, meta?: any) => logger.warn(`[CONTAINER] ${message}`, meta)
+    warn: (message: string, meta?: any) => logger.warn(`[CONTAINER] ${message}`, meta),
   },
   api: {
     info: (message: string, meta?: any) => logger.info(`[API] ${message}`, meta),
     error: (message: string, error?: any) => logger.error(`[API] ${message}`, { error }),
-    warn: (message: string, meta?: any) => logger.warn(`[API] ${message}`, meta)
-  }
+    warn: (message: string, meta?: any) => logger.warn(`[API] ${message}`, meta),
+  },
 };
 
 export default logger;

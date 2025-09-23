@@ -2,7 +2,10 @@ import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
 import { collaborationManager } from '../lib/collaborationManager.js';
 import { FileCreateRequest, FileListItem, ErrorCode } from '../types/index.js';
-import { validateContainerSession, SessionValidatedRequest } from '../middleware/sessionValidator.js';
+import {
+  validateContainerSession,
+  SessionValidatedRequest,
+} from '../middleware/sessionValidator.js';
 
 const router = Router();
 
@@ -10,84 +13,90 @@ const router = Router();
  * GET /api/v1/files/:containerId
  * List directory contents
  */
-router.get('/:containerId', validateContainerSession, async (req: SessionValidatedRequest, res: Response) => {
-  try {
-    const { path = '/' } = req.query;
-    const session = req.session!; // Validated by middleware
+router.get(
+  '/:containerId',
+  validateContainerSession,
+  async (req: SessionValidatedRequest, res: Response) => {
+    try {
+      const { path = '/' } = req.query;
+      const session = req.session!; // Validated by middleware
 
-    // List files in the specified path
-    const files = await listFiles(session.container, path as string);
+      // List files in the specified path
+      const files = await listFiles(session.container, path as string);
 
-    res.json({
-      status: 'success',
-      data: {
-        path: path,
-        files: files
-      }
-    });
-
-  } catch (error) {
-    console.error('File list error:', error);
-    res.status(500).json({
-      status: 'error',
-      error: {
-        code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to list files'
-      }
-    });
+      res.json({
+        status: 'success',
+        data: {
+          path: path,
+          files: files,
+        },
+      });
+    } catch (error) {
+      console.error('File list error:', error);
+      res.status(500).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.EXECUTION_ERROR,
+          message: 'Failed to list files',
+        },
+      });
+    }
   }
-});
+);
 
 /**
  * GET /api/v1/files/:containerId/content
  * Get file content
  */
-router.get('/:containerId/content', validateContainerSession, async (req: SessionValidatedRequest, res: Response) => {
-  try {
-    const { path } = req.query;
-    const session = req.session!; // Validated by middleware
+router.get(
+  '/:containerId/content',
+  validateContainerSession,
+  async (req: SessionValidatedRequest, res: Response) => {
+    try {
+      const { path } = req.query;
+      const session = req.session!; // Validated by middleware
 
-    if (!path || typeof path !== 'string') {
-      return res.status(400).json({
+      if (!path || typeof path !== 'string') {
+        return res.status(400).json({
+          status: 'error',
+          error: {
+            code: ErrorCode.INVALID_REQUEST,
+            message: 'File path is required',
+          },
+        });
+      }
+
+      const content = await readFile(session.container, path as string);
+
+      res.json({
+        status: 'success',
+        data: {
+          path: path,
+          content: content,
+          encoding: 'utf-8',
+        },
+      });
+    } catch (error) {
+      console.error('File read error:', error);
+
+      let errorCode = ErrorCode.EXECUTION_ERROR;
+      let message = 'Failed to read file';
+
+      if (error instanceof Error && error.message.includes('not found')) {
+        errorCode = ErrorCode.FILE_NOT_FOUND;
+        message = 'File not found';
+      }
+
+      res.status(errorCode === ErrorCode.FILE_NOT_FOUND ? 404 : 500).json({
         status: 'error',
         error: {
-          code: ErrorCode.INVALID_REQUEST,
-          message: 'File path is required'
-        }
+          code: errorCode,
+          message: message,
+        },
       });
     }
-
-    const content = await readFile(session.container, path as string);
-
-    res.json({
-      status: 'success',
-      data: {
-        path: path,
-        content: content,
-        encoding: 'utf-8'
-      }
-    });
-
-  } catch (error) {
-    console.error('File read error:', error);
-    
-    let errorCode = ErrorCode.EXECUTION_ERROR;
-    let message = 'Failed to read file';
-    
-    if (error instanceof Error && error.message.includes('not found')) {
-      errorCode = ErrorCode.FILE_NOT_FOUND;
-      message = 'File not found';
-    }
-
-    res.status(errorCode === ErrorCode.FILE_NOT_FOUND ? 404 : 500).json({
-      status: 'error',
-      error: {
-        code: errorCode,
-        message: message
-      }
-    });
   }
-});
+);
 
 /**
  * POST /api/v1/files/:containerId
@@ -104,20 +113,20 @@ router.post('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Path and content are required'
-        }
+          message: 'Path and content are required',
+        },
       });
     }
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -126,8 +135,8 @@ router.post('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -147,18 +156,17 @@ router.post('/:containerId', async (req: Request, res: Response) => {
       status: 'success',
       data: {
         path: path,
-        message: 'File created/updated successfully'
-      }
+        message: 'File created/updated successfully',
+      },
     });
-
   } catch (error) {
     console.error('File write error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to write file'
-      }
+        message: 'Failed to write file',
+      },
     });
   }
 });
@@ -178,20 +186,20 @@ router.put('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Path and content are required'
-        }
+          message: 'Path and content are required',
+        },
       });
     }
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -200,8 +208,8 @@ router.put('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -213,8 +221,8 @@ router.put('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.FILE_NOT_FOUND,
-          message: 'File not found'
-        }
+          message: 'File not found',
+        },
       });
     }
 
@@ -234,18 +242,17 @@ router.put('/:containerId', async (req: Request, res: Response) => {
       status: 'success',
       data: {
         path: path,
-        message: 'File updated successfully'
-      }
+        message: 'File updated successfully',
+      },
     });
-
   } catch (error) {
     console.error('File update error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to update file'
-      }
+        message: 'Failed to update file',
+      },
     });
   }
 });
@@ -265,20 +272,20 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'File path is required'
-        }
+          message: 'File path is required',
+        },
       });
     }
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -287,8 +294,8 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -300,16 +307,15 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
       status: 'success',
       data: {
         path: path,
-        message: 'File deleted successfully'
-      }
+        message: 'File deleted successfully',
+      },
     });
-
   } catch (error) {
     console.error('File delete error:', error);
-    
+
     let errorCode = ErrorCode.EXECUTION_ERROR;
     let message = 'Failed to delete file';
-    
+
     if (error instanceof Error && error.message.includes('not found')) {
       errorCode = ErrorCode.FILE_NOT_FOUND;
       message = 'File not found';
@@ -319,8 +325,8 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
       status: 'error',
       error: {
         code: errorCode,
-        message: message
-      }
+        message: message,
+      },
     });
   }
 });
@@ -332,15 +338,15 @@ async function listFiles(container: any, path: string): Promise<FileListItem[]> 
     // Use real WebContainer fs API
     const fs = container.fs;
     const entries = await fs.readdir(path, { withFileTypes: true });
-    
+
     const fileList: FileListItem[] = [];
-    
+
     for (const entry of entries) {
       try {
         // Get file stats for accurate information
         const fullPath = path === '/' ? `/${entry.name}` : `${path}/${entry.name}`;
         let size = 0;
-        
+
         if (entry.isFile()) {
           try {
             const stats = await fs.stat(fullPath);
@@ -350,19 +356,19 @@ async function listFiles(container: any, path: string): Promise<FileListItem[]> 
             size = 0;
           }
         }
-        
+
         fileList.push({
           name: entry.name,
           type: entry.isDirectory() ? 'directory' : 'file',
           size: size,
-          lastModified: new Date() // WebContainer doesn't provide mtime, use current time
+          lastModified: new Date(), // WebContainer doesn't provide mtime, use current time
         });
       } catch (entryError) {
         // Skip entries that cause errors but log them
         console.warn(`Warning: Could not process entry ${entry.name}:`, entryError);
       }
     }
-    
+
     return fileList;
   } catch (error) {
     console.error('WebContainer fs.readdir failed:', error);
@@ -381,10 +387,15 @@ async function readFile(container: any, path: string): Promise<string> {
   }
 }
 
-async function writeFile(container: any, path: string, content: string, encoding: string = 'utf-8'): Promise<void> {
+async function writeFile(
+  container: any,
+  path: string,
+  content: string,
+  encoding: string = 'utf-8'
+): Promise<void> {
   try {
     const fs = container.fs;
-    
+
     // Ensure parent directory exists
     const pathParts = path.split('/');
     pathParts.pop(); // Remove filename
@@ -397,22 +408,24 @@ async function writeFile(container: any, path: string, content: string, encoding
         console.debug(`Directory creation warning for ${dirPath}:`, mkdirError);
       }
     }
-    
+
     await fs.writeFile(path, content, encoding);
   } catch (error) {
     console.error('WebContainer fs.writeFile failed:', error);
-    throw new Error(`Failed to write file: ${path} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to write file: ${path} - ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
 async function deleteFile(container: any, path: string): Promise<void> {
   try {
     const fs = container.fs;
-    
+
     // Check if it's a file or directory first
     try {
       const stats = await fs.stat(path);
-      
+
       if (stats.isDirectory()) {
         // For directories, use rmdir (note: WebContainer may require empty directories)
         await fs.rmdir(path);
@@ -426,7 +439,9 @@ async function deleteFile(container: any, path: string): Promise<void> {
     }
   } catch (error) {
     console.error('WebContainer fs delete operation failed:', error);
-    throw new Error(`Failed to delete file/directory: ${path} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to delete file/directory: ${path} - ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
