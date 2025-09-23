@@ -192,7 +192,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
             result.success = true;
             break;
 
-          default:
+          default: {
             // Fall back to base automation for standard actions
             const baseActions = [
               {
@@ -203,6 +203,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
             ];
             await super.performUIAutomation(sessionId, pageId, baseActions);
             result.success = true;
+          }
         }
 
         // Post-action analysis if requested
@@ -565,14 +566,12 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       const linkCount = await page.$$eval('a', links => links.length);
       const imageCount = await page.$$eval('img', imgs => imgs.length);
       */
-
       // Calculate semantic score based on changes
       // const semanticScore = this.calculateSemanticScore(
       //   structuralChanges,
       //   contentChanges,
       //   layoutChanges
       // );
-
       // Future enhancement: impact calculation
       // const impact = semanticScore > 0.8 ? 'low' : semanticScore > 0.5 ? 'medium' : 'high';
     } catch (error) {
