@@ -5,6 +5,7 @@
     "noEmit": true,
     "allowJs": true,
     "rootDir": ".",
+    "noUnusedLocals": false,
     "lib": [
       "dom",
       "dom.iterable",

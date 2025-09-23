@@ -81,7 +81,7 @@ export function useAsyncState<T>(initialData: T | null = null): {
  */
 export function useAsyncOperation<T, TArgs extends any[] = []>(
   operation: (...args: TArgs) => Promise<T>,
-  dependencies: any[] = []
+  _dependencies: any[] = []
 ): {
   state: AsyncState<T>;
   execute: (...args: TArgs) => Promise<void>;
