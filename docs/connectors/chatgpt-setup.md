@@ -15,7 +15,9 @@ The Disco MCP Server provides multiple integration methods with ChatGPT:
 ### For ChatGPT.com Main Interface Connectors
 ```
 Connector URL: https://disco-mcp.up.railway.app/openapi.json
-Authentication: Automatic via GitHub OAuth
+Authentication: OAuth 2.0 (automatic via GitHub)
+OAuth Authorize URL: https://disco-mcp.up.railway.app/oauth/authorize
+OAuth Token URL: https://disco-mcp.up.railway.app/oauth/token
 ```
 
 ### For Custom GPT Actions
@@ -64,12 +66,41 @@ This method integrates directly with ChatGPT.com's main chat interface.
 
 4. **Click Add/Connect**
 
-#### Step 3: Authentication Flow
+#### Step 3: OAuth 2.0 Authentication Flow (New!)
 
-1. **Automatic Redirect**: ChatGPT will redirect you to GitHub OAuth
-2. **Authorize Application**: Click "Authorize" on GitHub
-3. **Return to ChatGPT**: You'll be redirected back automatically
-4. **Verify Connection**: Look for green "Connected" status
+The Disco MCP Server now uses OAuth 2.0 for secure authentication with ChatGPT connectors.
+
+1. **Initial Setup**: ChatGPT will automatically detect OAuth requirements from the OpenAPI specification
+2. **Authorization Request**: ChatGPT initiates OAuth flow with these parameters:
+   - `authorization_url`: `https://disco-mcp.up.railway.app/oauth/authorize`
+   - `token_url`: `https://disco-mcp.up.railway.app/oauth/token`
+   - `scopes`: `mcp:tools mcp:resources mcp:prompts`
+   - `PKCE`: Enabled for enhanced security
+
+3. **User Authentication**: 
+   - If not logged in, you'll be redirected to GitHub OAuth
+   - Login with your GitHub account
+   - Authorize the Disco MCP application
+
+4. **Consent Flow**:
+   - Review the requested permissions:
+     - **MCP Tools Access**: Execute development tools and commands
+     - **MCP Resources Access**: Read and write files in WebContainers  
+     - **MCP Prompts Access**: Use prompt templates and completions
+   - Click **"Authorize"** to grant access
+
+5. **Completion**: 
+   - You'll be redirected back to ChatGPT
+   - The connector status will show "Connected"
+   - OAuth access token is securely stored by ChatGPT
+
+#### Security Features
+
+- ✅ **OAuth 2.0 with PKCE**: Industry-standard security
+- ✅ **GitHub Authentication**: Leverages your existing GitHub account
+- ✅ **Scoped Permissions**: Only requests necessary MCP capabilities
+- ✅ **Secure Redirect**: Only allows official ChatGPT callback URLs
+- ✅ **No Credential Sharing**: Your credentials never leave GitHub/OpenAI
 
 #### Step 4: Test the Connection
 
