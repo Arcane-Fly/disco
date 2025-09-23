@@ -2671,6 +2671,24 @@ app.get('/oauth/authorize', async (req, res) => {
  *     summary: Handle OAuth consent response
  *     description: Process user consent and redirect to ChatGPT with authorization code
  */
+// --- Allowed redirect URIs per client_id (for demo; in production, fetch from registry/database)
+const allowedRedirectUris = {
+  'YOUR_CLIENT_ID_1': [
+    'https://your.safe.domain/callback'
+  ],
+  'YOUR_CLIENT_ID_2': [
+    'https://another.safe.domain/callback'
+  ]
+  // Add additional client_id/URI pairs as needed
+};
+
+function isValidRedirectUri(client_id, redirect_uri) {
+  if (typeof redirect_uri !== "string") { return false; }
+  const uris = allowedRedirectUris[client_id];
+  if (!uris) return false;
+  return uris.includes(redirect_uri);
+}
+
 app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req, res) => {
   try {
     const { 
@@ -2686,7 +2704,12 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
 
     // Handle denial
     if (action === 'deny') {
-      const errorUrl = `${redirect_uri}?error=access_denied&error_description=User denied authorization&state=${encodeURIComponent(state || '')}`;
+      let errorUrl;
+      if (isValidRedirectUri(client_id, redirect_uri)) {
+        errorUrl = `${redirect_uri}?error=access_denied&error_description=User denied authorization&state=${encodeURIComponent(state || '')}`;
+      } else {
+        errorUrl = "/";
+      }
       const safeClientId = typeof client_id === "string" ? client_id.replace(/[\r\n]/g, "") : String(client_id);
       console.log(`❌ ChatGPT OAuth: User denied authorization for client: ${safeClientId}`);
       return res.redirect(errorUrl);
@@ -2706,14 +2729,24 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
     });
 
     // Redirect to ChatGPT with authorization code
-    const callbackUrl = `${redirect_uri}?code=${authCode}&state=${encodeURIComponent(state || '')}`;
+    let callbackUrl;
+    if (isValidRedirectUri(client_id, redirect_uri)) {
+      callbackUrl = `${redirect_uri}?code=${authCode}&state=${encodeURIComponent(state || '')}`;
+    } else {
+      callbackUrl = "/";
+    }
     console.log(`✅ ChatGPT OAuth: Authorization granted for client: ${client_id}, user: ${user_id}`);
     
     res.redirect(callbackUrl);
 
   } catch (error) {
     console.error('OAuth authorize POST error:', error);
-    const errorUrl = `${req.body.redirect_uri}?error=server_error&error_description=Authorization processing failed&state=${encodeURIComponent(req.body.state || '')}`;
+    let errorUrl;
+    if (isValidRedirectUri(req.body.client_id, req.body.redirect_uri)) {
+      errorUrl = `${req.body.redirect_uri}?error=server_error&error_description=Authorization processing failed&state=${encodeURIComponent(req.body.state || '')}`;
+    } else {
+      errorUrl = "/";
+    }
     res.redirect(errorUrl);
   }
 });
