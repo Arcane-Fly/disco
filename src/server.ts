@@ -3267,7 +3267,7 @@ app.get('/claude-connector', (_req, res) => {
     platform: 'Claude.ai Web Interface',
     type: 'MCP-Compliant External API Integration',
     mcp_transport: 'http-stream', // New MCP HTTP Stream transport
-    mcp_version: '2024-11-05',
+    mcp_version: '2025-06-18',
     instructions: [
       '1. Open Claude.ai (requires Claude Pro/Team/Enterprise)',
       '2. Go to Settings → External APIs or Integrations',
@@ -3408,6 +3408,16 @@ app.get('/.well-known/mcp.json', (_req, res) => {
  *               type: string
  */
 
+// Specific OPTIONS handler for /mcp endpoint
+app.options('/mcp', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, Mcp-Session-Id, X-MCP-Version, X-Platform-ID, X-Client-Version, Accept, Accept-Encoding, Cache-Control');
+  res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id, X-MCP-Version, X-Performance-Metrics, X-Rate-Limit-Remaining, X-Rate-Limit-Reset');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.status(204).end();
+});
+
 // Handle GET requests for HTTP Stream transport (SSE)
 app.get('/mcp', (req, res) => {
   const acceptHeader = req.headers.accept;
@@ -3420,7 +3430,7 @@ app.get('/mcp', (req, res) => {
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control',
+      'Access-Control-Allow-Headers': 'Cache-Control, Mcp-Session-Id',
     });
 
     // Get session ID if provided
@@ -3495,7 +3505,7 @@ app.post('/mcp', express.json(), (req, res) => {
           jsonrpc: '2.0',
           id,
           result: {
-            protocolVersion: '2024-11-05',
+            protocolVersion: '2025-06-18',
             capabilities: {
               tools: {
                 listChanged: true,
@@ -3773,7 +3783,7 @@ app.post('/messages', express.json(), (req, res) => {
           jsonrpc: '2.0',
           id,
           result: {
-            protocolVersion: '2024-11-05',
+            protocolVersion: '2025-06-18',
             capabilities: {
               tools: {
                 listChanged: true,
@@ -3938,7 +3948,7 @@ app.get('/mcp-setup', (_req, res) => {
       name: 'Disco MCP Server',
       url: domain,
       version: '1.0.0',
-      protocol_version: '2024-11-05',
+      protocol_version: '2025-06-18',
     },
     transport_options: {
       http: {
