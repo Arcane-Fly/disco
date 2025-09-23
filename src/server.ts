@@ -2687,7 +2687,8 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
     // Handle denial
     if (action === 'deny') {
       const errorUrl = `${redirect_uri}?error=access_denied&error_description=User denied authorization&state=${encodeURIComponent(state || '')}`;
-      console.log(`❌ ChatGPT OAuth: User denied authorization for client: ${client_id}`);
+      const safeClientId = typeof client_id === "string" ? client_id.replace(/[\r\n]/g, "") : String(client_id);
+      console.log(`❌ ChatGPT OAuth: User denied authorization for client: ${safeClientId}`);
       return res.redirect(errorUrl);
     }
 
