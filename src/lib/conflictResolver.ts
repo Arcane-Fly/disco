@@ -49,26 +49,26 @@ export class AdvancedConflictResolver {
   private initializeSemanticPatterns() {
     // JavaScript/TypeScript patterns
     this.semanticPatterns.set('javascript', [
-      /^(import|export)\s+.*$/gm,           // Import/export statements
-      /^(function|const|let|var)\s+\w+/gm,  // Function/variable declarations
-      /^(class|interface)\s+\w+/gm,         // Class/interface declarations
-      /^\s*\/\*[\s\S]*?\*\/\s*$/gm,         // Block comments
-      /^\s*\/\/.*$/gm                       // Line comments
+      /^(import|export)\s+.*$/gm, // Import/export statements
+      /^(function|const|let|var)\s+\w+/gm, // Function/variable declarations
+      /^(class|interface)\s+\w+/gm, // Class/interface declarations
+      /^\s*\/\*[\s\S]*?\*\/\s*$/gm, // Block comments
+      /^\s*\/\/.*$/gm, // Line comments
     ]);
 
     // JSON patterns
     this.semanticPatterns.set('json', [
-      /^\s*"[\w-]+"\s*:\s*[{[].*$/gm,      // Object/array properties
-      /^\s*"[\w-]+"\s*:\s*".*"[,]?$/gm,    // String properties
-      /^\s*"[\w-]+"\s*:\s*\d+[,]?$/gm      // Number properties
+      /^\s*"[\w-]+"\s*:\s*[{[].*$/gm, // Object/array properties
+      /^\s*"[\w-]+"\s*:\s*".*"[,]?$/gm, // String properties
+      /^\s*"[\w-]+"\s*:\s*\d+[,]?$/gm, // Number properties
     ]);
 
     // Markdown patterns
     this.semanticPatterns.set('markdown', [
-      /^#{1,6}\s+.*$/gm,                   // Headers
-      /^-\s+.*$/gm,                        // List items
-      /^\d+\.\s+.*$/gm,                    // Numbered lists
-      /^```[\s\S]*?```$/gm                 // Code blocks
+      /^#{1,6}\s+.*$/gm, // Headers
+      /^-\s+.*$/gm, // List items
+      /^\d+\.\s+.*$/gm, // Numbered lists
+      /^```[\s\S]*?```$/gm, // Code blocks
     ]);
   }
 
@@ -88,7 +88,7 @@ export class AdvancedConflictResolver {
       remoteContent,
       filePath,
       fileType: this.getFileType(filePath),
-      lastModified: new Date()
+      lastModified: new Date(),
     };
 
     // Try smart merge first
@@ -99,16 +99,18 @@ export class AdvancedConflictResolver {
         metadata: {
           ...smartMergeResult.metadata,
           userId,
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       };
     }
 
     // If smart merge couldn't auto-resolve, try semantic merge for supported file types
     // But skip semantic merge for simple variable assignments that should be handled manually
-    if (!smartMergeResult.metadata?.autoResolved && 
-        this.supportsSemanticMerge(context.fileType) &&
-        !this.isSimpleVariableAssignmentConflict(context)) {
+    if (
+      !smartMergeResult.metadata?.autoResolved &&
+      this.supportsSemanticMerge(context.fileType) &&
+      !this.isSimpleVariableAssignmentConflict(context)
+    ) {
       const semanticMergeResult = await this.attemptSemanticMerge(context);
       if (semanticMergeResult.metadata?.autoResolved) {
         return {
@@ -116,8 +118,8 @@ export class AdvancedConflictResolver {
           metadata: {
             ...semanticMergeResult.metadata,
             userId,
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         };
       }
     }
@@ -143,7 +145,9 @@ export class AdvancedConflictResolver {
       confidence?: number;
     }> = [];
 
-    let i = 0, j = 0, k = 0;
+    let i = 0,
+      j = 0,
+      k = 0;
     let autoResolved = true;
 
     while (i < baseLines.length || j < localLines.length || k < remoteLines.length) {
@@ -154,19 +158,28 @@ export class AdvancedConflictResolver {
       if (baseLine === localLine && baseLine === remoteLine) {
         // No conflict
         mergedLines.push(baseLine);
-        i++; j++; k++;
+        i++;
+        j++;
+        k++;
       } else if (baseLine === localLine && baseLine !== remoteLine) {
         // Remote change only
         mergedLines.push(remoteLine);
-        i++; j++; k++;
+        i++;
+        j++;
+        k++;
       } else if (baseLine === remoteLine && baseLine !== localLine) {
         // Local change only
         mergedLines.push(localLine);
-        i++; j++; k++;
+        i++;
+        j++;
+        k++;
       } else {
         // Conflict detected
         const conflictResolution = this.resolveLineConflict(
-          baseLine, localLine, remoteLine, context.fileType
+          baseLine,
+          localLine,
+          remoteLine,
+          context.fileType
         );
 
         if (conflictResolution.confidence >= this.diffThreshold) {
@@ -176,7 +189,7 @@ export class AdvancedConflictResolver {
             end: mergedLines.length - 1,
             versions: [localLine, remoteLine],
             resolution: 'auto',
-            confidence: conflictResolution.confidence
+            confidence: conflictResolution.confidence,
           });
         } else {
           // Manual resolution required
@@ -186,11 +199,13 @@ export class AdvancedConflictResolver {
             end: mergedLines.length - 1,
             versions: [localLine, remoteLine],
             resolution: 'manual',
-            confidence: conflictResolution.confidence
+            confidence: conflictResolution.confidence,
           });
           autoResolved = false;
         }
-        i++; j++; k++;
+        i++;
+        j++;
+        k++;
       }
     }
 
@@ -203,8 +218,8 @@ export class AdvancedConflictResolver {
         severity: autoResolved ? 'low' : 'medium',
         autoResolved,
         userId: '',
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -213,12 +228,13 @@ export class AdvancedConflictResolver {
    */
   private async attemptSemanticMerge(context: MergeContext): Promise<ConflictResolution> {
     const patterns = this.semanticPatterns.get(context.fileType) || [];
-    
+
     const baseSemanticBlocks = this.extractSemanticBlocks(context.baseContent, patterns);
     const localSemanticBlocks = this.extractSemanticBlocks(context.localContent, patterns);
     const remoteSemanticBlocks = this.extractSemanticBlocks(context.remoteContent, patterns);
 
-    const mergedBlocks: Array<{ content: string; source: 'base' | 'local' | 'remote' | 'merged' }> = [];
+    const mergedBlocks: Array<{ content: string; source: 'base' | 'local' | 'remote' | 'merged' }> =
+      [];
     const conflicts: Array<{
       start: number;
       end: number;
@@ -231,7 +247,7 @@ export class AdvancedConflictResolver {
     const allBlockIds = new Set([
       ...baseSemanticBlocks.map(b => b.id),
       ...localSemanticBlocks.map(b => b.id),
-      ...remoteSemanticBlocks.map(b => b.id)
+      ...remoteSemanticBlocks.map(b => b.id),
     ]);
 
     let autoResolved = true;
@@ -253,36 +269,44 @@ export class AdvancedConflictResolver {
           mergedBlocks.push({ content: localBlock.content, source: 'local' });
         } else {
           // Semantic conflict - check if it's a variable assignment that should require manual resolution
-          if (this.isVariableAssignment(localBlock.content, context.fileType) && 
-              this.isVariableAssignment(remoteBlock.content, context.fileType)) {
+          if (
+            this.isVariableAssignment(localBlock.content, context.fileType) &&
+            this.isVariableAssignment(remoteBlock.content, context.fileType)
+          ) {
             const localVar = this.extractVariableName(localBlock.content);
             const remoteVar = this.extractVariableName(remoteBlock.content);
-            
+
             if (localVar === remoteVar && localBlock.content !== remoteBlock.content) {
               // Same variable, different values - requires manual resolution
-              const conflictBlock = this.createSemanticConflictBlock(localBlock.content, remoteBlock.content);
+              const conflictBlock = this.createSemanticConflictBlock(
+                localBlock.content,
+                remoteBlock.content
+              );
               mergedBlocks.push({ content: conflictBlock, source: 'merged' });
               conflicts.push({
                 start: mergedBlocks.length - 1,
                 end: mergedBlocks.length - 1,
                 versions: [localBlock.content, remoteBlock.content],
                 resolution: 'manual',
-                confidence: 0.1
+                confidence: 0.1,
               });
               autoResolved = false;
               continue;
             }
           }
-          
+
           // Other semantic conflicts - requires manual resolution
-          const conflictBlock = this.createSemanticConflictBlock(localBlock.content, remoteBlock.content);
+          const conflictBlock = this.createSemanticConflictBlock(
+            localBlock.content,
+            remoteBlock.content
+          );
           mergedBlocks.push({ content: conflictBlock, source: 'merged' });
           conflicts.push({
             start: mergedBlocks.length - 1,
             end: mergedBlocks.length - 1,
             versions: [localBlock.content, remoteBlock.content],
             resolution: 'manual',
-            confidence: 0.3
+            confidence: 0.3,
           });
           autoResolved = false;
         }
@@ -304,8 +328,8 @@ export class AdvancedConflictResolver {
         severity: autoResolved ? 'low' : 'high',
         autoResolved,
         userId: '',
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -321,20 +345,22 @@ export class AdvancedConflictResolver {
     return {
       strategy: 'manual',
       resolvedContent: conflictMarkers,
-      conflictedSections: [{
-        start: 0,
-        end: conflictMarkers.split('\n').length - 1,
-        versions: [context.localContent, context.remoteContent],
-        resolution: 'manual',
-        confidence: 0
-      }],
+      conflictedSections: [
+        {
+          start: 0,
+          end: conflictMarkers.split('\n').length - 1,
+          versions: [context.localContent, context.remoteContent],
+          resolution: 'manual',
+          confidence: 0,
+        },
+      ],
       metadata: {
         conflictType: 'structural',
         severity: 'high',
         autoResolved: false,
         userId,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -348,15 +374,18 @@ export class AdvancedConflictResolver {
     fileType: string
   ): { resolvedLine: string; confidence: number } {
     // Check for variable assignment conflicts (should require manual resolution)
-    if (this.isVariableAssignment(localLine, fileType) && this.isVariableAssignment(remoteLine, fileType)) {
+    if (
+      this.isVariableAssignment(localLine, fileType) &&
+      this.isVariableAssignment(remoteLine, fileType)
+    ) {
       const localVar = this.extractVariableName(localLine);
       const remoteVar = this.extractVariableName(remoteLine);
-      
+
       if (localVar === remoteVar && localLine !== remoteLine) {
         // Same variable, different values - requires manual resolution
         return {
           resolvedLine: localLine,
-          confidence: 0.1
+          confidence: 0.1,
         };
       }
     }
@@ -365,7 +394,7 @@ export class AdvancedConflictResolver {
     if (this.isCommentOnlyChange(localLine, remoteLine, fileType)) {
       return {
         resolvedLine: localLine.length > remoteLine.length ? localLine : remoteLine,
-        confidence: 0.9
+        confidence: 0.9,
       };
     }
 
@@ -373,41 +402,47 @@ export class AdvancedConflictResolver {
     if (localLine.trim() === remoteLine.trim()) {
       return {
         resolvedLine: localLine,
-        confidence: 0.95
+        confidence: 0.95,
       };
     }
 
     // Check for import/require statement changes
-    if (this.isImportStatement(localLine, fileType) && this.isImportStatement(remoteLine, fileType)) {
+    if (
+      this.isImportStatement(localLine, fileType) &&
+      this.isImportStatement(remoteLine, fileType)
+    ) {
       return {
         resolvedLine: this.mergeImportStatements(localLine, remoteLine),
-        confidence: 0.8
+        confidence: 0.8,
       };
     }
 
     // Default to lower confidence for manual review
     return {
       resolvedLine: localLine,
-      confidence: 0.2
+      confidence: 0.2,
     };
   }
 
   /**
    * Extract semantic blocks from content using patterns
    */
-  private extractSemanticBlocks(content: string, patterns: RegExp[]): Array<{ id: string; content: string }> {
+  private extractSemanticBlocks(
+    content: string,
+    patterns: RegExp[]
+  ): Array<{ id: string; content: string }> {
     const blocks: Array<{ id: string; content: string }> = [];
     const lines = content.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       for (const pattern of patterns) {
         const match = line.match(pattern);
         if (match) {
           blocks.push({
             id: this.generateBlockId(line),
-            content: line
+            content: line,
           });
           break;
         }
@@ -422,18 +457,18 @@ export class AdvancedConflictResolver {
    */
   private getFileType(filePath: string): string {
     const extension = filePath.split('.').pop()?.toLowerCase() || '';
-    
+
     const typeMapping: { [key: string]: string } = {
-      'js': 'javascript',
-      'jsx': 'javascript',
-      'ts': 'javascript',
-      'tsx': 'javascript',
-      'json': 'json',
-      'md': 'markdown',
-      'py': 'python',
-      'java': 'java',
-      'cpp': 'cpp',
-      'c': 'cpp'
+      js: 'javascript',
+      jsx: 'javascript',
+      ts: 'javascript',
+      tsx: 'javascript',
+      json: 'json',
+      md: 'markdown',
+      py: 'python',
+      java: 'java',
+      cpp: 'cpp',
+      c: 'cpp',
     };
 
     return typeMapping[extension] || 'text';
@@ -452,7 +487,7 @@ export class AdvancedConflictResolver {
     const commentPatterns: { [key: string]: RegExp } = {
       javascript: /^\s*(\/\/|\/\*|\*)/,
       python: /^\s*#/,
-      java: /^\s*(\/\/|\/\*|\*)/
+      java: /^\s*(\/\/|\/\*|\*)/,
     };
 
     const pattern = commentPatterns[fileType];
@@ -463,7 +498,7 @@ export class AdvancedConflictResolver {
     const importPatterns: { [key: string]: RegExp } = {
       javascript: /^\s*(import|export|require)/,
       python: /^\s*(import|from\s+.*\s+import)/,
-      java: /^\s*import\s+/
+      java: /^\s*import\s+/,
     };
 
     const pattern = importPatterns[fileType];
@@ -495,7 +530,7 @@ ${remoteContent}
     const assignmentPatterns: { [key: string]: RegExp } = {
       javascript: /^\s*(const|let|var)\s+\w+\s*=|^\s*\w+\s*=/,
       python: /^\s*\w+\s*=/,
-      java: /^\s*(final\s+)?\w+\s+\w+\s*=/
+      java: /^\s*(final\s+)?\w+\s+\w+\s*=/,
     };
 
     const pattern = assignmentPatterns[fileType] || /^\s*\w+\s*=/;
@@ -510,22 +545,24 @@ ${remoteContent}
   private isSimpleVariableAssignmentConflict(context: MergeContext): boolean {
     const localLines = context.localContent.split('\n');
     const remoteLines = context.remoteContent.split('\n');
-    
+
     // Check if both local and remote are single-line variable assignments
     if (localLines.length === 1 && remoteLines.length === 1) {
       const localLine = localLines[0].trim();
       const remoteLine = remoteLines[0].trim();
-      
-      if (this.isVariableAssignment(localLine, context.fileType) && 
-          this.isVariableAssignment(remoteLine, context.fileType)) {
+
+      if (
+        this.isVariableAssignment(localLine, context.fileType) &&
+        this.isVariableAssignment(remoteLine, context.fileType)
+      ) {
         const localVar = this.extractVariableName(localLine);
         const remoteVar = this.extractVariableName(remoteLine);
-        
+
         // Same variable name but different content = simple assignment conflict
         return localVar === remoteVar && localLine !== remoteLine;
       }
     }
-    
+
     return false;
   }
 }

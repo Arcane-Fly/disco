@@ -48,9 +48,9 @@ const router = Router();
 router.get('/:containerId/sessions', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
-    
+
     const sessions = collaborationManager.getActiveCollaborations(containerId);
-    
+
     res.json({
       sessions: sessions.map(session => ({
         id: session.id,
@@ -58,14 +58,14 @@ router.get('/:containerId/sessions', authMiddleware, async (req: Request, res: R
         users: Array.from(session.users),
         lastModified: session.lastModified,
         version: session.version,
-        userCount: session.users.size
-      }))
+        userCount: session.users.size,
+      })),
     });
   } catch (error) {
     console.error('Error getting collaboration sessions:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get collaboration sessions',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -105,19 +105,19 @@ router.post('/:containerId/broadcast', authMiddleware, async (req: Request, res:
   try {
     const { containerId } = req.params;
     const { message } = req.body;
-    
+
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
-    
+
     collaborationManager.broadcastSystemMessage(containerId, message);
-    
+
     res.json({ success: true, message: 'Message broadcasted' });
   } catch (error) {
     console.error('Error broadcasting message:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to broadcast message',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -164,24 +164,24 @@ router.post('/:containerId/sync', authMiddleware, async (req: Request, res: Resp
   try {
     const { containerId } = req.params;
     const { filePath, content, excludeUserId } = req.body;
-    
+
     if (!filePath || content === undefined) {
       return res.status(400).json({ error: 'File path and content are required' });
     }
-    
+
     await collaborationManager.syncFileToCollaborators(
       containerId,
       filePath,
       content,
       excludeUserId
     );
-    
+
     res.json({ success: true, message: 'File synced to collaborators' });
   } catch (error) {
     console.error('Error syncing file:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to sync file',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -217,15 +217,15 @@ router.post('/:containerId/sync', authMiddleware, async (req: Request, res: Resp
 router.get('/session/:sessionId/users', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
-    
+
     const users = collaborationManager.getSessionUsers(sessionId);
-    
+
     res.json({ users });
   } catch (error) {
     console.error('Error getting session users:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get session users',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -280,18 +280,18 @@ router.get('/session/:sessionId/history', authMiddleware, async (req: Request, r
   try {
     const { sessionId } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
-    
+
     const history = collaborationManager.getSessionHistory(sessionId, limit);
-    
-    res.json({ 
+
+    res.json({
       history,
-      sessionId 
+      sessionId,
     });
   } catch (error) {
     console.error('Error getting session history:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get session history',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -336,37 +336,41 @@ router.get('/session/:sessionId/history', authMiddleware, async (req: Request, r
  *       200:
  *         description: Conflict resolved successfully
  */
-router.post('/session/:sessionId/resolve-conflict', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { sessionId } = req.params;
-    const { resolvedContent, strategy, userId } = req.body;
-    
-    if (!resolvedContent || !strategy || !userId) {
-      return res.status(400).json({ 
-        error: 'Resolved content, strategy, and userId are required' 
+router.post(
+  '/session/:sessionId/resolve-conflict',
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.params;
+      const { resolvedContent, strategy, userId } = req.body;
+
+      if (!resolvedContent || !strategy || !userId) {
+        return res.status(400).json({
+          error: 'Resolved content, strategy, and userId are required',
+        });
+      }
+
+      const result = await collaborationManager.resolveManualConflict(
+        sessionId,
+        resolvedContent,
+        strategy,
+        userId
+      );
+
+      res.json({
+        success: true,
+        message: 'Conflict resolved successfully',
+        newVersion: result.version,
+        timestamp: result.timestamp,
+      });
+    } catch (error) {
+      console.error('Error resolving conflict:', error);
+      res.status(500).json({
+        error: 'Failed to resolve conflict',
+        details: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-    
-    const result = await collaborationManager.resolveManualConflict(
-      sessionId,
-      resolvedContent,
-      strategy,
-      userId
-    );
-    
-    res.json({ 
-      success: true, 
-      message: 'Conflict resolved successfully',
-      newVersion: result.version,
-      timestamp: result.timestamp
-    });
-  } catch (error) {
-    console.error('Error resolving conflict:', error);
-    res.status(500).json({ 
-      error: 'Failed to resolve conflict',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
   }
-});
+);
 
 export { router as collaborationRouter };

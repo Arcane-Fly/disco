@@ -15,9 +15,9 @@ jest.mock('../src/lib/oauthState.js', () => ({
     codeChallengeMethod: 'S256',
     clientId: 'test-client',
     createdAt: Date.now(),
-    expiresAt: Date.now() + 600000
+    expiresAt: Date.now() + 600000,
   })),
-  verifyCodeChallenge: jest.fn(() => true)
+  verifyCodeChallenge: jest.fn(() => true),
 }));
 
 // Mock fetch for GitHub API calls
@@ -36,18 +36,18 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset environment for each test
     process.env = { ...originalEnv };
     process.env.JWT_SECRET = TEST_JWT_SECRET;
 
     app = express();
-    
+
     // Enable trust proxy for X-Forwarded-For headers in tests
     app.set('trust proxy', true);
-    
+
     app.use(express.json());
-    
+
     // Add rate limiting middleware for login endpoints
     const authLimiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
@@ -58,11 +58,11 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         status: 'error',
         error: {
           code: 'AUTH_RATE_LIMIT_EXCEEDED',
-          message: 'Too many authentication attempts, please try again later.'
-        }
-      }
+          message: 'Too many authentication attempts, please try again later.',
+        },
+      },
     });
-    
+
     app.use('/api/v1/auth', authLimiter, authRouter);
   });
 
@@ -77,9 +77,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     });
 
     test('should inspect auth.ts OAuth callback URL configuration', async () => {
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       // Verify OAuth configuration is properly detected
       expect(response.body.data.github_oauth.callback_url).toBe('/api/v1/auth/github/callback');
@@ -88,9 +86,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     });
 
     test('should verify OAuth scopes in GitHub authorization URL', async () => {
-      const response = await request(app)
-        .get('/api/v1/auth/github')
-        .expect(302);
+      const response = await request(app).get('/api/v1/auth/github').expect(302);
 
       const location = response.headers.location;
       expect(location).toContain('scope=user:email');
@@ -102,9 +98,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       delete process.env.GITHUB_CLIENT_ID;
       delete process.env.GITHUB_CLIENT_SECRET;
 
-      const response = await request(app)
-        .get('/api/v1/auth/github')
-        .expect(503);
+      const response = await request(app).get('/api/v1/auth/github').expect(503);
 
       expect(response.body.error.details.setup_instructions).toBeDefined();
       expect(response.body.error.details.missing_env_vars).toContain('GITHUB_CLIENT_ID');
@@ -114,9 +108,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       process.env.GITHUB_CLIENT_ID = 'your-github-client-id';
       process.env.GITHUB_CLIENT_SECRET = 'your-github-client-secret';
 
-      const response = await request(app)
-        .get('/api/v1/auth/github')
-        .expect(503);
+      const response = await request(app).get('/api/v1/auth/github').expect(503);
 
       expect(response.body.error.message).toContain('placeholder values');
     });
@@ -132,40 +124,44 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       // Mock GitHub API responses
       (fetch as jest.MockedFunction<typeof fetch>)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({
-            access_token: 'gho_test_access_token',
-            token_type: 'bearer',
-            scope: 'user:email'
-          })
+          json: () =>
+            Promise.resolve({
+              access_token: 'gho_test_access_token',
+              token_type: 'bearer',
+              scope: 'user:email',
+            }),
         } as any)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({
-            login: 'testuser',
-            name: 'Test User',
-            email: 'test@example.com',
-            avatar_url: 'https://github.com/images/error/testuser_happy.gif'
-          })
+          json: () =>
+            Promise.resolve({
+              login: 'testuser',
+              name: 'Test User',
+              email: 'test@example.com',
+              avatar_url: 'https://github.com/images/error/testuser_happy.gif',
+            }),
         } as any);
 
       const response = await request(app)
         .get('/api/v1/auth/github/callback')
-        .query({ 
+        .query({
           code: 'test_auth_code',
-          state: Buffer.from(JSON.stringify({ 
-            timestamp: Date.now(),
-            redirectTo: '/' 
-          })).toString('base64')
+          state: Buffer.from(
+            JSON.stringify({
+              timestamp: Date.now(),
+              redirectTo: '/',
+            })
+          ).toString('base64'),
         })
         .expect(302);
 
       // Verify token was created in redirect
       expect(response.headers.location).toMatch(/#token=.+/);
-      
+
       // Verify GitHub API was called correctly
       expect(fetch).toHaveBeenCalledWith('https://github.com/login/oauth/access_token', {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -177,13 +173,13 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     });
 
     test('should handle GitHub API errors during OAuth', async () => {
-      (fetch as jest.MockedFunction<typeof fetch>)
-        .mockResolvedValueOnce({
-          json: () => Promise.resolve({
+      (fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
+        json: () =>
+          Promise.resolve({
             error: 'invalid_grant',
-            error_description: 'The provided authorization grant is invalid'
-          })
-        } as any);
+            error_description: 'The provided authorization grant is invalid',
+          }),
+      } as any);
 
       const response = await request(app)
         .get('/api/v1/auth/github/callback')
@@ -198,36 +194,40 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       // Mock GitHub API responses
       (fetch as jest.MockedFunction<typeof fetch>)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({
-            access_token: 'gho_test_access_token'
-          })
+          json: () =>
+            Promise.resolve({
+              access_token: 'gho_test_access_token',
+            }),
         } as any)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({
-            login: 'testuser',
-            name: 'Test User'
-          })
+          json: () =>
+            Promise.resolve({
+              login: 'testuser',
+              name: 'Test User',
+            }),
         } as any);
 
-      const stateWithPKCE = Buffer.from(JSON.stringify({ 
-        timestamp: Date.now(),
-        redirectTo: '/',
-        codeChallenge: 'test-challenge',
-        codeChallengeMethod: 'S256',
-        clientId: 'mcp-client'
-      })).toString('base64');
+      const stateWithPKCE = Buffer.from(
+        JSON.stringify({
+          timestamp: Date.now(),
+          redirectTo: '/',
+          codeChallenge: 'test-challenge',
+          codeChallengeMethod: 'S256',
+          clientId: 'mcp-client',
+        })
+      ).toString('base64');
 
       const response = await request(app)
         .get('/api/v1/auth/github/callback')
-        .query({ 
+        .query({
           code: 'test_auth_code',
-          state: stateWithPKCE
+          state: stateWithPKCE,
         })
         .expect(302);
 
       // Should redirect to callback page with auth code for PKCE flow
       expect(response.headers.location).toContain('/auth/callback?code=');
-      
+
       // Verify OAuth state storage was called
       const { storeAuthCodeData } = require('../src/lib/oauthState.js');
       expect(storeAuthCodeData).toHaveBeenCalled();
@@ -241,20 +241,14 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
     test('should enforce rate limits on /login endpoint', async () => {
       const loginData = { apiKey: 'test-api-key-1' };
-      
+
       // Make requests up to the limit (10 requests in 15 minutes)
       for (let i = 0; i < 10; i++) {
-        await request(app)
-          .post('/api/v1/auth/login')
-          .send(loginData)
-          .expect(200);
+        await request(app).post('/api/v1/auth/login').send(loginData).expect(200);
       }
-      
+
       // The 11th request should be rate limited
-      const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send(loginData)
-        .expect(429);
+      const response = await request(app).post('/api/v1/auth/login').send(loginData).expect(429);
 
       expect(response.body.error.code).toBe('AUTH_RATE_LIMIT_EXCEEDED');
       expect(response.body.error.message).toContain('Too many authentication attempts');
@@ -262,7 +256,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
     test('should have different rate limits for different IPs', async () => {
       const loginData = { apiKey: 'test-api-key-1' };
-      
+
       // Exhaust limit for first IP
       for (let i = 0; i < 10; i++) {
         await request(app)
@@ -271,14 +265,14 @@ describe('Authentication Workflow Tests (Step 8)', () => {
           .set('X-Forwarded-For', '192.168.1.1')
           .expect(200);
       }
-      
+
       // First IP should be rate limited
       await request(app)
         .post('/api/v1/auth/login')
         .send(loginData)
         .set('X-Forwarded-For', '192.168.1.1')
         .expect(429);
-      
+
       // Different IP should still work
       await request(app)
         .post('/api/v1/auth/login')
@@ -336,11 +330,11 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         .expect(200);
 
       const token = response.body.data.token;
-      
+
       // Verify with correct issuer and audience
       const decoded = jwt.verify(token, TEST_JWT_SECRET, {
         issuer: 'mcp-server',
-        audience: 'chatgpt'
+        audience: 'chatgpt',
       }) as any;
 
       expect(decoded.iss).toBe('mcp-server');
@@ -350,7 +344,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       expect(() => {
         jwt.verify(token, TEST_JWT_SECRET, {
           issuer: 'wrong-issuer',
-          audience: 'chatgpt'
+          audience: 'chatgpt',
         });
       }).toThrow();
     });
@@ -359,17 +353,19 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       // Mock GitHub OAuth flow
       (fetch as jest.MockedFunction<typeof fetch>)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({
-            access_token: 'gho_test_access_token'
-          })
+          json: () =>
+            Promise.resolve({
+              access_token: 'gho_test_access_token',
+            }),
         } as any)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({
-            login: 'testuser',
-            name: 'Test User',
-            email: 'test@example.com',
-            avatar_url: 'https://github.com/images/error/testuser_happy.gif'
-          })
+          json: () =>
+            Promise.resolve({
+              login: 'testuser',
+              name: 'Test User',
+              email: 'test@example.com',
+              avatar_url: 'https://github.com/images/error/testuser_happy.gif',
+            }),
         } as any);
 
       process.env.GITHUB_CLIENT_ID = 'test-github-client-id';
@@ -384,7 +380,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       const location = response.headers.location;
       const tokenMatch = location.match(/token=([^&]+)/);
       expect(tokenMatch).toBeTruthy();
-      
+
       if (tokenMatch) {
         const token = decodeURIComponent(tokenMatch[1]);
         const decoded = jwt.verify(token, TEST_JWT_SECRET) as any;
@@ -414,8 +410,8 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       const decoded = jwt.verify(token, TEST_JWT_SECRET) as any;
 
       // Compare expires field with JWT exp claim (allow small variance for processing time)
-      expect(Math.abs(expires - (decoded.exp * 1000))).toBeLessThan(1000); // Within 1 second
-      
+      expect(Math.abs(expires - decoded.exp * 1000)).toBeLessThan(1000); // Within 1 second
+
       // Verify expiry is in the future
       expect(decoded.exp * 1000).toBeGreaterThan(Date.now());
     });
@@ -428,36 +424,28 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
     beforeEach(async () => {
       process.env.VALID_API_KEYS = 'test-api-key';
-      
+
       // Create a valid token
       const response = await request(app)
         .post('/api/v1/auth/login')
         .send({ apiKey: 'test-api-key' })
         .expect(200);
-      
+
       validToken = response.body.data.token;
 
       // Create an expired token (expired 1 hour ago)
-      expiredToken = jwt.sign(
-        { userId: 'api:testuser', provider: 'api' },
-        TEST_JWT_SECRET,
-        { 
-          expiresIn: '-1h',
-          issuer: 'mcp-server',
-          audience: 'chatgpt'
-        }
-      );
+      expiredToken = jwt.sign({ userId: 'api:testuser', provider: 'api' }, TEST_JWT_SECRET, {
+        expiresIn: '-1h',
+        issuer: 'mcp-server',
+        audience: 'chatgpt',
+      });
 
       // Create an invalid token (wrong secret)
-      invalidToken = jwt.sign(
-        { userId: 'api:testuser', provider: 'api' },
-        'wrong-secret',
-        { 
-          expiresIn: '1h',
-          issuer: 'mcp-server',
-          audience: 'chatgpt'
-        }
-      );
+      invalidToken = jwt.sign({ userId: 'api:testuser', provider: 'api' }, 'wrong-secret', {
+        expiresIn: '1h',
+        issuer: 'mcp-server',
+        audience: 'chatgpt',
+      });
     });
 
     test('should refresh valid tokens successfully', async () => {
@@ -467,10 +455,10 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         .expect(200);
 
       const { token: newToken, expires, userId } = response.body.data;
-      
+
       // Verify new token is different from old one
       expect(newToken).not.toBe(validToken);
-      
+
       // Verify new token is valid
       const decoded = jwt.verify(newToken, TEST_JWT_SECRET) as any;
       expect(decoded.userId).toBe(userId);
@@ -491,17 +479,17 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       // Create a token with an old iat (issued at) timestamp - 8 days ago
       const eightDaysAgo = Math.floor((Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000);
       const veryOldToken = jwt.sign(
-        { 
-          userId: 'api:testuser', 
+        {
+          userId: 'api:testuser',
           provider: 'api',
-          iat: eightDaysAgo // Set the issued at time to 8 days ago
+          iat: eightDaysAgo, // Set the issued at time to 8 days ago
         },
         TEST_JWT_SECRET,
-        { 
+        {
           expiresIn: '1h', // Still expires in 1 hour from now
           issuer: 'mcp-server',
           audience: 'chatgpt',
-          noTimestamp: true // Don't override our manual iat
+          noTimestamp: true, // Don't override our manual iat
         }
       );
 
@@ -523,9 +511,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     });
 
     test('should reject refresh requests without authorization header', async () => {
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .expect(401);
+      const response = await request(app).post('/api/v1/auth/refresh').expect(401);
 
       expect(response.body.error.message).toContain('Missing authorization header');
     });
@@ -560,10 +546,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
     test('should handle malformed authorization headers', async () => {
       // Missing Bearer prefix
-      await request(app)
-        .post('/api/v1/auth/refresh')
-        .set('Authorization', validToken)
-        .expect(401);
+      await request(app).post('/api/v1/auth/refresh').set('Authorization', validToken).expect(401);
 
       // Wrong prefix
       await request(app)
@@ -572,10 +555,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         .expect(401);
 
       // Empty bearer token
-      await request(app)
-        .post('/api/v1/auth/refresh')
-        .set('Authorization', 'Bearer ')
-        .expect(401);
+      await request(app).post('/api/v1/auth/refresh').set('Authorization', 'Bearer ').expect(401);
     });
   });
 
@@ -583,18 +563,18 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     test('should handle JWT secret validation', () => {
       // This test validates that the system requires a proper JWT secret
       expect(TEST_JWT_SECRET.length).toBeGreaterThanOrEqual(32);
-      
+
       // Test token creation and validation with our test secret
       const testPayload = { userId: 'test', provider: 'test' };
       const token = jwt.sign(testPayload, TEST_JWT_SECRET, { expiresIn: '1h' });
       const decoded = jwt.verify(token, TEST_JWT_SECRET) as any;
-      
+
       expect(decoded.userId).toBe('test');
     });
 
     test('should handle concurrent authentication requests', async () => {
       process.env.VALID_API_KEYS = 'test-api-key';
-      
+
       // Make 5 sequential requests with small delays to ensure unique iat timestamps
       const responses: any[] = [];
       for (let i = 0; i < 5; i++) {
@@ -602,17 +582,17 @@ describe('Authentication Workflow Tests (Step 8)', () => {
           .post('/api/v1/auth/login')
           .send({ apiKey: 'test-api-key' });
         responses.push(response);
-        
+
         // Small delay to ensure different iat timestamps
         await new Promise(resolve => setTimeout(resolve, 10));
       }
-      
+
       // All should succeed with tokens
       responses.forEach(response => {
         expect(response.status).toBe(200);
         expect(response.body.data.token).toBeDefined();
       });
-      
+
       // Verify all tokens are different (they should be due to different iat timestamps)
       const tokens = responses.map(r => r.body.data.token);
       const uniqueTokens = new Set(tokens);
@@ -637,21 +617,22 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       // Mock GitHub responses
       (fetch as jest.MockedFunction<typeof fetch>)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({ access_token: 'token' })
+          json: () => Promise.resolve({ access_token: 'token' }),
         } as any)
         .mockResolvedValueOnce({
-          json: () => Promise.resolve({ 
-            login: 'testuser',
-            name: 'Test User'
-          })
+          json: () =>
+            Promise.resolve({
+              login: 'testuser',
+              name: 'Test User',
+            }),
         } as any);
 
       // Test with malformed state
       const response = await request(app)
         .get('/api/v1/auth/github/callback')
-        .query({ 
+        .query({
           code: 'test_code',
-          state: 'invalid-base64-state'
+          state: 'invalid-base64-state',
         })
         .expect(302);
 
@@ -662,9 +643,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
   describe('7. OAuth Discovery and MCP Compliance', () => {
     test('should provide OAuth discovery endpoints', async () => {
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       const { oauth_discovery } = response.body.data;
       expect(oauth_discovery.authorization_server).toBe('/.well-known/oauth-authorization-server');
@@ -672,12 +651,10 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     });
 
     test('should validate authentication status response structure', async () => {
-      const response = await request(app)
-        .get('/api/v1/auth')
-        .expect(200);
+      const response = await request(app).get('/api/v1/auth').expect(200);
 
       const { data } = response.body;
-      
+
       // Required fields for MCP OAuth 2.1 compliance
       expect(data).toHaveProperty('authenticated');
       expect(data).toHaveProperty('authentication_required');
@@ -696,7 +673,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
     test('should handle authentication with valid token in header', async () => {
       process.env.VALID_API_KEYS = 'test-api-key';
-      
+
       // First get a valid token
       const authResponse = await request(app)
         .post('/api/v1/auth/login')

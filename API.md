@@ -23,6 +23,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -51,14 +52,24 @@ GET /capabilities
 ```
 
 **Response:**
+
 ```json
 {
   "version": "1.0",
   "capabilities": [
-    "file:read", "file:write", "file:delete", "file:list",
-    "git:clone", "git:commit", "git:push", "git:pull",
-    "terminal:execute", "terminal:stream",
-    "computer-use:screenshot", "computer-use:click", "computer-use:type",
+    "file:read",
+    "file:write",
+    "file:delete",
+    "file:list",
+    "git:clone",
+    "git:commit",
+    "git:push",
+    "git:pull",
+    "terminal:execute",
+    "terminal:stream",
+    "computer-use:screenshot",
+    "computer-use:click",
+    "computer-use:type",
     "rag:search"
   ],
   "environment": {
@@ -87,6 +98,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -106,6 +118,7 @@ Authorization: Bearer {token}
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -149,6 +162,7 @@ Authorization: Bearer {token}
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -180,6 +194,7 @@ Authorization: Bearer {token}
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -231,6 +246,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -258,6 +274,7 @@ Content-Type: application/json
 ```
 
 **Response:** Server-Sent Events (SSE)
+
 ```
 data: {"type": "stdout", "data": "Starting development server...\n"}
 
@@ -291,6 +308,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -361,6 +379,7 @@ Authorization: Bearer {token}
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -385,6 +404,7 @@ GET /health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -449,11 +469,13 @@ All API responses follow a consistent error format:
 ## Rate Limiting
 
 API requests are limited to:
+
 - **100 requests per minute** per user
 - **10 concurrent containers** per user
 - **30 minute timeout** for inactive containers
 
 Rate limit headers are included in responses:
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
@@ -467,11 +489,11 @@ For real-time updates, connect to the WebSocket endpoint:
 ```javascript
 const socket = io('wss://your-app.up.railway.app');
 
-socket.on('container:status', (data) => {
+socket.on('container:status', data => {
   console.log('Container status:', data);
 });
 
-socket.on('terminal:output', (data) => {
+socket.on('terminal:output', data => {
   console.log('Terminal output:', data);
 });
 ```
@@ -492,7 +514,7 @@ class MCPClient {
     const response = await fetch(`${this.baseUrl}/api/v1/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey: this.apiKey })
+      body: JSON.stringify({ apiKey: this.apiKey }),
     });
     const data = await response.json();
     this.token = data.data.token;
@@ -502,25 +524,22 @@ class MCPClient {
     const response = await fetch(`${this.baseUrl}/api/v1/containers`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
     });
     return response.json();
   }
 
   async executeCommand(containerId, command) {
-    const response = await fetch(
-      `${this.baseUrl}/api/v1/terminal/${containerId}/execute`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ command })
-      }
-    );
+    const response = await fetch(`${this.baseUrl}/api/v1/terminal/${containerId}/execute`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ command }),
+    });
     return response.json();
   }
 }
@@ -531,21 +550,21 @@ const client = new MCPClient('https://disco-mcp.up.railway.app', 'your-api-key')
 async function developmentWorkflow() {
   // Authenticate
   await client.authenticate();
-  
+
   // Create a development container
   const container = await client.createContainer();
   const containerId = container.data.containerId;
-  
+
   // Clone a repository
   await client.executeCommand(containerId, 'git clone https://github.com/user/project.git');
-  
+
   // Install dependencies
   await client.executeCommand(containerId, 'cd project && npm install');
-  
+
   // Run tests
   const testResult = await client.executeCommand(containerId, 'cd project && npm test');
   console.log('Test results:', testResult.data.output);
-  
+
   // Start development server
   await client.executeCommand(containerId, 'cd project && npm run dev');
 }
@@ -570,9 +589,9 @@ function MCPTerminal() {
     const response = await fetch('/api/v1/containers', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('mcp_token')}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${localStorage.getItem('mcp_token')}`,
+        'Content-Type': 'application/json',
+      },
     });
     const data = await response.json();
     setContainer(data.data.containerId);
@@ -584,10 +603,10 @@ function MCPTerminal() {
     const response = await fetch(`/api/v1/terminal/${container}/execute`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('mcp_token')}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${localStorage.getItem('mcp_token')}`,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ command })
+      body: JSON.stringify({ command }),
     });
 
     const result = await response.json();
@@ -608,8 +627,8 @@ function MCPTerminal() {
       <div className="input">
         <input
           value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && executeCommand()}
+          onChange={e => setCommand(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && executeCommand()}
           placeholder="Enter command..."
         />
         <button onClick={executeCommand}>Execute</button>
@@ -630,7 +649,7 @@ class MCPClient:
         self.base_url = base_url
         self.api_key = api_key
         self.token = None
-    
+
     def authenticate(self):
         response = requests.post(
             f"{self.base_url}/api/v1/auth",
@@ -638,14 +657,14 @@ class MCPClient:
         )
         data = response.json()
         self.token = data["data"]["token"]
-    
+
     def create_container(self):
         response = requests.post(
             f"{self.base_url}/api/v1/containers",
             headers={"Authorization": f"Bearer {self.token}"}
         )
         return response.json()
-    
+
     def execute_command(self, container_id, command):
         response = requests.post(
             f"{self.base_url}/api/v1/terminal/{container_id}/execute",
@@ -671,13 +690,7 @@ This API documentation provides a complete reference for integrating with the MC
         "type": "bearer",
         "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
       },
-      "capabilities": [
-        "tools",
-        "resources", 
-        "prompts",
-        "sampling",
-        "completions"
-      ]
+      "capabilities": ["tools", "resources", "prompts", "sampling", "completions"]
     }
   }
 }
@@ -698,7 +711,7 @@ This API documentation provides a complete reference for integrating with the MC
 ```json
 {
   "name": "Disco MCP Server",
-  "base_url": "https://disco-mcp.up.railway.app/mcp", 
+  "base_url": "https://disco-mcp.up.railway.app/mcp",
   "authentication": {
     "type": "bearer",
     "token": "your-jwt-token-here"

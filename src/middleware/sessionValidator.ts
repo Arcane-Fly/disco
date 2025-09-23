@@ -27,21 +27,21 @@ export const validateContainerSession = async (
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Container ID is required'
-        }
+          message: 'Container ID is required',
+        },
       });
     }
 
     // Get container session
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -51,23 +51,22 @@ export const validateContainerSession = async (
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
     // Attach validated session to request for use in handlers
     req.session = session;
     next();
-
   } catch (error) {
     console.error('Session validation error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Session validation failed'
-      }
+        message: 'Session validation failed',
+      },
     });
   }
 };
@@ -77,7 +76,7 @@ export const validateContainerSession = async (
  */
 export const getValidatedSession = async (containerId: string, userId: string) => {
   const session = await containerManager.getSession(containerId);
-  
+
   if (!session) {
     throw new Error('CONTAINER_NOT_FOUND');
   }

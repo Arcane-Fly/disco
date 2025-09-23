@@ -1,7 +1,7 @@
 /**
  * Shared Utility Functions
  * DRY Principle: Consolidates common operations scattered across components
- * 
+ *
  * Previously duplicated in various components for:
  * - Data formatting
  * - Validation
@@ -29,11 +29,11 @@ export function formatNumber(num: number): string {
  */
 export function formatBytes(bytes: number, decimals: number = 2): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
 
@@ -132,11 +132,14 @@ export function deepClone<T>(obj: T): T {
  * Group array items by a key
  */
 export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-  return array.reduce((groups, item) => {
-    const value = String(item[key]);
-    (groups[value] = groups[value] || []).push(item);
-    return groups;
-  }, {} as Record<string, T[]>);
+  return array.reduce(
+    (groups, item) => {
+      const value = String(item[key]);
+      (groups[value] = groups[value] || []).push(item);
+      return groups;
+    },
+    {} as Record<string, T[]>
+  );
 }
 
 /**
@@ -180,7 +183,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
       document.execCommand('copy');
       document.body.removeChild(textArea);

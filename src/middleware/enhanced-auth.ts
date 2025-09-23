@@ -19,15 +19,19 @@ interface EnhancedAuthRequest extends Request {
 /**
  * Enhanced authentication middleware with token refresh detection
  */
-export function enhancedAuthMiddleware(req: EnhancedAuthRequest, res: Response, next: NextFunction) {
+export function enhancedAuthMiddleware(
+  req: EnhancedAuthRequest,
+  res: Response,
+  next: NextFunction
+) {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     req.authStatus = {
       authenticated: false,
       tokenExpiry: 0,
       refreshNeeded: false,
-      timeToExpiry: 0
+      timeToExpiry: 0,
     };
     return next();
   }
@@ -36,23 +40,23 @@ export function enhancedAuthMiddleware(req: EnhancedAuthRequest, res: Response, 
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    
+
     const now = Math.floor(Date.now() / 1000);
     const timeToExpiry = decoded.exp - now;
     const refreshNeeded = timeToExpiry < 15 * 60; // Refresh if < 15 minutes left
-    
+
     req.user = {
       userId: decoded.userId,
       provider: decoded.provider || 'github',
       exp: decoded.exp,
-      iat: decoded.iat
+      iat: decoded.iat,
     };
-    
+
     req.authStatus = {
       authenticated: true,
       tokenExpiry: decoded.exp * 1000, // Convert to milliseconds
       refreshNeeded,
-      timeToExpiry: timeToExpiry * 1000 // Convert to milliseconds
+      timeToExpiry: timeToExpiry * 1000, // Convert to milliseconds
     };
 
     // Add refresh hint to response headers
@@ -60,16 +64,15 @@ export function enhancedAuthMiddleware(req: EnhancedAuthRequest, res: Response, 
       res.setHeader('X-Token-Refresh-Needed', 'true');
       res.setHeader('X-Token-Expires-In', timeToExpiry.toString());
     }
-
   } catch (error) {
     // Token is invalid or expired
     req.authStatus = {
       authenticated: false,
       tokenExpiry: 0,
       refreshNeeded: true,
-      timeToExpiry: 0
+      timeToExpiry: 0,
     };
-    
+
     res.setHeader('X-Token-Status', 'invalid');
   }
 
@@ -82,28 +85,30 @@ export function enhancedAuthMiddleware(req: EnhancedAuthRequest, res: Response, 
 export function createAuthStatusEndpoint() {
   return (req: EnhancedAuthRequest, res: Response) => {
     const { authStatus, user } = req;
-    
+
     const response = {
       authenticated: authStatus?.authenticated || false,
-      user: authStatus?.authenticated ? {
-        userId: user?.userId,
-        provider: user?.provider
-      } : null,
+      user: authStatus?.authenticated
+        ? {
+            userId: user?.userId,
+            provider: user?.provider,
+          }
+        : null,
       token: {
         expires_at: authStatus?.tokenExpiry || 0,
         expires_in: authStatus?.timeToExpiry || 0,
-        refresh_needed: authStatus?.refreshNeeded || false
+        refresh_needed: authStatus?.refreshNeeded || false,
       },
       endpoints: {
         refresh: '/api/v1/auth/refresh',
         login: '/api/v1/auth/github',
-        logout: '/api/v1/auth/logout'
-      }
+        logout: '/api/v1/auth/logout',
+      },
     };
 
     res.json({
       status: 'success',
-      data: response
+      data: response,
     });
   };
 }

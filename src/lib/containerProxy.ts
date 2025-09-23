@@ -6,14 +6,11 @@
 
 import Docker from 'dockerode';
 import * as path from 'path';
-import * as fs from 'fs/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { EventEmitter } from 'events';
 import { createClient, RedisClientType } from 'redis';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+// import { exec } from 'child_process';
+// import { promisify } from 'util';
 
 export interface ContainerProxyConfig {
   dockerHost?: string;
@@ -61,15 +58,22 @@ export interface FileSystemAPI {
 }
 
 export interface ProcessAPI {
-  spawn(command: string, args: string[], options?: {
-    cwd?: string;
-    env?: Record<string, string>;
-  }): Promise<{ pid: string; output: AsyncIterableIterator<string> }>;
+  spawn(
+    command: string,
+    args: string[],
+    options?: {
+      cwd?: string;
+      env?: Record<string, string>;
+    }
+  ): Promise<{ pid: string; output: AsyncIterableIterator<string> }>;
   kill(pid: string): Promise<void>;
-  exec(command: string, options?: {
-    cwd?: string;
-    env?: Record<string, string>;
-  }): Promise<{ stdout: string; stderr: string; exitCode: number }>;
+  exec(
+    command: string,
+    options?: {
+      cwd?: string;
+      env?: Record<string, string>;
+    }
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }>;
 }
 
 export class ContainerProxy extends EventEmitter {
@@ -81,7 +85,7 @@ export class ContainerProxy extends EventEmitter {
 
   constructor(config: ContainerProxyConfig = {}) {
     super();
-    
+
     this.config = {
       dockerHost: config.dockerHost || process.env.DOCKER_HOST || '/var/run/docker.sock',
       dockerPort: config.dockerPort || 2375,
@@ -92,9 +96,9 @@ export class ContainerProxy extends EventEmitter {
         cpuShares: config.resourceLimits?.cpuShares || 512,
         memory: config.resourceLimits?.memory || '512m',
         diskQuota: config.resourceLimits?.diskQuota || '1g',
-        ...config.resourceLimits
+        ...config.resourceLimits,
       },
-      redisUrl: config.redisUrl || process.env.REDIS_URL || ''
+      redisUrl: config.redisUrl || process.env.REDIS_URL || '',
     };
 
     // Initialize Docker client
@@ -105,7 +109,7 @@ export class ContainerProxy extends EventEmitter {
       // TCP connection
       this.docker = new Docker({
         host: this.config.dockerHost,
-        port: this.config.dockerPort
+        port: this.config.dockerPort,
       });
     }
 
@@ -126,9 +130,10 @@ export class ContainerProxy extends EventEmitter {
    */
   async createSession(template: string = 'node', userId?: string): Promise<string> {
     // Check container limit
-    const activeContainers = Array.from(this.sessions.values())
-      .filter(s => s.status === 'running').length;
-    
+    const activeContainers = Array.from(this.sessions.values()).filter(
+      s => s.status === 'running'
+    ).length;
+
     if (activeContainers >= this.config.maxContainers) {
       throw new Error('Maximum container limit reached');
     }
@@ -143,7 +148,7 @@ export class ContainerProxy extends EventEmitter {
       template,
       files: new Map(),
       processes: new Map(),
-      environment: {}
+      environment: {},
     };
 
     this.sessions.set(sessionId, session);
@@ -179,7 +184,7 @@ export class ContainerProxy extends EventEmitter {
    */
   private async createDockerContainer(sessionId: string, template: string) {
     const image = this.getImageForTemplate(template);
-    
+
     // Ensure image exists
     await this.pullImageIfNeeded(image);
 
@@ -193,10 +198,7 @@ export class ContainerProxy extends EventEmitter {
       Tty: true,
       OpenStdin: false,
       StdinOnce: false,
-      Env: [
-        `SESSION_ID=${sessionId}`,
-        'NODE_ENV=development'
-      ],
+      Env: [`SESSION_ID=${sessionId}`, 'NODE_ENV=development'],
       WorkingDir: '/workspace',
       Cmd: ['/bin/sh'],
       HostConfig: {
@@ -207,13 +209,13 @@ export class ContainerProxy extends EventEmitter {
         Binds: [],
         CapDrop: ['ALL'],
         CapAdd: ['CHOWN', 'SETUID', 'SETGID', 'DAC_OVERRIDE'],
-        SecurityOpt: ['no-new-privileges']
+        SecurityOpt: ['no-new-privileges'],
       },
       Labels: {
         'webcontainer.session': sessionId,
         'webcontainer.template': template,
-        'webcontainer.created': new Date().toISOString()
-      }
+        'webcontainer.created': new Date().toISOString(),
+      },
     });
 
     return container;
@@ -224,15 +226,15 @@ export class ContainerProxy extends EventEmitter {
    */
   private getImageForTemplate(template: string): string {
     const imageMap: Record<string, string> = {
-      'node': 'node:20-alpine',
-      'python': 'python:3.11-alpine',
-      'ruby': 'ruby:3.2-alpine',
-      'go': 'golang:1.21-alpine',
-      'rust': 'rust:1.74-alpine',
-      'java': 'openjdk:21-alpine',
-      'php': 'php:8.2-alpine',
-      'deno': 'denoland/deno:alpine',
-      'bun': 'oven/bun:alpine'
+      node: 'node:20-alpine',
+      python: 'python:3.11-alpine',
+      ruby: 'ruby:3.2-alpine',
+      go: 'golang:1.21-alpine',
+      rust: 'rust:1.74-alpine',
+      java: 'openjdk:21-alpine',
+      php: 'php:8.2-alpine',
+      deno: 'denoland/deno:alpine',
+      bun: 'oven/bun:alpine',
     };
 
     return imageMap[template] || this.config.defaultImage;
@@ -248,7 +250,7 @@ export class ContainerProxy extends EventEmitter {
       if (error.statusCode === 404) {
         console.log(`Pulling Docker image: ${image}`);
         const stream = await this.docker.pull(image);
-        
+
         // Wait for pull to complete
         await new Promise((resolve, reject) => {
           this.docker.modem.followProgress(stream, (err: any, res: any) => {
@@ -279,12 +281,12 @@ export class ContainerProxy extends EventEmitter {
         const exec = await container.exec({
           Cmd: ['cat', fullPath],
           AttachStdout: true,
-          AttachStderr: true
+          AttachStderr: true,
         });
 
         const stream = await exec.start({});
         const output = await this.streamToString(stream);
-        
+
         session.lastActivity = new Date();
         return output;
       },
@@ -292,24 +294,26 @@ export class ContainerProxy extends EventEmitter {
       writeFile: async (filePath: string, content: string) => {
         const fullPath = path.posix.join('/workspace', filePath);
         const dir = path.posix.dirname(fullPath);
-        
+
         // Ensure directory exists
-        await container.exec({
-          Cmd: ['mkdir', '-p', dir],
-          AttachStdout: true,
-          AttachStderr: true
-        }).then(exec => exec.start({}));
+        await container
+          .exec({
+            Cmd: ['mkdir', '-p', dir],
+            AttachStdout: true,
+            AttachStderr: true,
+          })
+          .then(exec => exec.start({}));
 
         // Write file
         const escapedContent = content.replace(/'/g, "'\\''");
         const exec = await container.exec({
           Cmd: ['sh', '-c', `echo '${escapedContent}' > ${fullPath}`],
           AttachStdout: true,
-          AttachStderr: true
+          AttachStderr: true,
         });
 
         await exec.start({});
-        
+
         session.files.set(filePath, content);
         session.lastActivity = new Date();
       },
@@ -319,26 +323,24 @@ export class ContainerProxy extends EventEmitter {
         const exec = await container.exec({
           Cmd: ['ls', '-1', fullPath],
           AttachStdout: true,
-          AttachStderr: true
+          AttachStderr: true,
         });
 
         const stream = await exec.start({});
         const output = await this.streamToString(stream);
-        
+
         session.lastActivity = new Date();
         return output.split('\n').filter(Boolean);
       },
 
       mkdir: async (dirPath: string, options = {}) => {
         const fullPath = path.posix.join('/workspace', dirPath);
-        const cmd = options.recursive 
-          ? ['mkdir', '-p', fullPath]
-          : ['mkdir', fullPath];
-        
+        const cmd = options.recursive ? ['mkdir', '-p', fullPath] : ['mkdir', fullPath];
+
         const exec = await container.exec({
           Cmd: cmd,
           AttachStdout: true,
-          AttachStderr: true
+          AttachStderr: true,
         });
 
         await exec.start({});
@@ -347,18 +349,16 @@ export class ContainerProxy extends EventEmitter {
 
       rm: async (filePath: string, options = {}) => {
         const fullPath = path.posix.join('/workspace', filePath);
-        const cmd = options.recursive
-          ? ['rm', '-rf', fullPath]
-          : ['rm', fullPath];
-        
+        const cmd = options.recursive ? ['rm', '-rf', fullPath] : ['rm', fullPath];
+
         const exec = await container.exec({
           Cmd: cmd,
           AttachStdout: true,
-          AttachStderr: true
+          AttachStderr: true,
         });
 
         await exec.start({});
-        
+
         session.files.delete(filePath);
         session.lastActivity = new Date();
       },
@@ -368,21 +368,21 @@ export class ContainerProxy extends EventEmitter {
         const exec = await container.exec({
           Cmd: ['stat', '-c', '%F|%s', fullPath],
           AttachStdout: true,
-          AttachStderr: true
+          AttachStderr: true,
         });
 
         const stream = await exec.start({});
         const output = await this.streamToString(stream);
         const [type, size] = output.trim().split('|');
-        
+
         session.lastActivity = new Date();
-        
+
         return {
           isFile: type === 'regular file',
           isDirectory: type === 'directory',
-          size: parseInt(size, 10)
+          size: parseInt(size, 10),
         };
-      }
+      },
     };
   }
 
@@ -405,7 +405,7 @@ export class ContainerProxy extends EventEmitter {
           command: `${command} ${args.join(' ')}`,
           status: 'running',
           output: [],
-          startedAt: new Date()
+          startedAt: new Date(),
         };
 
         session.processes.set(pid, processInfo);
@@ -415,16 +415,16 @@ export class ContainerProxy extends EventEmitter {
           AttachStdout: true,
           AttachStderr: true,
           WorkingDir: options.cwd ? path.posix.join('/workspace', options.cwd) : '/workspace',
-          Env: options.env ? Object.entries(options.env).map(([k, v]) => `${k}=${v}`) : undefined
+          Env: options.env ? Object.entries(options.env).map(([k, v]) => `${k}=${v}`) : undefined,
         });
 
         const stream = await exec.start({});
-        
+
         // Create async iterator for output
         const output = {
           async *[Symbol.asyncIterator]() {
             const chunks: string[] = [];
-            
+
             stream.on('data', (chunk: Buffer) => {
               const text = chunk.toString('utf8');
               chunks.push(text);
@@ -448,7 +448,7 @@ export class ContainerProxy extends EventEmitter {
             while (chunks.length > 0) {
               yield chunks.shift()!;
             }
-          }
+          },
         };
 
         session.lastActivity = new Date();
@@ -470,21 +470,21 @@ export class ContainerProxy extends EventEmitter {
           AttachStdout: true,
           AttachStderr: true,
           WorkingDir: options.cwd ? path.posix.join('/workspace', options.cwd) : '/workspace',
-          Env: options.env ? Object.entries(options.env).map(([k, v]) => `${k}=${v}`) : undefined
+          Env: options.env ? Object.entries(options.env).map(([k, v]) => `${k}=${v}`) : undefined,
         });
 
         const stream = await exec.start({});
         const output = await this.streamToString(stream);
-        
+
         session.lastActivity = new Date();
-        
+
         // Parse stdout and stderr (simplified)
         return {
           stdout: output,
           stderr: '',
-          exitCode: 0
+          exitCode: 0,
         };
-      }
+      },
     };
   }
 
@@ -510,7 +510,7 @@ export class ContainerProxy extends EventEmitter {
     }
 
     this.sessions.delete(sessionId);
-    
+
     if (this.redis) {
       await this.redis.del(`session:${sessionId}`);
     }
@@ -538,10 +538,10 @@ export class ContainerProxy extends EventEmitter {
    */
   private parseMemoryLimit(memory: string): number {
     const units: Record<string, number> = {
-      'b': 1,
-      'k': 1024,
-      'm': 1024 * 1024,
-      'g': 1024 * 1024 * 1024
+      b: 1,
+      k: 1024,
+      m: 1024 * 1024,
+      g: 1024 * 1024 * 1024,
     };
 
     const match = memory.toLowerCase().match(/^(\d+)([bkmg])?$/);
@@ -551,7 +551,7 @@ export class ContainerProxy extends EventEmitter {
 
     const value = parseInt(match[1], 10);
     const unit = match[2] || 'b';
-    
+
     return value * units[unit];
   }
 
@@ -561,15 +561,15 @@ export class ContainerProxy extends EventEmitter {
   private async streamToString(stream: any): Promise<string> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      
+
       stream.on('data', (chunk: Buffer) => {
         chunks.push(chunk);
       });
-      
+
       stream.on('end', () => {
         resolve(Buffer.concat(chunks).toString('utf8'));
       });
-      
+
       stream.on('error', reject);
     });
   }
@@ -583,18 +583,14 @@ export class ContainerProxy extends EventEmitter {
     const data = {
       ...session,
       files: Array.from(session.files.entries()),
-      processes: Array.from(session.processes.entries())
+      processes: Array.from(session.processes.entries()),
     };
 
     // Set the key with an expiry. The redis client expects an options object for expiry.
     // See: https://github.com/redis/node-redis#basic-usage
-    await this.redis.set(
-      `session:${session.id}`,
-      JSON.stringify(data),
-      {
-        EX: Math.floor(this.config.containerTimeout / 1000)
-      }
-    );
+    await this.redis.set(`session:${session.id}`, JSON.stringify(data), {
+      EX: Math.floor(this.config.containerTimeout / 1000),
+    });
   }
 
   /**
@@ -605,7 +601,7 @@ export class ContainerProxy extends EventEmitter {
 
     try {
       const keys = await this.redis.keys('session:*');
-      
+
       for (const key of keys) {
         const data = await this.redis.get(key);
         if (data) {
@@ -614,7 +610,7 @@ export class ContainerProxy extends EventEmitter {
           session.processes = new Map(session.processes);
           session.createdAt = new Date(session.createdAt);
           session.lastActivity = new Date(session.lastActivity);
-          
+
           this.sessions.set(session.id, session);
         }
       }
@@ -635,11 +631,11 @@ export class ContainerProxy extends EventEmitter {
       this.redis = createClient({
         url: redisUrl,
         socket: {
-          reconnectStrategy: (retries: number) => Math.min(retries * 50, 500)
-        }
+          reconnectStrategy: (retries: number) => Math.min(retries * 50, 500),
+        },
       });
 
-      this.redis.on('error', (err) => {
+      this.redis.on('error', err => {
         console.error('Redis Client Error in ContainerProxy:', err);
       });
 
@@ -671,7 +667,7 @@ export class ContainerProxy extends EventEmitter {
 
       for (const [sessionId, session] of this.sessions.entries()) {
         const lastActivity = session.lastActivity.getTime();
-        
+
         if (now - lastActivity > timeout) {
           console.log(`Session ${sessionId} timed out, terminating...`);
           await this.terminateSession(sessionId);
@@ -705,5 +701,5 @@ export class ContainerProxy extends EventEmitter {
 export const containerProxy = new ContainerProxy({
   maxContainers: parseInt(process.env.MAX_CONTAINERS || '50', 10),
   containerTimeout: parseInt(process.env.CONTAINER_TIMEOUT || '3600000', 10),
-  redisUrl: process.env.REDIS_URL
+  redisUrl: process.env.REDIS_URL,
 });

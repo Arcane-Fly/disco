@@ -39,7 +39,7 @@ export class CodeQualityEnhancer {
     this.projectPath = projectPath;
     this.eslint = new ESLint({
       useEslintrc: true,
-      fix: true
+      fix: true,
     });
   }
 
@@ -52,19 +52,19 @@ export class CodeQualityEnhancer {
     overallScore: number;
   }> {
     console.log('🔍 Starting comprehensive code quality analysis...');
-    
+
     const startTime = performance.now();
-    
+
     try {
       // Run ESLint analysis
       const lintResults = await this.runLintAnalysis();
-      
+
       // Analyze TypeScript files
       const typeResults = await this.analyzeTypeScript();
-      
+
       // Check for performance issues
       const performanceIssues = await this.analyzePerformanceIssues();
-      
+
       // Generate metrics
       const metrics: CodeQualityMetrics = {
         lintErrors: lintResults.errors,
@@ -73,25 +73,24 @@ export class CodeQualityEnhancer {
         testCoverage: await this.calculateTestCoverage(),
         typeErrors: typeResults.errors,
         duplicateCode: await this.detectDuplicateCode(),
-        performanceIssues: performanceIssues.length
+        performanceIssues: performanceIssues.length,
       };
 
       // Generate improvement suggestions
       const suggestions = [
         ...lintResults.suggestions,
         ...typeResults.suggestions,
-        ...performanceIssues
+        ...performanceIssues,
       ];
 
       // Calculate overall quality score
       const overallScore = this.calculateQualityScore(metrics);
-      
+
       const analysisTime = performance.now() - startTime;
       console.log(`✅ Code quality analysis complete in ${analysisTime.toFixed(2)}ms`);
       console.log(`📊 Overall Quality Score: ${overallScore}/100`);
-      
+
       return { metrics, suggestions, overallScore };
-      
     } catch (error) {
       console.error('❌ Code quality analysis failed:', error);
       throw error;
@@ -107,38 +106,39 @@ export class CodeQualityEnhancer {
     filesModified: string[];
   }> {
     console.log('🔧 Applying automated code quality fixes...');
-    
+
     const fixesApplied: string[] = [];
     const filesModified: string[] = [];
-    
+
     try {
       // Apply ESLint fixes
       const lintFixes = await this.applyESLintFixes();
       fixesApplied.push(...lintFixes.fixes);
       filesModified.push(...lintFixes.filesModified);
-      
+
       // Apply TypeScript fixes
       const typeFixes = await this.applyTypeScriptFixes();
       fixesApplied.push(...typeFixes.fixes);
       filesModified.push(...typeFixes.filesModified);
-      
+
       // Apply performance optimizations
       const perfFixes = await this.applyPerformanceFixes();
       fixesApplied.push(...perfFixes.fixes);
       filesModified.push(...perfFixes.filesModified);
-      
-      console.log(`✅ Applied ${fixesApplied.length} automated fixes to ${filesModified.length} files`);
-      
+
+      console.log(
+        `✅ Applied ${fixesApplied.length} automated fixes to ${filesModified.length} files`
+      );
+
       // Re-analyze to get remaining issues
       const reanalysis = await this.analyzeCodeQuality();
       const totalIssues = Object.values(reanalysis.metrics).reduce((sum, count) => sum + count, 0);
-      
+
       return {
         fixesApplied: fixesApplied.length,
         issuesRemaining: totalIssues,
-        filesModified: [...new Set(filesModified)]
+        filesModified: [...new Set(filesModified)],
       };
-      
     } catch (error) {
       console.error('❌ Automated fixes failed:', error);
       throw error;
@@ -198,7 +198,7 @@ export class CodeQualityEnhancer {
       highPriority,
       mediumPriority,
       lowPriority,
-      estimatedEffort
+      estimatedEffort,
     };
   }
 
@@ -212,7 +212,7 @@ export class CodeQualityEnhancer {
     try {
       const filesToLint = await this.getSourceFiles();
       const results = await this.eslint.lintFiles(filesToLint);
-      
+
       let errors = 0;
       let warnings = 0;
       const suggestions: QualityImprovementSuggestion[] = [];
@@ -222,7 +222,8 @@ export class CodeQualityEnhancer {
         warnings += result.warningCount;
 
         for (const message of result.messages) {
-          if (message.severity === 2) { // Error
+          if (message.severity === 2) {
+            // Error
             suggestions.push({
               type: this.categorizeESLintRule(message.ruleId),
               priority: 'high',
@@ -230,7 +231,7 @@ export class CodeQualityEnhancer {
               file: result.filePath,
               line: message.line,
               estimatedImpact: 8,
-              autoFixable: message.fix !== undefined
+              autoFixable: message.fix !== undefined,
             });
           }
         }
@@ -258,13 +259,14 @@ export class CodeQualityEnhancer {
     for (const file of sourceFiles) {
       try {
         const content = await fs.readFile(file, 'utf-8');
-        
+
         // Count 'any' types as potential issues
         const anyMatches = content.match(/:\s*any\b/g) || [];
         errors += anyMatches.length;
 
         // Calculate cyclomatic complexity (simplified)
-        const complexityIndicators = content.match(/\b(if|else|while|for|switch|catch|&&|\|\|)\b/g) || [];
+        const complexityIndicators =
+          content.match(/\b(if|else|while|for|switch|catch|&&|\|\|)\b/g) || [];
         const fileComplexity = complexityIndicators.length;
         totalComplexity += fileComplexity;
 
@@ -276,7 +278,7 @@ export class CodeQualityEnhancer {
             description: `High cyclomatic complexity (${fileComplexity}) - consider refactoring`,
             file,
             estimatedImpact: 6,
-            autoFixable: false
+            autoFixable: false,
           });
         }
 
@@ -288,7 +290,7 @@ export class CodeQualityEnhancer {
             description: `${anyMatches.length} 'any' types found - add proper type annotations`,
             file,
             estimatedImpact: 5,
-            autoFixable: false
+            autoFixable: false,
           });
         }
       } catch (error) {
@@ -299,7 +301,7 @@ export class CodeQualityEnhancer {
     return {
       errors,
       complexity: Math.round(totalComplexity / sourceFiles.length),
-      suggestions
+      suggestions,
     };
   }
 
@@ -310,14 +312,26 @@ export class CodeQualityEnhancer {
     for (const file of sourceFiles) {
       try {
         const content = await fs.readFile(file, 'utf-8');
-        
+
         // Check for potential performance issues
         const issues = [
-          { pattern: /console\.log/g, description: 'Console.log statements can impact performance in production' },
-          { pattern: /JSON\.parse\(JSON\.stringify/g, description: 'Deep cloning with JSON.parse/stringify is inefficient' },
-          { pattern: /Array\.prototype\.forEach/g, description: 'Consider using for...of loops for better performance' },
-          { pattern: /\.find\(.*\)\.find\(/g, description: 'Chained array operations can be optimized' },
-          { pattern: /new RegExp/g, description: 'Consider pre-compiling regular expressions' }
+          {
+            pattern: /console\.log/g,
+            description: 'Console.log statements can impact performance in production',
+          },
+          {
+            pattern: /JSON\.parse\(JSON\.stringify/g,
+            description: 'Deep cloning with JSON.parse/stringify is inefficient',
+          },
+          {
+            pattern: /Array\.prototype\.forEach/g,
+            description: 'Consider using for...of loops for better performance',
+          },
+          {
+            pattern: /\.find\(.*\)\.find\(/g,
+            description: 'Chained array operations can be optimized',
+          },
+          { pattern: /new RegExp/g, description: 'Consider pre-compiling regular expressions' },
         ];
 
         for (const issue of issues) {
@@ -329,7 +343,7 @@ export class CodeQualityEnhancer {
               description: issue.description,
               file,
               estimatedImpact: 3,
-              autoFixable: false
+              autoFixable: false,
             });
           }
         }
@@ -346,9 +360,9 @@ export class CodeQualityEnhancer {
     try {
       const testFiles = await this.getSourceFiles('.test.ts', '.spec.ts');
       const sourceFiles = await this.getSourceFiles('.ts');
-      
+
       if (sourceFiles.length === 0) return 0;
-      
+
       // Very basic coverage estimation based on test file ratio
       const coverageRatio = testFiles.length / sourceFiles.length;
       return Math.min(Math.round(coverageRatio * 100), 100);
@@ -366,16 +380,16 @@ export class CodeQualityEnhancer {
 
   private calculateQualityScore(metrics: CodeQualityMetrics): number {
     let score = 100;
-    
+
     // Deduct points for issues
     score -= metrics.lintErrors * 5;
     score -= metrics.lintWarnings * 1;
     score -= metrics.typeErrors * 3;
-    score -= Math.max(0, (10 - metrics.testCoverage / 10)) * 2;
+    score -= Math.max(0, 10 - metrics.testCoverage / 10) * 2;
     score -= Math.max(0, metrics.codeComplexity - 5) * 2;
     score -= metrics.performanceIssues * 2;
     score -= metrics.duplicateCode * 1;
-    
+
     return Math.max(0, Math.round(score));
   }
 
@@ -386,20 +400,20 @@ export class CodeQualityEnhancer {
     try {
       const filesToLint = await this.getSourceFiles();
       const results = await this.eslint.lintFiles(filesToLint);
-      
+
       const fixes: string[] = [];
       const filesModified: string[] = [];
-      
+
       // Apply auto-fixes
       await ESLint.outputFixes(results);
-      
+
       for (const result of results) {
         if (result.output !== undefined) {
           filesModified.push(result.filePath);
           fixes.push(`Auto-fixed ESLint issues in ${path.basename(result.filePath)}`);
         }
       }
-      
+
       return { fixes, filesModified };
     } catch (error) {
       console.warn('ESLint auto-fix failed:', error);
@@ -427,14 +441,14 @@ export class CodeQualityEnhancer {
   private async getSourceFiles(...extensions: string[]): Promise<string[]> {
     const defaultExtensions = extensions.length > 0 ? extensions : ['.ts', '.js'];
     const files: string[] = [];
-    
+
     const scanDirectory = async (dir: string): Promise<void> => {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
-          
+
           if (entry.isDirectory()) {
             // Skip common directories that shouldn't be linted
             if (!['node_modules', 'dist', 'build', '.git', 'coverage'].includes(entry.name)) {
@@ -451,18 +465,28 @@ export class CodeQualityEnhancer {
         console.warn(`Failed to scan directory ${dir}:`, error);
       }
     };
-    
+
     await scanDirectory(path.join(this.projectPath, 'src'));
     return files;
   }
 
-  private categorizeESLintRule(ruleId: string | null): 'performance' | 'maintainability' | 'reliability' | 'security' {
+  private categorizeESLintRule(
+    ruleId: string | null
+  ): 'performance' | 'maintainability' | 'reliability' | 'security' {
     if (!ruleId) return 'maintainability';
-    
-    if (ruleId.includes('security') || ruleId.includes('no-eval') || ruleId.includes('no-implied-eval')) {
+
+    if (
+      ruleId.includes('security') ||
+      ruleId.includes('no-eval') ||
+      ruleId.includes('no-implied-eval')
+    ) {
       return 'security';
     }
-    if (ruleId.includes('performance') || ruleId.includes('no-unused') || ruleId.includes('prefer-const')) {
+    if (
+      ruleId.includes('performance') ||
+      ruleId.includes('no-unused') ||
+      ruleId.includes('prefer-const')
+    ) {
       return 'performance';
     }
     if (ruleId.includes('no-console') || ruleId.includes('complexity') || ruleId.includes('max-')) {

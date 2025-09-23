@@ -8,7 +8,7 @@ jest.mock('next', () => {
     prepare: jest.fn().mockResolvedValue(undefined),
     getRequestHandler: jest.fn().mockReturnValue((req: any, res: any) => {
       res.status(200).send('mocked next handler');
-    })
+    }),
   }));
 });
 
@@ -20,8 +20,8 @@ jest.mock('dockerode', () => {
       id: 'test-container',
       start: jest.fn().mockResolvedValue(undefined),
       stop: jest.fn().mockResolvedValue(undefined),
-      remove: jest.fn().mockResolvedValue(undefined)
-    })
+      remove: jest.fn().mockResolvedValue(undefined),
+    }),
   }));
 });
 
@@ -33,8 +33,8 @@ jest.mock('redis', () => ({
     quit: jest.fn().mockResolvedValue(undefined),
     set: jest.fn().mockResolvedValue('OK'),
     get: jest.fn().mockResolvedValue(null),
-    del: jest.fn().mockResolvedValue(1)
-  }))
+    del: jest.fn().mockResolvedValue(1),
+  })),
 }));
 
 // Mock file system operations that might fail in test env
@@ -43,7 +43,7 @@ jest.mock('fs/promises', () => ({
   mkdir: jest.fn().mockResolvedValue(undefined),
   readFile: jest.fn().mockResolvedValue('mocked file content'),
   writeFile: jest.fn().mockResolvedValue(undefined),
-  stat: jest.fn().mockResolvedValue({ isDirectory: () => true, isFile: () => true })
+  stat: jest.fn().mockResolvedValue({ isDirectory: () => true, isFile: () => true }),
 }));
 
 // Global test environment setup

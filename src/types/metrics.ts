@@ -1,10 +1,10 @@
 /**
  * Centralized Metrics Type Definitions
  * DRY Principle: Consolidates all metrics interfaces scattered across the codebase
- * 
+ *
  * Previously found in:
  * - src/components/UltimateMCPDashboard.tsx (PerformanceMetrics, QualityMetrics)
- * - src/lib/store.ts (PerformanceMetrics) 
+ * - src/lib/store.ts (PerformanceMetrics)
  * - src/lib/enhanced-ux-automation.ts (PerformanceMetrics)
  * - src/lib/codeQualityEnhancer.ts (CodeQualityMetrics)
  * - src/lib/performanceOptimizer.ts (ScalingMetrics)
@@ -39,7 +39,7 @@ export interface PerformanceMetrics extends BaseMetrics {
   };
 }
 
-// Quality metrics - unified definition  
+// Quality metrics - unified definition
 export interface QualityMetrics extends BaseMetrics {
   testCoverage: number;
   codeQuality: string;

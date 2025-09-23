@@ -25,11 +25,13 @@ npm install
 ### 2. Environment Configuration
 
 Copy the example environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` with your configuration:
+
 ```env
 # Required for production
 JWT_SECRET=your-super-secret-jwt-key-here
@@ -63,6 +65,7 @@ curl http://localhost:3000/health
 ```
 
 You should see a response like:
+
 ```json
 {
   "status": "healthy",
@@ -88,6 +91,7 @@ railway create mcp-server
 ### 3. Link to Your Repository
 
 If deploying from GitHub:
+
 ```bash
 railway link
 ```
@@ -95,6 +99,7 @@ railway link
 ### 4. Configure Environment Variables
 
 #### Option A: Manual Variable Setup
+
 Set the required environment variables individually:
 
 ```bash
@@ -116,6 +121,7 @@ railway variables set GEMINI_API_KEY=your-gemini-api-key
 ```
 
 #### Option B: Shared Configuration Setup (Recommended)
+
 For better variable management across multiple services, use Railway's shared configuration:
 
 ```bash
@@ -147,29 +153,35 @@ railway variables set GITHUB_TOKEN='${{shared.GITHUB_TOKEN}}'
 ### 5. Add Required Services
 
 #### Postgres Database
+
 ```bash
 railway add postgresql
 ```
 
 This automatically sets up the following environment variables:
+
 - `DATABASE_URL` - Primary connection string
-- `DATABASE_PUBLIC_URL` - Public connection string  
+- `DATABASE_PUBLIC_URL` - Public connection string
 - `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` - Connection details
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` - Database credentials
 
 #### Redis Cache
+
 ```bash
 railway add redis
 ```
 
 This automatically sets up the following environment variables:
+
 - `REDIS_HOST`, `REDISHOST` - Redis host
 - `REDIS_PORT`, `REDISPORT` - Redis port
 - `REDIS_USER`, `REDISUSER` - Redis username
 - `REDIS_PASSWORD`, `REDISPASSWORD` - Redis password
 
 #### Verify Add-on Configuration
+
 After adding services, verify the variables are properly set:
+
 ```bash
 # Check all environment variables
 railway variables
@@ -177,7 +189,7 @@ railway variables
 # Test database connection
 railway run -- node -e "console.log('DB URL:', process.env.DATABASE_URL)"
 
-# Test Redis connection  
+# Test Redis connection
 railway run -- node -e "console.log('Redis Host:', process.env.REDIS_HOST)"
 ```
 
@@ -188,6 +200,7 @@ railway up
 ```
 
 The deployment will:
+
 1. Install dependencies using npm
 2. Build the TypeScript code
 3. Start the server on Railway's assigned port
@@ -228,16 +241,19 @@ railway variables set WEBSOCKET_URL="wss://${RAILWAY_DOMAIN}/socket.io"
 ### 9. Verify Deployment
 
 Check the deployment status:
+
 ```bash
 railway status
 ```
 
 Get the public URL:
+
 ```bash
 railway domain
 ```
 
 Test the health endpoint:
+
 ```bash
 curl https://your-app.up.railway.app/health
 ```
@@ -276,6 +292,7 @@ The server will automatically resolve the security directory to `/data/disco/sec
 #### Option 3: Fallback Configuration
 
 If no volume is attached, the server gracefully falls back to:
+
 1. `/tmp/disco/security` (ephemeral storage in production)
 2. In-memory logging only if filesystem is completely read-only
 
@@ -294,6 +311,7 @@ railway logs --filter "Security compliance"
 ```
 
 You should see log messages like:
+
 ```
 🛡️ Security compliance data directory initialized { dir: '/data/disco/security' }
 ```
@@ -319,6 +337,7 @@ curl -I https://your-app.up.railway.app/favicon.ico
 If you encounter 400 errors on favicon requests:
 
 1. **Check Security Middleware Configuration**:
+
    ```bash
    railway logs --filter "INVALID_INPUT"
    ```
@@ -344,87 +363,96 @@ To serve a custom favicon instead of the default transparent PNG:
 ### Environment Variables
 
 #### Core Server Configuration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PORT` | No | Railway sets this automatically |
-| `NODE_ENV` | No | Set to "production" automatically |
-| `JWT_SECRET` | Yes | Secret for JWT token signing |
-| `ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
-| `DATA_DIR` | No | Data directory path (default: "app/data") |
-| `LOG_LEVEL` | No | Logging level (default: "info") |
+
+| Variable          | Required | Description                               |
+| ----------------- | -------- | ----------------------------------------- |
+| `PORT`            | No       | Railway sets this automatically           |
+| `NODE_ENV`        | No       | Set to "production" automatically         |
+| `JWT_SECRET`      | Yes      | Secret for JWT token signing              |
+| `ALLOWED_ORIGINS` | Yes      | Comma-separated allowed origins           |
+| `DATA_DIR`        | No       | Data directory path (default: "app/data") |
+| `LOG_LEVEL`       | No       | Logging level (default: "info")           |
 
 #### WebContainer Integration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
-| `WEBCONTAINER_CLIENT_ID` | Yes | StackBlitz WebContainer client ID |
-| `WEBSOCKET_URL` | No | WebSocket URL (auto-generated for Railway) |
+
+| Variable                 | Required | Description                                |
+| ------------------------ | -------- | ------------------------------------------ |
+| `WEBCONTAINER_API_KEY`   | Yes      | StackBlitz WebContainer API key            |
+| `WEBCONTAINER_CLIENT_ID` | Yes      | StackBlitz WebContainer client ID          |
+| `WEBSOCKET_URL`          | No       | WebSocket URL (auto-generated for Railway) |
 
 #### Database Configuration (Postgres Add-on)
-| Variable | Auto-Set by Railway | Description |
-|----------|---------------------|-------------|
-| `DATABASE_URL` | Yes | Primary Postgres connection string |
-| `DATABASE_PUBLIC_URL` | Yes | Public Postgres connection string |
-| `PGHOST` | Yes | Postgres host |
-| `PGPORT` | Yes | Postgres port |
-| `PGDATABASE` | Yes | Postgres database name |
-| `PGUSER` | Yes | Postgres username |
-| `POSTGRES_DB` | Yes | Postgres database name |
-| `POSTGRES_USER` | Yes | Postgres user |
-| `POSTGRES_PASSWORD` | Yes | Postgres password |
+
+| Variable              | Auto-Set by Railway | Description                        |
+| --------------------- | ------------------- | ---------------------------------- |
+| `DATABASE_URL`        | Yes                 | Primary Postgres connection string |
+| `DATABASE_PUBLIC_URL` | Yes                 | Public Postgres connection string  |
+| `PGHOST`              | Yes                 | Postgres host                      |
+| `PGPORT`              | Yes                 | Postgres port                      |
+| `PGDATABASE`          | Yes                 | Postgres database name             |
+| `PGUSER`              | Yes                 | Postgres username                  |
+| `POSTGRES_DB`         | Yes                 | Postgres database name             |
+| `POSTGRES_USER`       | Yes                 | Postgres user                      |
+| `POSTGRES_PASSWORD`   | Yes                 | Postgres password                  |
 
 #### Redis Configuration (Redis Add-on)
-| Variable | Auto-Set by Railway | Description |
-|----------|---------------------|-------------|
-| `REDIS_HOST` | Yes | Redis host |
-| `REDIS_PORT` | Yes | Redis port |
-| `REDIS_USER` | Yes | Redis username |
-| `REDIS_PASSWORD` | Yes | Redis password |
-| `REDISHOST` | Yes | Redis host (alternative) |
-| `REDISPORT` | Yes | Redis port (alternative) |
-| `REDISUSER` | Yes | Redis user (alternative) |
-| `REDISPASSWORD` | Yes | Redis password (alternative) |
+
+| Variable         | Auto-Set by Railway | Description                  |
+| ---------------- | ------------------- | ---------------------------- |
+| `REDIS_HOST`     | Yes                 | Redis host                   |
+| `REDIS_PORT`     | Yes                 | Redis port                   |
+| `REDIS_USER`     | Yes                 | Redis username               |
+| `REDIS_PASSWORD` | Yes                 | Redis password               |
+| `REDISHOST`      | Yes                 | Redis host (alternative)     |
+| `REDISPORT`      | Yes                 | Redis port (alternative)     |
+| `REDISUSER`      | Yes                 | Redis user (alternative)     |
+| `REDISPASSWORD`  | Yes                 | Redis password (alternative) |
 
 #### AI Provider API Keys
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENAI_API_KEY` | No | OpenAI API key for GPT models |
-| `ANTHROPIC_API_KEY` | No | Anthropic API key for Claude models |
-| `GEMINI_API_KEY` | No | Google Gemini API key |
-| `GOOGLE_API_KEY` | No | Google API key for various services |
-| `PERPLEXITY_API_KEY` | No | Perplexity AI API key |
-| `QWEN_ACCESS_KEY_SECRET` | No | Qwen/Alibaba Cloud API key |
+
+| Variable                 | Required | Description                         |
+| ------------------------ | -------- | ----------------------------------- |
+| `OPENAI_API_KEY`         | No       | OpenAI API key for GPT models       |
+| `ANTHROPIC_API_KEY`      | No       | Anthropic API key for Claude models |
+| `GEMINI_API_KEY`         | No       | Google Gemini API key               |
+| `GOOGLE_API_KEY`         | No       | Google API key for various services |
+| `PERPLEXITY_API_KEY`     | No       | Perplexity AI API key               |
+| `QWEN_ACCESS_KEY_SECRET` | No       | Qwen/Alibaba Cloud API key          |
 
 #### GitHub Integration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GITHUB_CLIENT_ID` | No | GitHub OAuth client ID |
-| `GITHUB_CLIENT_SECRET` | No | GitHub OAuth client secret |
-| `GITHUB_TOKEN` | No | GitHub personal access token |
-| `GITHUB_USERNAME` | No | GitHub username |
-| `GITHUB_USEREMAIL` | No | GitHub user email |
-| `AUTH_CALLBACK_URL` | No | OAuth callback URL |
+
+| Variable               | Required | Description                  |
+| ---------------------- | -------- | ---------------------------- |
+| `GITHUB_CLIENT_ID`     | No       | GitHub OAuth client ID       |
+| `GITHUB_CLIENT_SECRET` | No       | GitHub OAuth client secret   |
+| `GITHUB_TOKEN`         | No       | GitHub personal access token |
+| `GITHUB_USERNAME`      | No       | GitHub username              |
+| `GITHUB_USEREMAIL`     | No       | GitHub user email            |
+| `AUTH_CALLBACK_URL`    | No       | OAuth callback URL           |
 
 #### Container & Rate Limiting
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MAX_CONTAINERS` | No | Maximum number of containers (default: 50) |
-| `CONTAINER_TIMEOUT_MINUTES` | No | Container timeout in minutes (default: 30) |
-| `POOL_SIZE` | No | Connection pool size (default: 5) |
-| `RATE_LIMIT_MAX` | No | Rate limit max requests (default: 100) |
-| `RATE_LIMIT_WINDOW_MS` | No | Rate limit window in ms (default: 60000) |
-| `VALID_API_KEYS` | No | Comma-separated valid API keys |
+
+| Variable                    | Required | Description                                |
+| --------------------------- | -------- | ------------------------------------------ |
+| `MAX_CONTAINERS`            | No       | Maximum number of containers (default: 50) |
+| `CONTAINER_TIMEOUT_MINUTES` | No       | Container timeout in minutes (default: 30) |
+| `POOL_SIZE`                 | No       | Connection pool size (default: 5)          |
+| `RATE_LIMIT_MAX`            | No       | Rate limit max requests (default: 100)     |
+| `RATE_LIMIT_WINDOW_MS`      | No       | Rate limit window in ms (default: 60000)   |
+| `VALID_API_KEYS`            | No       | Comma-separated valid API keys             |
 
 #### Production Configuration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NPM_CONFIG_PRODUCTION` | No | NPM production mode (default: false) |
+
+| Variable                | Required | Description                          |
+| ----------------------- | -------- | ------------------------------------ |
+| `NPM_CONFIG_PRODUCTION` | No       | NPM production mode (default: false) |
 
 ### Railway Variable References
 
 Railway uses a variable reference system to automatically populate environment variables from shared configurations and add-on services. In production, these variables are automatically set using the following pattern:
 
 #### Shared Variables (from Railway shared configuration)
+
 ```bash
 ALLOWED_ORIGINS="${{shared.ALLOWED_ORIGINS}}"
 ANTHROPIC_API_KEY="${{shared.ANTHROPIC_API_KEY}}"
@@ -434,6 +462,7 @@ OPENAI_API_KEY="${{shared.OPENAI_API_KEY}}"
 ```
 
 #### Postgres Add-on Variables
+
 ```bash
 DATABASE_URL="${{Postgres.DATABASE_URL}}"
 DATABASE_PUBLIC_URL="${{Postgres.DATABASE_PUBLIC_URL}}"
@@ -445,6 +474,7 @@ POSTGRES_PASSWORD="${{Postgres.POSTGRES_PASSWORD}}"
 ```
 
 #### Redis Add-on Variables
+
 ```bash
 REDIS_HOST="${{Redis.REDISHOST}}"
 REDISPASSWORD="${{Redis.REDISPASSWORD}}"
@@ -454,6 +484,7 @@ REDISUSER="${{Redis.REDISUSER}}"
 ```
 
 This system ensures that:
+
 1. **Add-on variables** are automatically updated when services are modified
 2. **Shared variables** can be reused across multiple services
 3. **Environment consistency** is maintained across deployments
@@ -462,6 +493,7 @@ This system ensures that:
 ### Setting Up Railway Variable References
 
 #### 1. Configure Shared Variables
+
 ```bash
 # Set shared variables that can be referenced across services
 railway variables set --shared JWT_SECRET=$(openssl rand -base64 32)
@@ -471,6 +503,7 @@ railway variables set --shared ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
 #### 2. Add Database and Redis Services
+
 ```bash
 # Add Postgres database
 railway add postgresql
@@ -480,13 +513,15 @@ railway add redis
 ```
 
 #### 3. Reference Variables in Service Configuration
+
 In your Railway service, set environment variables using references:
+
 ```bash
 # Reference shared variables
 railway variables set JWT_SECRET='${{shared.JWT_SECRET}}'
 railway variables set WEBCONTAINER_API_KEY='${{shared.WEBCONTAINER_API_KEY}}'
 
-# Reference add-on variables  
+# Reference add-on variables
 railway variables set DATABASE_URL='${{Postgres.DATABASE_URL}}'
 railway variables set REDIS_HOST='${{Redis.REDISHOST}}'
 ```
@@ -496,6 +531,7 @@ railway variables set REDIS_HOST='${{Redis.REDISHOST}}'
 For production deployments, sensitive variables should be properly managed:
 
 #### Railway Environment Variables
+
 ```bash
 # Generate and set secure JWT secret
 railway variables set JWT_SECRET=$(openssl rand -base64 32)
@@ -506,6 +542,7 @@ railway variables set VALID_API_KEYS=$(openssl rand -hex 16),$(openssl rand -hex
 ```
 
 #### GitHub Environment Secrets
+
 To sync secrets to GitHub environments for CI/CD:
 
 ```bash
@@ -528,6 +565,7 @@ gh secret set JWT_SECRET --body "$(openssl rand -base64 32)" --env staging
 ```
 
 #### Secret Rotation Schedule
+
 - **JWT_SECRET**: Rotate monthly
 - **API_KEYS**: Rotate quarterly
 - **GITHUB_CLIENT_SECRET**: Rotate annually or on compromise
@@ -560,10 +598,12 @@ curl -H "Origin: https://chat.openai.com" \
 The server uses a persistent data directory for storing application data. This is configured via the `DATA_DIR` environment variable:
 
 **Default Configuration:**
-- `DATA_DIR="app/data"` 
+
+- `DATA_DIR="app/data"`
 - Container path: `/app/data`
 
 **For Docker Deployment:**
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -573,11 +613,13 @@ services:
     environment:
       - DATA_DIR=app/data
     volumes:
-      - ./local_data:/app/data  # Mount host directory to container
+      - ./local_data:/app/data # Mount host directory to container
 ```
 
 **For Railway Deployment:**
+
 1. Set the `DATA_DIR` environment variable (optional, defaults to "app/data"):
+
    ```bash
    railway variables set DATA_DIR=app/data
    ```
@@ -588,11 +630,12 @@ services:
 
 **Using Different Data Paths:**
 If you want to use a different path:
+
 ```bash
 # For /data mount point
 railway variables set DATA_DIR=data
 
-# For /app/storage mount point  
+# For /app/storage mount point
 railway variables set DATA_DIR=app/storage
 ```
 
@@ -601,8 +644,9 @@ The mount path in your container will be `/${DATA_DIR}` (e.g., `/data`, `/app/st
 ### Scaling Configuration
 
 Railway will automatically scale based on:
+
 - CPU usage
-- Memory usage  
+- Memory usage
 - Active connections
 
 You can configure scaling in `railway.toml`:
@@ -655,7 +699,9 @@ railway variables set ALLOWED_ORIGINS="https://chat.openai.com,https://chatgpt.c
 **Error**: Container creation fails
 
 **Solutions**:
+
 1. Increase memory allocation:
+
    ```bash
    railway variables set RAILWAY_MEMORY_MB=2048
    ```
@@ -670,7 +716,9 @@ railway variables set ALLOWED_ORIGINS="https://chat.openai.com,https://chatgpt.c
 **Error**: Application runs out of memory
 
 **Solutions**:
+
 1. Set memory limit for Node.js heap:
+
    ```bash
    railway variables set NODE_OPTIONS="--max-old-space-size=1536"
    ```
@@ -723,6 +771,7 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
 #### ✅ Valid NODE_OPTIONS Flags
 
 **Memory Management (Recommended)**:
+
 ```bash
 # Basic memory limit (recommended for most deployments)
 NODE_OPTIONS="--max-old-space-size=1536"
@@ -738,6 +787,7 @@ NODE_OPTIONS="--max-old-space-size=1024 --max-semi-space-size=32"
 ```
 
 **Stack Management**:
+
 ```bash
 # Increase stack size for deep recursion
 NODE_OPTIONS="--max-old-space-size=1536 --stack-size=2048"
@@ -749,13 +799,14 @@ NODE_OPTIONS="--max-old-space-size=1536 --stack-trace-limit=50"
 #### ❌ Invalid NODE_OPTIONS Flags (Common Mistakes)
 
 **These flags will cause build failures**:
+
 ```bash
 # ❌ WRONG - These are V8 compile flags, not runtime flags
 NODE_OPTIONS="--optimize-for-size"              # Not a Node.js flag
 NODE_OPTIONS="--max-inlined-bytecode-size=256"  # V8 compile flag
 NODE_OPTIONS="--no-lazy"                        # V8 compile flag
 
-# ❌ WRONG - Deprecated or non-existent flags  
+# ❌ WRONG - Deprecated or non-existent flags
 NODE_OPTIONS="--max-heap-size=1536"             # Use --max-old-space-size instead
 NODE_OPTIONS="--max-gc-pause=100"               # Not a valid Node.js flag
 ```
@@ -767,7 +818,9 @@ NODE_OPTIONS="--max-gc-pause=100"               # Not a valid Node.js flag
 This error occurs when using V8 compile-time flags as Node.js runtime flags.
 
 **Solution**:
+
 1. Remove the invalid flag from Railway variables:
+
    ```bash
    railway variables delete NODE_OPTIONS --service disco
    ```
@@ -782,7 +835,9 @@ This error occurs when using V8 compile-time flags as Node.js runtime flags.
 This typically happens during the build process when NODE_OPTIONS contains invalid flags.
 
 **Solution**:
+
 1. Check current NODE_OPTIONS:
+
    ```bash
    railway variables list --service disco | grep NODE_OPTIONS
    ```
@@ -793,8 +848,9 @@ This typically happens during the build process when NODE_OPTIONS contains inval
    ```
 
 **Memory Optimization Guidelines**:
+
 - **Small apps (< 100MB)**: `--max-old-space-size=512`
-- **Medium apps (100-500MB)**: `--max-old-space-size=1024` 
+- **Medium apps (100-500MB)**: `--max-old-space-size=1024`
 - **Large apps (500MB+)**: `--max-old-space-size=1536`
 - **Development**: Add `--expose-gc` for debugging
 
@@ -813,6 +869,7 @@ npm run prebuild  # Runs validation automatically
 ## Monitoring and Alerting
 
 Set up monitoring for:
+
 - Container count and usage
 - Memory usage
 - Response times
@@ -828,6 +885,7 @@ Set up monitoring for:
 ## Support
 
 For issues:
+
 1. Check logs: `railway logs`
 2. Verify environment variables: `railway variables`
 3. Test health endpoints

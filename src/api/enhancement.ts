@@ -55,20 +55,20 @@ router.get('/status', authMiddleware, async (req: Request, res: Response) => {
         id: s.id,
         name: s.name,
         category: s.category,
-        expectedGain: s.expectedGain
+        expectedGain: s.expectedGain,
       })),
       performanceOptimizer: {
         metrics: optimizerMetrics,
-        cacheStats: performanceOptimizer.getStats()
+        cacheStats: performanceOptimizer.getStats(),
       },
       totalGain: performanceReport.improvements.performance || 1,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   } catch (error) {
     console.error('Enhancement status error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to get enhancement status',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -131,24 +131,23 @@ router.post('/execute', authMiddleware, async (req: Request, res: Response) => {
         estimatedDuration: '15-30 minutes',
         strategiesPlanned: strategies || 'all',
         risks: ['Temporary performance impact during implementation'],
-        benefits: ['10x performance improvement', 'Enhanced scalability', 'Better reliability']
+        benefits: ['10x performance improvement', 'Enhanced scalability', 'Better reliability'],
       });
       return;
     }
 
     const result = await mcpEnhancementEngine.executeEnhancementStrategy();
-    
+
     res.json({
       ...result,
       executionTime: new Date().toISOString(),
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error('Enhancement execution error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to execute enhancement strategy',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -192,29 +191,30 @@ router.post('/execute', authMiddleware, async (req: Request, res: Response) => {
 router.get('/opportunities', authMiddleware, async (req: Request, res: Response) => {
   try {
     const opportunities = await mcpEnhancementEngine.analyzeInnovationOpportunities();
-    
+
     res.json({
       opportunities,
       analysis: {
         totalOpportunities: opportunities.length,
-        averagePotentialGain: opportunities.reduce((sum, opp) => sum + opp.potentialGain, 0) / opportunities.length,
+        averagePotentialGain:
+          opportunities.reduce((sum, opp) => sum + opp.potentialGain, 0) / opportunities.length,
         highestImpact: opportunities[0],
         quickestWins: opportunities.filter(opp => opp.timeline <= 30),
-        strategicInitiatives: opportunities.filter(opp => opp.businessImpact >= 8)
+        strategicInitiatives: opportunities.filter(opp => opp.businessImpact >= 8),
       },
       recommendations: [
         'Prioritize AI-powered enhancements for maximum impact',
         'Focus on quick wins to build momentum',
         'Allocate resources for strategic initiatives with high business impact',
-        'Consider phased implementation for complex opportunities'
+        'Consider phased implementation for complex opportunities',
       ],
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   } catch (error) {
     console.error('Opportunities analysis error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to analyze innovation opportunities',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -240,7 +240,7 @@ router.get('/opportunities', authMiddleware, async (req: Request, res: Response)
  */
 router.get('/report', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const format = req.query.format as string || 'json';
+    const format = (req.query.format as string) || 'json';
     const report = mcpEnhancementEngine.generatePerformanceReport();
     const optimizerMetrics = performanceOptimizer.getOptimizationMetrics();
 
@@ -251,21 +251,21 @@ router.get('/report', authMiddleware, async (req: Request, res: Response) => {
           keyAchievements: [
             `Performance improved by ${report.improvements.performance.toFixed(1)}x`,
             `Scalability enhanced by ${report.improvements.scalability.toFixed(1)}x`,
-            `Reliability increased by ${report.improvements.reliability.toFixed(1)}x`
+            `Reliability increased by ${report.improvements.reliability.toFixed(1)}x`,
           ],
           businessImpact: {
             userSatisfaction: `+${((report.improvements.userExperience - 1) * 100).toFixed(0)}%`,
             costReduction: `${((report.improvements.costOptimization - 1) * 100).toFixed(0)}%`,
-            securityPosture: `+${((report.improvements.security - 1) * 100).toFixed(0)}%`
+            securityPosture: `+${((report.improvements.security - 1) * 100).toFixed(0)}%`,
           },
           strategicRecommendations: report.recommendations,
           nextSteps: [
             'Continue monitoring optimization metrics',
             'Implement remaining high-priority strategies',
-            'Plan for advanced AI-powered enhancements'
-          ]
+            'Plan for advanced AI-powered enhancements',
+          ],
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } else if (format === 'technical') {
       res.json({
@@ -274,30 +274,30 @@ router.get('/report', authMiddleware, async (req: Request, res: Response) => {
           systemMetrics: {
             memoryUsage: process.memoryUsage(),
             cpuUsage: process.cpuUsage(),
-            uptime: process.uptime()
+            uptime: process.uptime(),
           },
           optimizerDetails: optimizerMetrics,
           implementationDetails: mcpEnhancementEngine.getImplementedStrategies().map(s => ({
             strategy: s.name,
             category: s.category,
             priority: s.priority,
-            expectedGain: s.expectedGain
-          }))
+            expectedGain: s.expectedGain,
+          })),
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } else {
       res.json({
         ...report,
         optimizerMetrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   } catch (error) {
     console.error('Report generation error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate performance report',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -330,12 +330,13 @@ router.get('/report', authMiddleware, async (req: Request, res: Response) => {
  *       200:
  *         description: Optimization results
  */
-router.post('/optimize', 
+router.post(
+  '/optimize',
   [
     authMiddleware,
     body('type').isIn(['cache', 'memory', 'containers', 'performance', 'all']),
     body('intensity').optional().isIn(['light', 'moderate', 'aggressive']),
-    body('duration').optional().isInt({ min: 1, max: 3600 })
+    body('duration').optional().isInt({ min: 1, max: 3600 }),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -344,7 +345,7 @@ router.post('/optimize',
     }
 
     try {
-      const { type, intensity = 'moderate', _duration = 300 } = req.body;
+      const { type, intensity = 'moderate' } = req.body;
       const startTime = Date.now();
 
       let results: any = {};
@@ -354,29 +355,29 @@ router.post('/optimize',
           // Optimize caching system
           results.cache = await optimizeCache(intensity);
           break;
-          
+
         case 'memory':
           // Optimize memory usage
           results.memory = await optimizeMemory(intensity);
           break;
-          
+
         case 'containers':
           // Optimize container management
           results.containers = await optimizeContainers(intensity);
           break;
-          
+
         case 'performance':
           // General performance optimization
           results.performance = await performanceOptimizer.optimizeResourceUsage();
           break;
-          
+
         case 'all':
           // Comprehensive optimization
           results = {
             cache: await optimizeCache(intensity),
             memory: await optimizeMemory(intensity),
             containers: await optimizeContainers(intensity),
-            performance: await performanceOptimizer.optimizeResourceUsage()
+            performance: await performanceOptimizer.optimizeResourceUsage(),
           };
           break;
       }
@@ -389,14 +390,13 @@ router.post('/optimize',
         executionTime,
         results,
         success: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error) {
       console.error('Optimization error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Failed to execute optimization',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -405,27 +405,27 @@ router.post('/optimize',
 // Helper functions for specific optimizations
 async function optimizeCache(intensity: string): Promise<any> {
   const metrics = performanceOptimizer.getStats();
-  
+
   // Simulate cache optimization based on intensity
   switch (intensity) {
     case 'light':
       return {
         cacheCleared: Math.floor((metrics.cacheSize || 100) * 0.1),
         memoryFreed: '10MB',
-        performanceGain: '5%'
+        performanceGain: '5%',
       };
     case 'moderate':
       return {
         cacheCleared: Math.floor((metrics.cacheSize || 100) * 0.3),
         memoryFreed: '30MB',
-        performanceGain: '15%'
+        performanceGain: '15%',
       };
     case 'aggressive':
       performanceOptimizer.clear();
       return {
         cacheCleared: metrics.cacheSize || 100,
         memoryFreed: '100MB',
-        performanceGain: '25%'
+        performanceGain: '25%',
       };
     default:
       return { error: 'Invalid intensity level' };
@@ -434,20 +434,20 @@ async function optimizeCache(intensity: string): Promise<any> {
 
 async function optimizeMemory(_intensity: string): Promise<any> {
   const memBefore = process.memoryUsage();
-  
+
   // Trigger garbage collection if available
   if (global.gc) {
     global.gc();
   }
-  
+
   const memAfter = process.memoryUsage();
   const memoryFreed = memBefore.heapUsed - memAfter.heapUsed;
-  
+
   return {
     memoryBefore: memBefore,
     memoryAfter: memAfter,
     memoryFreed: memoryFreed,
-    improvement: `${((memoryFreed / memBefore.heapUsed) * 100).toFixed(1)}%`
+    improvement: `${((memoryFreed / memBefore.heapUsed) * 100).toFixed(1)}%`,
   };
 }
 
@@ -457,7 +457,7 @@ async function optimizeContainers(intensity: string): Promise<any> {
     containersOptimized: Math.floor(Math.random() * 10) + 1,
     resourcesSaved: '20%',
     responseTimeImprovement: '15%',
-    intensity
+    intensity,
   };
 }
 

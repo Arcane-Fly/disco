@@ -40,7 +40,10 @@ import { metricsHandler } from './routes/metrics.js';
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { securityAuditMiddleware, securityInputValidationMiddleware } from './middleware/securityAudit.js';
+import {
+  securityAuditMiddleware,
+  securityInputValidationMiddleware,
+} from './middleware/securityAudit.js';
 import faviconRouter from './middleware/favicon.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { performanceMonitor } from './middleware/performance.js';
@@ -83,7 +86,7 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 // Initialize Next.js app
 const nextApp = next({
   dev: process.env.NODE_ENV !== 'production',
-  dir: path.join(process.cwd(), 'frontend')
+  dir: path.join(process.cwd(), 'frontend'),
 });
 const nextHandler = nextApp.getRequestHandler();
 
@@ -102,7 +105,12 @@ const requiredEnvVars = ['JWT_SECRET'];
 // Optional environment variables
 // Note: the WebContainer API key is now supplied via WEBCONTAINER_CLIENT_ID
 // because StackBlitz WebContainers expect this variable name.
-const optionalEnvVars = ['WEBCONTAINER_CLIENT_ID', 'REDIS_URL', 'GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET'];
+const optionalEnvVars = [
+  'WEBCONTAINER_CLIENT_ID',
+  'REDIS_URL',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
+];
 const securityEnvVars = ['ALLOWED_ORIGINS', 'AUTH_CALLBACK_URL'];
 
 // Check required variables
@@ -126,7 +134,7 @@ if (process.env.NODE_ENV === 'production') {
       console.warn(`⚠️  Security warning: ${envVar} not set in production`);
     }
   }
-  
+
   // Ensure ALLOWED_ORIGINS is properly configured in production
   if (!process.env.ALLOWED_ORIGINS) {
     console.error('❌ ALLOWED_ORIGINS must be set in production for CORS security');
@@ -147,20 +155,20 @@ for (const envVar of optionalEnvVars) {
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : [
-    'https://chat.openai.com', 
-    'https://chatgpt.com', 
-    'https://claude.ai',
-    'https://console.anthropic.com',
-    'https://webcontainer.io', 
-    'https://disco-mcp.up.railway.app',
-    'vscode://ms-vscode.copilot',
-    'cursor://',
-    'warp://',
-    'jetbrains://',
-    'zed://',
-    /^https?:\/\/localhost:\d+$/,
-    /^https?:\/\/127\.0\.0\.1:\d+$/
-  ];
+      'https://chat.openai.com',
+      'https://chatgpt.com',
+      'https://claude.ai',
+      'https://console.anthropic.com',
+      'https://webcontainer.io',
+      'https://disco-mcp.up.railway.app',
+      'vscode://ms-vscode.copilot',
+      'cursor://',
+      'warp://',
+      'jetbrains://',
+      'zed://',
+      /^https?:\/\/localhost:\d+$/,
+      /^https?:\/\/127\.0\.0\.1:\d+$/,
+    ];
 
 // Never allow '*' in production
 if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
@@ -168,26 +176,31 @@ if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
 }
 
 // Security middleware with enhanced headers for WebContainer compatibility
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP from helmet, we'll handle it with enhanced middleware
-  crossOriginEmbedderPolicy: { policy: 'credentialless' }, // Enable SharedArrayBuffer support
-  crossOriginOpenerPolicy: { policy: 'same-origin' },      // Required for WebContainer
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable CSP from helmet, we'll handle it with enhanced middleware
+    crossOriginEmbedderPolicy: { policy: 'credentialless' }, // Enable SharedArrayBuffer support
+    crossOriginOpenerPolicy: { policy: 'same-origin' }, // Required for WebContainer
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 
 // Enhanced CSP middleware with nonce generation for Google Fonts support
 app.use(enhancedCSPMiddleware);
 
 // CORS configuration - Enhanced for Universal Platform Support
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allowed?: boolean) => void) => {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allowed?: boolean) => void
+  ) => {
     // Allow requests with no origin (mobile apps, CLI tools, etc.)
     if (!origin) return callback(null, true);
-    
+
     // Check against allowed origins (including regex patterns)
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
@@ -197,32 +210,32 @@ const corsOptions = {
       }
       return false;
     });
-    
+
     callback(null, isAllowed);
   },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-API-Key', 
+    'Content-Type',
+    'Authorization',
+    'X-API-Key',
     'Mcp-Session-Id',
     'X-MCP-Version',
     'X-Platform-ID',
     'X-Client-Version',
     'Accept',
     'Accept-Encoding',
-    'Cache-Control'
+    'Cache-Control',
   ],
   exposedHeaders: [
-    'Mcp-Session-Id', 
-    'X-MCP-Version', 
+    'Mcp-Session-Id',
+    'X-MCP-Version',
     'X-Performance-Metrics',
     'X-Rate-Limit-Remaining',
-    'X-Rate-Limit-Reset'
+    'X-Rate-Limit-Reset',
   ],
   optionsSuccessStatus: 204,
-  maxAge: 86400 // 24 hours preflight cache
+  maxAge: 86400, // 24 hours preflight cache
 };
 
 app.use(cors(corsOptions));
@@ -231,17 +244,20 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Serve static files with proper headers for WebContainer
-app.use('/public', express.static(path.join(process.cwd(), 'public'), {
-  setHeaders: (res, _path) => {
-    // Set COEP and COOP headers for WebContainer compatibility
-    res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    
-    // Additional security headers for static files
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  }
-}));
+app.use(
+  '/public',
+  express.static(path.join(process.cwd(), 'public'), {
+    setHeaders: (res, _path) => {
+      // Set COEP and COOP headers for WebContainer compatibility
+      res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+      res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+
+      // Additional security headers for static files
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    },
+  })
+);
 
 // Enhanced rate limiting with different limits for different endpoints
 const globalLimiter = rateLimit({
@@ -253,9 +269,9 @@ const globalLimiter = rateLimit({
     status: 'error',
     error: {
       code: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many requests, please try again later.'
-    }
-  }
+      message: 'Too many requests, please try again later.',
+    },
+  },
 });
 
 const authLimiter = rateLimit({
@@ -267,9 +283,9 @@ const authLimiter = rateLimit({
     status: 'error',
     error: {
       code: 'AUTH_RATE_LIMIT_EXCEEDED',
-      message: 'Too many authentication attempts, please try again later.'
-    }
-  }
+      message: 'Too many authentication attempts, please try again later.',
+    },
+  },
 });
 
 const apiLimiter = rateLimit({
@@ -281,9 +297,9 @@ const apiLimiter = rateLimit({
     status: 'error',
     error: {
       code: 'API_RATE_LIMIT_EXCEEDED',
-      message: 'API rate limit exceeded, please slow down.'
-    }
-  }
+      message: 'API rate limit exceeded, please slow down.',
+    },
+  },
 });
 
 app.use(globalLimiter);
@@ -311,42 +327,51 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const userAgent = req.get('User-Agent') || 'unknown';
   const ip = req.ip || (req.connection as any)?.remoteAddress || 'unknown';
-  
+
   // Security monitoring flags
   const securityFlags: string[] = [];
-  
+
   // Check for suspicious patterns
   if (req.url.includes('..')) securityFlags.push('PATH_TRAVERSAL');
   if (req.url.includes('<script>')) securityFlags.push('XSS_ATTEMPT');
   if (req.url.includes('sql') && req.url.includes('inject')) securityFlags.push('SQL_INJECTION');
-  if (userAgent.includes('sqlmap') || userAgent.includes('nikto')) securityFlags.push('SECURITY_SCANNER');
-  
+  if (userAgent.includes('sqlmap') || userAgent.includes('nikto'))
+    securityFlags.push('SECURITY_SCANNER');
+
   // Log request
-  console.log(`📨 ${req.method} ${req.originalUrl} - ${ip} - ${new Date().toISOString()}${securityFlags.length > 0 ? ` [SECURITY: ${securityFlags.join(', ')}]` : ''}`);
-  
+  console.log(
+    `📨 ${req.method} ${req.originalUrl} - ${ip} - ${new Date().toISOString()}${securityFlags.length > 0 ? ` [SECURITY: ${securityFlags.join(', ')}]` : ''}`
+  );
+
   // Log security alerts
   if (securityFlags.length > 0) {
-    console.warn(`🚨 Security alert: ${securityFlags.join(', ')} from ${ip} - ${req.method} ${req.url}`);
+    console.warn(
+      `🚨 Security alert: ${securityFlags.join(', ')} from ${ip} - ${req.method} ${req.url}`
+    );
   }
-  
+
   // Override res.json to log response
   const originalJson = res.json.bind(res);
-  res.json = function(body: any) {
+  res.json = function (body: any) {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
-    const statusIcon = statusCode >= 200 && statusCode < 300 ? '📤' : 
-                     statusCode >= 400 && statusCode < 500 ? '⚠️' : '❌';
-    
+    const statusIcon =
+      statusCode >= 200 && statusCode < 300
+        ? '📤'
+        : statusCode >= 400 && statusCode < 500
+          ? '⚠️'
+          : '❌';
+
     console.log(`${statusIcon} ${req.method} ${req.originalUrl} - ${statusCode} - ${duration}ms`);
-    
+
     // Log response body for errors and security events
     if (statusCode >= 400 || securityFlags.length > 0) {
       console.log(`📋 Response body:`, JSON.stringify(body, null, 2));
     }
-    
+
     return originalJson(body);
   };
-  
+
   next();
 });
 
@@ -375,41 +400,47 @@ app.get('/mcp-manifest.json', async (_req, res) => {
     const manifestPath = path.join(process.cwd(), 'mcp-manifest.json');
     const manifestData = await fs.readFile(manifestPath, 'utf-8');
     const manifest = JSON.parse(manifestData);
-    
+
     // Update URLs based on current environment
-    const domain = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-      : `http://localhost:${port}`;
-    
+    const domain =
+      process.env.NODE_ENV === 'production'
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+        : `http://localhost:${port}`;
+
     // Update server URL in manifest
     manifest.server_url = domain;
     manifest.authentication.authorization_endpoint = `${domain}/api/v1/auth/github`;
     manifest.authentication.token_endpoint = `${domain}/oauth/token`;
-    
+
     // Update transport URLs
     manifest.transports.forEach((transport: any) => {
       if (transport.url) {
         transport.url = transport.url.replace('https://disco-mcp.up.railway.app', domain);
       }
       if (transport.sse_endpoint) {
-        transport.sse_endpoint = transport.sse_endpoint.replace('https://disco-mcp.up.railway.app', domain);
+        transport.sse_endpoint = transport.sse_endpoint.replace(
+          'https://disco-mcp.up.railway.app',
+          domain
+        );
       }
       if (transport.messages_endpoint) {
-        transport.messages_endpoint = transport.messages_endpoint.replace('https://disco-mcp.up.railway.app', domain);
+        transport.messages_endpoint = transport.messages_endpoint.replace(
+          'https://disco-mcp.up.railway.app',
+          domain
+        );
       }
     });
-    
+
     res.setHeader('Content-Type', 'application/json');
     res.json(manifest);
-    
   } catch (error) {
     console.error('Error serving MCP manifest:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: 'MANIFEST_ERROR',
-        message: 'Failed to load MCP manifest'
-      }
+        message: 'Failed to load MCP manifest',
+      },
     });
   }
 });
@@ -434,33 +465,32 @@ app.get('/webcontainer-loader', async (req: CSPRequest, res) => {
   try {
     const loaderPath = path.join(process.cwd(), 'public', 'webcontainer-loader.html');
     let loaderContent = await fs.readFile(loaderPath, 'utf-8');
-    
+
     // Get nonce from CSP middleware
     const nonce = req.nonce || '';
-    
+
     // Inject nonce into style and script tags
     if (nonce) {
       loaderContent = loaderContent
         .replace('<style>', `<style nonce="${nonce}">`)
         .replace('<script type="module">', `<script type="module" nonce="${nonce}">`);
     }
-    
+
     // Set headers required for WebContainer SharedArrayBuffer support
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    
+
     res.send(loaderContent);
-    
   } catch (error) {
     console.error('Error serving WebContainer loader:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: 'LOADER_ERROR',
-        message: 'Failed to load WebContainer loader'
-      }
+        message: 'Failed to load WebContainer loader',
+      },
     });
   }
 });
@@ -537,7 +567,7 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
     capabilities: '/capabilities',
     health: '/health',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // Return JSON for API clients or explicit JSON requests
@@ -546,9 +576,10 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
   }
 
   // Return web interface for browser requests
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
 
   // Get nonce from CSP middleware
   const nonce = req.nonce || '';
@@ -1781,7 +1812,7 @@ app.get('/', (req, res) => {
     capabilities: '/capabilities',
     health: '/health',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   if (req.headers.accept?.includes('application/json') || req.query.format === 'json') {
@@ -1825,17 +1856,20 @@ app.get('/', (req, res) => {
  */
 app.get('/auth/callback', (req, res) => {
   const { code, error } = req.query;
-  
+
   // Enhanced security headers for OAuth callback to prevent extension interference
-  res.setHeader('Content-Security-Policy', [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    "frame-ancestors 'none'",
-    "form-action 'self'"
-  ].join('; '));
-  
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com data:",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+    ].join('; ')
+  );
+
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -2105,18 +2139,22 @@ app.get('/openapi.json', (_req, res) => {
 
 // Swagger UI Documentation - serve directly on /docs without redirect conflicts
 // The swaggerUi.serve middleware handles both /docs and /docs/ automatically
-(app as any).use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Disco MCP Server API Documentation',
-  swaggerOptions: {
-    persistAuthorization: true,
-    displayRequestDuration: true,
-    docExpansion: 'list',
-    filter: true,
-    showExtensions: true,
-    showCommonExtensions: true
-  }
-}));
+(app as any).use(
+  '/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(specs, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Disco MCP Server API Documentation',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      docExpansion: 'list',
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+    },
+  })
+);
 
 // Configuration endpoint for ChatGPT integration
 /**
@@ -2162,26 +2200,36 @@ app.get('/openapi.json', (_req, res) => {
 app.get('/config', (_req, res) => {
   // Note: WebSocket URL is no longer exposed for security reasons
   // Clients should connect to /socket.io directly or use authenticated endpoints
-  
+
   res.json({
-    api_url: process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}/api/v1`
-      : `http://localhost:${port}/api/v1`,
+    api_url:
+      process.env.NODE_ENV === 'production'
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}/api/v1`
+        : `http://localhost:${port}/api/v1`,
     auth_required: true,
     rate_limit: {
       max: 100,
-      window_ms: 60000
+      window_ms: 60000,
     },
     environment: process.env.NODE_ENV || 'development',
     capabilities: [
-      'file:read', 'file:write', 'file:delete', 'file:list',
-      'git:clone', 'git:commit', 'git:push', 'git:pull',
-      'terminal:execute', 'terminal:stream',
-      'computer-use:screenshot', 'computer-use:click', 'computer-use:type',
-      'rag:search'
+      'file:read',
+      'file:write',
+      'file:delete',
+      'file:list',
+      'git:clone',
+      'git:commit',
+      'git:push',
+      'git:pull',
+      'terminal:execute',
+      'terminal:stream',
+      'computer-use:screenshot',
+      'computer-use:click',
+      'computer-use:type',
+      'rag:search',
     ],
     documentation: '/docs',
-    openapi_spec: '/openapi.json'
+    openapi_spec: '/openapi.json',
   });
 });
 
@@ -2222,10 +2270,11 @@ app.get('/config', (_req, res) => {
  *                   example: ["S256"]
  */
 app.get('/.well-known/oauth-authorization-server', (_req, res) => {
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
-  
+  const baseUrl =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+
   res.json({
     issuer: baseUrl,
     authorization_endpoint: `${baseUrl}/api/v1/auth/github`,
@@ -2239,7 +2288,7 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
     token_endpoint_auth_methods_supported: ['none', 'client_secret_basic'],
     revocation_endpoint: `${baseUrl}/oauth/revoke`,
     introspection_endpoint: `${baseUrl}/oauth/introspect`,
-    jwks_uri: `${baseUrl}/.well-known/jwks.json`
+    jwks_uri: `${baseUrl}/.well-known/jwks.json`,
   });
 });
 
@@ -2279,46 +2328,50 @@ app.get('/.well-known/oauth-authorization-server', (_req, res) => {
  *                   example: ["header"]
  */
 app.get('/.well-known/oauth-protected-resource', (_req, res) => {
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
-  
+  const baseUrl =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+
   res.json({
     resource_server: baseUrl,
     authorization_servers: [`${baseUrl}/.well-known/oauth-authorization-server`],
     scopes_supported: ['mcp:tools', 'mcp:resources', 'mcp:prompts'],
     bearer_methods_supported: ['header', 'body', 'query'],
     resource_documentation: `${baseUrl}/docs`,
-    resource_registration: `${baseUrl}/oauth/resource/register`
+    resource_registration: `${baseUrl}/oauth/resource/register`,
   });
 });
 
 // ChatGPT plugin manifest
 app.get('/.well-known/ai-plugin.json', (_req, res) => {
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
-    
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+
   res.json({
     schema_version: 'v1',
     name_for_human: 'Disco Code Runner',
     name_for_model: 'disco',
-    description_for_human: 'Full development environment with repository access, terminal operations, and computer use capabilities.',
-    description_for_model: 'Provides complete development environment through WebContainers with file operations, git integration, terminal access, and browser automation for code development and testing.',
+    description_for_human:
+      'Full development environment with repository access, terminal operations, and computer use capabilities.',
+    description_for_model:
+      'Provides complete development environment through WebContainers with file operations, git integration, terminal access, and browser automation for code development and testing.',
     auth: {
       type: 'oauth',
       client_url: `${domain}/oauth/authorize`,
       scope: 'mcp:tools mcp:resources mcp:prompts',
       authorization_url: `${domain}/oauth/authorize`,
-      authorization_content_type: 'application/x-www-form-urlencoded'
+      authorization_content_type: 'application/x-www-form-urlencoded',
     },
     api: {
       type: 'openapi',
-      url: `${domain}/openapi.json`
+      url: `${domain}/openapi.json`,
     },
     logo_url: `${domain}/logo.png`,
     contact_email: 'support@disco-mcp.dev',
-    legal_info_url: `${domain}/legal`
+    legal_info_url: `${domain}/legal`,
   });
 });
 
@@ -2380,21 +2433,22 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
  */
 app.get('/oauth/authorize', async (req, res) => {
   try {
-    const { 
-      client_id, 
-      redirect_uri, 
-      response_type, 
-      scope, 
-      state, 
-      code_challenge, 
-      code_challenge_method = 'S256' 
+    const {
+      client_id,
+      redirect_uri,
+      response_type,
+      scope,
+      state,
+      code_challenge,
+      code_challenge_method = 'S256',
     } = req.query;
 
     // Validate required parameters
     if (!client_id || !redirect_uri || !response_type || !code_challenge) {
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: 'Missing required parameters: client_id, redirect_uri, response_type, code_challenge'
+        error_description:
+          'Missing required parameters: client_id, redirect_uri, response_type, code_challenge',
       });
     }
 
@@ -2402,20 +2456,20 @@ app.get('/oauth/authorize', async (req, res) => {
     if (response_type !== 'code') {
       return res.status(400).json({
         error: 'unsupported_response_type',
-        error_description: 'Only authorization_code flow is supported'
+        error_description: 'Only authorization_code flow is supported',
       });
     }
 
     // Validate redirect URI for ChatGPT
     const allowedRedirectUris = [
       'https://chat.openai.com/oauth/callback',
-      'https://chatgpt.com/oauth/callback'
+      'https://chatgpt.com/oauth/callback',
     ];
-    
+
     if (!allowedRedirectUris.includes(redirect_uri as string)) {
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: 'Invalid redirect_uri. Must be a ChatGPT callback URL.'
+        error_description: 'Invalid redirect_uri. Must be a ChatGPT callback URL.',
       });
     }
 
@@ -2423,7 +2477,7 @@ app.get('/oauth/authorize', async (req, res) => {
     const authHeader = req.headers.authorization;
     const tempAuthCookie = req.cookies?.['temp-auth-token'];
     let userId = null;
-    
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.substring(7);
@@ -2455,14 +2509,17 @@ app.get('/oauth/authorize', async (req, res) => {
 
       const githubClientId = process.env.GITHUB_CLIENT_ID;
       const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/github/callback`;
-      
-      const githubAuthUrl = `https://github.com/login/oauth/authorize?` +
+
+      const githubAuthUrl =
+        `https://github.com/login/oauth/authorize?` +
         `client_id=${githubClientId}&` +
         `redirect_uri=${encodeURIComponent(callbackUrl)}&` +
         `scope=user:email&` +
         `state=${oauthState}`;
 
-      console.log(`🔐 ChatGPT OAuth: Redirecting to GitHub authentication for client: ${client_id}`);
+      console.log(
+        `🔐 ChatGPT OAuth: Redirecting to GitHub authentication for client: ${client_id}`
+      );
       return res.redirect(githubAuthUrl);
     }
 
@@ -2652,12 +2709,11 @@ app.get('/oauth/authorize', async (req, res) => {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.send(consentHtml);
-
   } catch (error) {
     console.error('OAuth authorize error:', error);
     res.status(500).json({
       error: 'server_error',
-      error_description: 'Authorization request failed'
+      error_description: 'Authorization request failed',
     });
   }
 });
@@ -2673,17 +2729,15 @@ app.get('/oauth/authorize', async (req, res) => {
  */
 // --- Allowed redirect URIs per client_id (for demo; in production, fetch from registry/database)
 const allowedRedirectUris = {
-  'YOUR_CLIENT_ID_1': [
-    'https://your.safe.domain/callback'
-  ],
-  'YOUR_CLIENT_ID_2': [
-    'https://another.safe.domain/callback'
-  ]
+  YOUR_CLIENT_ID_1: ['https://your.safe.domain/callback'],
+  YOUR_CLIENT_ID_2: ['https://another.safe.domain/callback'],
   // Add additional client_id/URI pairs as needed
 };
 
 function isValidRedirectUri(client_id, redirect_uri) {
-  if (typeof redirect_uri !== "string") { return false; }
+  if (typeof redirect_uri !== 'string') {
+    return false;
+  }
   const uris = allowedRedirectUris[client_id];
   if (!uris) return false;
   return uris.includes(redirect_uri);
@@ -2691,15 +2745,15 @@ function isValidRedirectUri(client_id, redirect_uri) {
 
 app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req, res) => {
   try {
-    const { 
-      client_id, 
-      redirect_uri, 
-      scope, 
-      state, 
-      code_challenge, 
-      code_challenge_method, 
-      user_id, 
-      action 
+    const {
+      client_id,
+      redirect_uri,
+      scope,
+      state,
+      code_challenge,
+      code_challenge_method,
+      user_id,
+      action,
     } = req.body;
 
     // Handle denial
@@ -2708,9 +2762,10 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
       if (isValidRedirectUri(client_id, redirect_uri)) {
         errorUrl = `${redirect_uri}?error=access_denied&error_description=User denied authorization&state=${encodeURIComponent(state || '')}`;
       } else {
-        errorUrl = "/";
+        errorUrl = '/';
       }
-      const safeClientId = typeof client_id === "string" ? client_id.replace(/[\r\n]/g, "") : String(client_id);
+      const safeClientId =
+        typeof client_id === 'string' ? client_id.replace(/[\r\n]/g, '') : String(client_id);
       console.log(`❌ ChatGPT OAuth: User denied authorization for client: ${safeClientId}`);
       return res.redirect(errorUrl);
     }
@@ -2725,7 +2780,7 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
       scope: scope || 'mcp:tools mcp:resources',
       codeChallenge: code_challenge,
       codeChallengeMethod: code_challenge_method || 'S256',
-      clientId: client_id
+      clientId: client_id,
     });
 
     // Redirect to ChatGPT with authorization code
@@ -2733,19 +2788,20 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
     if (isValidRedirectUri(client_id, redirect_uri)) {
       callbackUrl = `${redirect_uri}?code=${authCode}&state=${encodeURIComponent(state || '')}`;
     } else {
-      callbackUrl = "/";
+      callbackUrl = '/';
     }
-    console.log(`✅ ChatGPT OAuth: Authorization granted for client: ${client_id}, user: ${user_id}`);
-    
-    res.redirect(callbackUrl);
+    console.log(
+      `✅ ChatGPT OAuth: Authorization granted for client: ${client_id}, user: ${user_id}`
+    );
 
+    res.redirect(callbackUrl);
   } catch (error) {
     console.error('OAuth authorize POST error:', error);
     let errorUrl;
     if (isValidRedirectUri(req.body.client_id, req.body.redirect_uri)) {
       errorUrl = `${req.body.redirect_uri}?error=server_error&error_description=Authorization processing failed&state=${encodeURIComponent(req.body.state || '')}`;
     } else {
-      errorUrl = "/";
+      errorUrl = '/';
     }
     res.redirect(errorUrl);
   }
@@ -2809,84 +2865,86 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
 app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res) => {
   try {
     const { grant_type, code, client_id, code_verifier } = req.body;
-    
+
     // Validate grant type
     if (grant_type !== 'authorization_code') {
       return res.status(400).json({
         error: 'unsupported_grant_type',
-        error_description: 'Only authorization_code grant type is supported'
+        error_description: 'Only authorization_code grant type is supported',
       });
     }
-    
+
     // Validate required parameters
     if (!code || !code_verifier) {
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: 'Missing required parameters: code, code_verifier'
+        error_description: 'Missing required parameters: code, code_verifier',
       });
     }
-    
+
     console.log(`🔐 OAuth token exchange request: code=${code.substring(0, 8)}...`);
-    
+
     // Import OAuth utilities
     const { getAndRemoveAuthCodeData, verifyCodeChallenge } = await import('./lib/oauthState.js');
-    
+
     // Retrieve stored authorization data
     const authData = getAndRemoveAuthCodeData(code);
     if (!authData) {
       console.warn(`❌ Invalid or expired authorization code: ${code.substring(0, 8)}...`);
       return res.status(400).json({
         error: 'invalid_grant',
-        error_description: 'Authorization code is invalid or expired'
+        error_description: 'Authorization code is invalid or expired',
       });
     }
-    
+
     // Verify PKCE challenge
     if (!verifyCodeChallenge(code_verifier, authData.codeChallenge, authData.codeChallengeMethod)) {
       console.warn(`❌ PKCE verification failed for code: ${code.substring(0, 8)}...`);
       return res.status(400).json({
         error: 'invalid_grant',
-        error_description: 'PKCE verification failed'
+        error_description: 'PKCE verification failed',
       });
     }
-    
+
     // Validate client ID if provided
     if (client_id && authData.clientId && client_id !== authData.clientId) {
       console.warn(`❌ Client ID mismatch: expected ${authData.clientId}, got ${client_id}`);
       return res.status(400).json({
         error: 'invalid_client',
-        error_description: 'Client ID does not match'
+        error_description: 'Client ID does not match',
       });
     }
-    
+
     // Generate access token with validated data
     const tokenPayload = {
       sub: authData.userId,
       scope: authData.scope,
       aud: authData.clientId,
-      iss: process.env.NODE_ENV === 'production'
-        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-        : `http://localhost:${port}`,
+      iss:
+        process.env.NODE_ENV === 'production'
+          ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+          : `http://localhost:${port}`,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
+      exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
     };
-    
+
     const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET!);
-    
-    console.log(`✅ OAuth access token generated for user: ${authData.userId}, client: ${authData.clientId}`);
-    
+
+    console.log(
+      `✅ OAuth access token generated for user: ${authData.userId}, client: ${authData.clientId}`
+    );
+
     res.json({
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: 3600,
-      scope: authData.scope
+      scope: authData.scope,
     });
-    
   } catch (error) {
     console.error('OAuth token exchange error:', error);
     res.status(500).json({
       error: 'server_error',
-      error_description: 'Internal server error during token exchange'
+      error_description: 'Internal server error during token exchange',
     });
   }
 });
@@ -2926,22 +2984,22 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
 app.post('/oauth/register', express.json(), async (req, res) => {
   try {
     const { client_name, redirect_uris, scope } = req.body;
-    
+
     if (!client_name || !redirect_uris || !Array.isArray(redirect_uris)) {
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: 'Missing required fields: client_name, redirect_uris'
+        error_description: 'Missing required fields: client_name, redirect_uris',
       });
     }
-    
+
     // Generate client credentials
     const crypto = await import('crypto');
     const clientId = `disco_${crypto.randomBytes(16).toString('hex')}`;
     const clientSecret = crypto.randomBytes(32).toString('hex');
-    
+
     // In production, store these in a database
     console.log(`📝 OAuth client registered: ${client_name} (${clientId})`);
-    
+
     res.status(201).json({
       client_id: clientId,
       client_secret: clientSecret,
@@ -2950,14 +3008,13 @@ app.post('/oauth/register', express.json(), async (req, res) => {
       scope: scope || 'mcp:tools mcp:resources',
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
-      token_endpoint_auth_method: 'client_secret_basic'
+      token_endpoint_auth_method: 'client_secret_basic',
     });
-    
   } catch (error) {
     console.error('OAuth registration error:', error);
     res.status(500).json({
       error: 'server_error',
-      error_description: 'Client registration failed'
+      error_description: 'Client registration failed',
     });
   }
 });
@@ -2991,17 +3048,17 @@ app.post('/oauth/register', express.json(), async (req, res) => {
 app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: 'Missing token parameter'
+        error_description: 'Missing token parameter',
       });
     }
-    
+
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-      
+
       res.json({
         active: true,
         scope: decoded.scope,
@@ -3012,20 +3069,18 @@ app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req
         sub: decoded.sub,
         aud: decoded.aud,
         iss: decoded.iss,
-        token_type: 'Bearer'
+        token_type: 'Bearer',
       });
-      
     } catch (jwtError) {
       res.json({
-        active: false
+        active: false,
       });
     }
-    
   } catch (error) {
     console.error('OAuth introspection error:', error);
     res.status(500).json({
       error: 'server_error',
-      error_description: 'Token introspection failed'
+      error_description: 'Token introspection failed',
     });
   }
 });
@@ -3059,20 +3114,19 @@ app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req
 app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: 'Missing token parameter'
+        error_description: 'Missing token parameter',
       });
     }
-    
+
     // In production, add token to revocation list/blacklist
     console.log(`🗑️ Token revocation requested: ${token.substring(0, 20)}...`);
-    
+
     // Always return 200 for security (don't reveal token validity)
     res.status(200).send();
-    
   } catch (error) {
     console.error('OAuth revocation error:', error);
     res.status(200).send(); // Still return 200 for security
@@ -3104,43 +3158,54 @@ app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, re
  *                   type: object
  */
 app.get('/chatgpt-connector', (_req, res) => {
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
 
   res.json({
     connector_url: `${domain}/openapi.json`,
-    platform: "ChatGPT.com Main Interface",
-    type: "Connector (not Custom GPT)",
+    platform: 'ChatGPT.com Main Interface',
+    type: 'Connector (not Custom GPT)',
     instructions: [
-      "1. Open ChatGPT.com (requires ChatGPT Plus/Pro/Team/Enterprise)",
-      "2. Go to Settings → Connectors", 
+      '1. Open ChatGPT.com (requires ChatGPT Plus/Pro/Team/Enterprise)',
+      '2. Go to Settings → Connectors',
       "3. Click 'Add New Connector'",
-      "4. Paste the connector_url above",
-      "5. Follow the authentication flow"
+      '4. Paste the connector_url above',
+      '5. Follow the authentication flow',
     ],
     authentication: {
-      method: "GitHub OAuth",
+      method: 'GitHub OAuth',
       login_url: `${domain}/api/v1/auth/github`,
       automatic: true,
-      description: "Authentication is handled automatically via GitHub OAuth when you use the connector"
+      description:
+        'Authentication is handled automatically via GitHub OAuth when you use the connector',
     },
     capabilities: [
-      "file:read", "file:write", "file:delete", "file:list",
-      "git:clone", "git:commit", "git:push", "git:pull", 
-      "terminal:execute", "terminal:stream",
-      "computer-use:screenshot", "computer-use:click", "computer-use:type",
-      "rag:search"
+      'file:read',
+      'file:write',
+      'file:delete',
+      'file:list',
+      'git:clone',
+      'git:commit',
+      'git:push',
+      'git:pull',
+      'terminal:execute',
+      'terminal:stream',
+      'computer-use:screenshot',
+      'computer-use:click',
+      'computer-use:type',
+      'rag:search',
     ],
     notes: [
-      "This is for ChatGPT.com main interface connectors, NOT for custom GPTs",
-      "Requires ChatGPT Plus, Pro, Team, or Enterprise subscription",
-      "Authentication is handled automatically through the connector flow"
-    ]
+      'This is for ChatGPT.com main interface connectors, NOT for custom GPTs',
+      'Requires ChatGPT Plus, Pro, Team, or Enterprise subscription',
+      'Authentication is handled automatically through the connector flow',
+    ],
   });
 });
 
-// Claude.ai connector configuration endpoint  
+// Claude.ai connector configuration endpoint
 /**
  * @swagger
  * /claude-connector:
@@ -3167,60 +3232,71 @@ app.get('/chatgpt-connector', (_req, res) => {
  *                   type: object
  */
 app.get('/claude-connector', (_req, res) => {
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
 
   res.json({
     // MCP-compliant endpoints (HTTP Stream transport)
-    api_base_url: `${domain}/mcp`,      // POST this URL for JSON-RPC requests
-    stream_base_url: `${domain}/mcp`,   // GET with Accept: text/event-stream for streaming
-    
+    api_base_url: `${domain}/mcp`, // POST this URL for JSON-RPC requests
+    stream_base_url: `${domain}/mcp`, // GET with Accept: text/event-stream for streaming
+
     // Legacy SSE transport for backward compatibility
-    sse_endpoint: `${domain}/sse`,      // GET for SSE streaming
+    sse_endpoint: `${domain}/sse`, // GET for SSE streaming
     messages_endpoint: `${domain}/messages`, // POST for JSON-RPC messages
-    
+
     openapi_url: `${domain}/openapi.json`,
-    platform: "Claude.ai Web Interface", 
-    type: "MCP-Compliant External API Integration",
-    mcp_transport: "http-stream",       // New MCP HTTP Stream transport
-    mcp_version: "2024-11-05",
+    platform: 'Claude.ai Web Interface',
+    type: 'MCP-Compliant External API Integration',
+    mcp_transport: 'http-stream', // New MCP HTTP Stream transport
+    mcp_version: '2024-11-05',
     instructions: [
-      "1. Open Claude.ai (requires Claude Pro/Team/Enterprise)",
-      "2. Go to Settings → External APIs or Integrations",
-      "3. For HTTP Stream: Use api_base_url for both JSON-RPC and SSE",
-      "4. For Legacy SSE: Use sse_endpoint for streaming, messages_endpoint for JSON-RPC", 
-      "5. Use GitHub OAuth for authentication"
+      '1. Open Claude.ai (requires Claude Pro/Team/Enterprise)',
+      '2. Go to Settings → External APIs or Integrations',
+      '3. For HTTP Stream: Use api_base_url for both JSON-RPC and SSE',
+      '4. For Legacy SSE: Use sse_endpoint for streaming, messages_endpoint for JSON-RPC',
+      '5. Use GitHub OAuth for authentication',
     ],
     authentication: {
-      method: "GitHub OAuth",
+      method: 'GitHub OAuth',
       login_url: `${domain}/api/v1/auth/github`,
       bearer_token_endpoint: `${domain}/api/v1/auth/github`,
-      description: "Login via GitHub OAuth to get bearer token for API requests"
+      description: 'Login via GitHub OAuth to get bearer token for API requests',
     },
     capabilities: [
-      "file:read", "file:write", "file:delete", "file:list",
-      "git:clone", "git:commit", "git:push", "git:pull",
-      "terminal:execute", "terminal:stream", 
-      "computer-use:screenshot", "computer-use:click", "computer-use:type",
-      "rag:search"
+      'file:read',
+      'file:write',
+      'file:delete',
+      'file:list',
+      'git:clone',
+      'git:commit',
+      'git:push',
+      'git:pull',
+      'terminal:execute',
+      'terminal:stream',
+      'computer-use:screenshot',
+      'computer-use:click',
+      'computer-use:type',
+      'rag:search',
     ],
     notes: [
-      "✅ MCP HTTP Stream transport compliant (recommended)",
-      "✅ Legacy SSE transport support for backward compatibility",
-      "Requires Claude Pro, Team, or Enterprise subscription",
-      "Bearer token authentication required for API calls",
-      "Use Mcp-Session-Id header for session management"
-    ]
+      '✅ MCP HTTP Stream transport compliant (recommended)',
+      '✅ Legacy SSE transport support for backward compatibility',
+      'Requires Claude Pro, Team, or Enterprise subscription',
+      'Bearer token authentication required for API calls',
+      'Use Mcp-Session-Id header for session management',
+    ],
   });
 });
 
 // MCP configuration endpoint for ChatGPT integration
 app.get('/.well-known/mcp.json', (_req, res) => {
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
-    
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+
   res.json({
     version: '1.0',
     name: 'WebContainer Development',
@@ -3228,23 +3304,23 @@ app.get('/.well-known/mcp.json', (_req, res) => {
     api_url: `${domain}/api/v1`,
     authentication: {
       type: 'bearer_token',
-      header: 'Authorization'
+      header: 'Authorization',
     },
     capabilities: [
       'file:read',
       'file:write',
       'terminal:execute',
       'git:clone',
-      'computer-use:screenshot'
+      'computer-use:screenshot',
     ],
     environment: {
       os: 'linux',
-      node_version: process.version
+      node_version: process.version,
     },
     risks: {
       data_processing: 'All code execution occurs in browser sandbox',
-      security_model: 'No persistent storage between sessions'
-    }
+      security_model: 'No persistent storage between sessions',
+    },
   });
 });
 
@@ -3318,58 +3394,62 @@ app.get('/.well-known/mcp.json', (_req, res) => {
 // Handle GET requests for HTTP Stream transport (SSE)
 app.get('/mcp', (req, res) => {
   const acceptHeader = req.headers.accept;
-  
+
   // Check if client wants SSE
   if (acceptHeader && acceptHeader.includes('text/event-stream')) {
     // Set SSE headers
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+      'Access-Control-Allow-Headers': 'Cache-Control',
     });
 
     // Get session ID if provided
     const sessionId = req.headers['mcp-session-id'] as string;
-    
+
     // Send endpoint event as per MCP spec
-    const domain = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-      : `http://localhost:${port}`;
-    
+    const domain =
+      process.env.NODE_ENV === 'production'
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+        : `http://localhost:${port}`;
+
     res.write(`event: endpoint\n`);
     res.write(`data: ${JSON.stringify({ url: `${domain}/mcp` })}\n\n`);
-    
+
     // Send server info event
     res.write(`event: server_info\n`);
-    res.write(`data: ${JSON.stringify({
-      name: 'Disco MCP Server',
-      version: '1.0.0',
-      capabilities: ['tools', 'resources', 'prompts'],
-      session_id: sessionId || 'default'
-    })}\n\n`);
-    
+    res.write(
+      `data: ${JSON.stringify({
+        name: 'Disco MCP Server',
+        version: '1.0.0',
+        capabilities: ['tools', 'resources', 'prompts'],
+        session_id: sessionId || 'default',
+      })}\n\n`
+    );
+
     // Keep connection alive with periodic ping
     const pingInterval = setInterval(() => {
       res.write(`event: ping\n`);
       res.write(`data: ${Date.now()}\n\n`);
     }, 30000);
-    
+
     // Clean up on close
     req.on('close', () => {
       clearInterval(pingInterval);
     });
-    
+
     return;
   }
-  
+
   // For non-SSE requests, return JSON info
   res.json({
     transport: 'http-stream',
     endpoint: `${req.protocol}://${req.get('host')}/mcp`,
     methods: ['POST', 'GET'],
-    description: 'MCP HTTP Stream transport - POST for JSON-RPC, GET with Accept: text/event-stream for SSE'
+    description:
+      'MCP HTTP Stream transport - POST for JSON-RPC, GET with Accept: text/event-stream for SSE',
   });
 });
 
@@ -3386,8 +3466,8 @@ app.post('/mcp', express.json(), (req, res) => {
         error: {
           code: -32600,
           message: 'Invalid Request',
-          data: 'jsonrpc must be "2.0"'
-        }
+          data: 'jsonrpc must be "2.0"',
+        },
       });
     }
 
@@ -3401,22 +3481,22 @@ app.post('/mcp', express.json(), (req, res) => {
             protocolVersion: '2024-11-05',
             capabilities: {
               tools: {
-                listChanged: true
+                listChanged: true,
               },
               resources: {
                 subscribe: true,
-                listChanged: true
+                listChanged: true,
               },
               prompts: {
-                listChanged: true
+                listChanged: true,
               },
-              logging: {}
+              logging: {},
             },
             serverInfo: {
               name: 'Disco MCP Server',
-              version: '1.0.0'
-            }
-          }
+              version: '1.0.0',
+            },
+          },
         });
 
       case 'tools/list':
@@ -3431,10 +3511,10 @@ app.post('/mcp', express.json(), (req, res) => {
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    path: { type: 'string', description: 'File path to read' }
+                    path: { type: 'string', description: 'File path to read' },
                   },
-                  required: ['path']
-                }
+                  required: ['path'],
+                },
               },
               {
                 name: 'file_write',
@@ -3443,10 +3523,10 @@ app.post('/mcp', express.json(), (req, res) => {
                   type: 'object',
                   properties: {
                     path: { type: 'string', description: 'File path to write' },
-                    content: { type: 'string', description: 'Content to write' }
+                    content: { type: 'string', description: 'Content to write' },
                   },
-                  required: ['path', 'content']
-                }
+                  required: ['path', 'content'],
+                },
               },
               {
                 name: 'terminal_execute',
@@ -3454,10 +3534,10 @@ app.post('/mcp', express.json(), (req, res) => {
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    command: { type: 'string', description: 'Command to execute' }
+                    command: { type: 'string', description: 'Command to execute' },
                   },
-                  required: ['command']
-                }
+                  required: ['command'],
+                },
               },
               {
                 name: 'git_clone',
@@ -3466,13 +3546,13 @@ app.post('/mcp', express.json(), (req, res) => {
                   type: 'object',
                   properties: {
                     url: { type: 'string', description: 'Repository URL' },
-                    path: { type: 'string', description: 'Target path' }
+                    path: { type: 'string', description: 'Target path' },
                   },
-                  required: ['url']
-                }
-              }
-            ]
-          }
+                  required: ['url'],
+                },
+              },
+            ],
+          },
         });
 
       case 'tools/call':
@@ -3484,8 +3564,8 @@ app.post('/mcp', express.json(), (req, res) => {
             error: {
               code: -32001,
               message: 'Authentication required',
-              data: 'Bearer token required for tool calls'
-            }
+              data: 'Bearer token required for tool calls',
+            },
           });
         }
 
@@ -3496,10 +3576,10 @@ app.post('/mcp', express.json(), (req, res) => {
             content: [
               {
                 type: 'text',
-                text: 'Tool call received. Use the REST API endpoints directly for full functionality.'
-              }
-            ]
-          }
+                text: 'Tool call received. Use the REST API endpoints directly for full functionality.',
+              },
+            ],
+          },
         });
 
       default:
@@ -3509,8 +3589,8 @@ app.post('/mcp', express.json(), (req, res) => {
           error: {
             code: -32601,
             message: 'Method not found',
-            data: `Unknown method: ${method}`
-          }
+            data: `Unknown method: ${method}`,
+          },
         });
     }
   } catch (error) {
@@ -3520,8 +3600,8 @@ app.post('/mcp', express.json(), (req, res) => {
       error: {
         code: -32603,
         message: 'Internal error',
-        data: error instanceof Error ? error.message : 'Unknown error'
-      }
+        data: error instanceof Error ? error.message : 'Unknown error',
+      },
     });
   }
 });
@@ -3559,38 +3639,41 @@ app.get('/sse', (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
+    Connection: 'keep-alive',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control, Mcp-Session-Id'
+    'Access-Control-Allow-Headers': 'Cache-Control, Mcp-Session-Id',
   });
 
   // Get session ID if provided
   const sessionId = req.headers['mcp-session-id'] as string;
-  
+
   // Send endpoint event pointing to /messages for JSON-RPC
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
-  
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
+
   res.write(`event: endpoint\n`);
   res.write(`data: ${JSON.stringify({ url: `${domain}/messages` })}\n\n`);
-  
+
   // Send server info event
   res.write(`event: server_info\n`);
-  res.write(`data: ${JSON.stringify({
-    name: 'Disco MCP Server',
-    version: '1.0.0',
-    capabilities: ['tools', 'resources', 'prompts'],
-    transport: 'sse',
-    session_id: sessionId || 'default'
-  })}\n\n`);
-  
+  res.write(
+    `data: ${JSON.stringify({
+      name: 'Disco MCP Server',
+      version: '1.0.0',
+      capabilities: ['tools', 'resources', 'prompts'],
+      transport: 'sse',
+      session_id: sessionId || 'default',
+    })}\n\n`
+  );
+
   // Keep connection alive with periodic ping
   const pingInterval = setInterval(() => {
     res.write(`event: ping\n`);
     res.write(`data: ${Date.now()}\n\n`);
   }, 30000);
-  
+
   // Clean up on close
   req.on('close', () => {
     clearInterval(pingInterval);
@@ -3642,13 +3725,13 @@ app.get('/sse', (req, res) => {
 app.post('/messages', express.json(), (req, res) => {
   // Set JSON headers
   res.setHeader('Content-Type', 'application/json');
-  
+
   // Handle session ID
   const sessionId = req.headers['mcp-session-id'] as string;
   if (sessionId) {
     res.setHeader('Mcp-Session-Id', sessionId);
   }
-  
+
   // Reuse the same JSON-RPC logic from /mcp POST handler
   try {
     const { jsonrpc, id, method } = req.body;
@@ -3661,8 +3744,8 @@ app.post('/messages', express.json(), (req, res) => {
         error: {
           code: -32600,
           message: 'Invalid Request',
-          data: 'jsonrpc must be "2.0"'
-        }
+          data: 'jsonrpc must be "2.0"',
+        },
       });
     }
 
@@ -3676,22 +3759,22 @@ app.post('/messages', express.json(), (req, res) => {
             protocolVersion: '2024-11-05',
             capabilities: {
               tools: {
-                listChanged: true
+                listChanged: true,
               },
               resources: {
                 subscribe: true,
-                listChanged: true
+                listChanged: true,
               },
               prompts: {
-                listChanged: true
+                listChanged: true,
               },
-              logging: {}
+              logging: {},
             },
             serverInfo: {
               name: 'Disco MCP Server',
-              version: '1.0.0'
-            }
-          }
+              version: '1.0.0',
+            },
+          },
         });
 
       case 'tools/list':
@@ -3706,10 +3789,10 @@ app.post('/messages', express.json(), (req, res) => {
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    path: { type: 'string', description: 'File path to read' }
+                    path: { type: 'string', description: 'File path to read' },
                   },
-                  required: ['path']
-                }
+                  required: ['path'],
+                },
               },
               {
                 name: 'file_write',
@@ -3718,10 +3801,10 @@ app.post('/messages', express.json(), (req, res) => {
                   type: 'object',
                   properties: {
                     path: { type: 'string', description: 'File path to write' },
-                    content: { type: 'string', description: 'Content to write' }
+                    content: { type: 'string', description: 'Content to write' },
                   },
-                  required: ['path', 'content']
-                }
+                  required: ['path', 'content'],
+                },
               },
               {
                 name: 'terminal_execute',
@@ -3729,10 +3812,10 @@ app.post('/messages', express.json(), (req, res) => {
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    command: { type: 'string', description: 'Command to execute' }
+                    command: { type: 'string', description: 'Command to execute' },
                   },
-                  required: ['command']
-                }
+                  required: ['command'],
+                },
               },
               {
                 name: 'git_clone',
@@ -3741,13 +3824,13 @@ app.post('/messages', express.json(), (req, res) => {
                   type: 'object',
                   properties: {
                     url: { type: 'string', description: 'Repository URL' },
-                    path: { type: 'string', description: 'Target path' }
+                    path: { type: 'string', description: 'Target path' },
                   },
-                  required: ['url']
-                }
-              }
-            ]
-          }
+                  required: ['url'],
+                },
+              },
+            ],
+          },
         });
 
       case 'tools/call':
@@ -3759,8 +3842,8 @@ app.post('/messages', express.json(), (req, res) => {
             error: {
               code: -32001,
               message: 'Authentication required',
-              data: 'Bearer token required for tool calls'
-            }
+              data: 'Bearer token required for tool calls',
+            },
           });
         }
 
@@ -3771,10 +3854,10 @@ app.post('/messages', express.json(), (req, res) => {
             content: [
               {
                 type: 'text',
-                text: 'Tool call received. Use the REST API endpoints directly for full functionality.'
-              }
-            ]
-          }
+                text: 'Tool call received. Use the REST API endpoints directly for full functionality.',
+              },
+            ],
+          },
         });
 
       default:
@@ -3784,8 +3867,8 @@ app.post('/messages', express.json(), (req, res) => {
           error: {
             code: -32601,
             message: 'Method not found',
-            data: `Unknown method: ${method}`
-          }
+            data: `Unknown method: ${method}`,
+          },
         });
     }
   } catch (error) {
@@ -3795,8 +3878,8 @@ app.post('/messages', express.json(), (req, res) => {
       error: {
         code: -32603,
         message: 'Internal error',
-        data: error instanceof Error ? error.message : 'Unknown error'
-      }
+        data: error instanceof Error ? error.message : 'Unknown error',
+      },
     });
   }
 });
@@ -3828,16 +3911,17 @@ app.use('/health', healthRouter);
  *                   type: object
  */
 app.get('/mcp-setup', (_req, res) => {
-  const domain = process.env.NODE_ENV === 'production' 
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
-    : `http://localhost:${port}`;
+  const domain =
+    process.env.NODE_ENV === 'production'
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
+      : `http://localhost:${port}`;
 
   res.json({
     server_info: {
       name: 'Disco MCP Server',
       url: domain,
       version: '1.0.0',
-      protocol_version: '2024-11-05'
+      protocol_version: '2024-11-05',
     },
     transport_options: {
       http: {
@@ -3845,13 +3929,13 @@ app.get('/mcp-setup', (_req, res) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer <your-jwt-token>'
-        }
+          Authorization: 'Bearer <your-jwt-token>',
+        },
       },
       websocket: {
         url: `${domain.replace('https://', 'wss://').replace('http://', 'ws://')}/socket.io`,
-        protocol: 'socket.io'
-      }
+        protocol: 'socket.io',
+      },
     },
     configuration_examples: {
       warp_terminal: {
@@ -3863,11 +3947,11 @@ app.get('/mcp-setup', (_req, res) => {
               transport: 'http',
               auth: {
                 type: 'bearer',
-                endpoint: `${domain}/api/v1/auth/github`
-              }
-            }
-          }
-        }
+                endpoint: `${domain}/api/v1/auth/github`,
+              },
+            },
+          },
+        },
       },
       mcp_client_json: {
         file_location: '~/.config/mcp/servers.json',
@@ -3876,18 +3960,22 @@ app.get('/mcp-setup', (_req, res) => {
             disco: {
               command: 'curl',
               args: [
-                '-X', 'POST',
-                '-H', 'Content-Type: application/json',
-                '-H', 'Authorization: Bearer ${DISCO_MCP_TOKEN}',
-                '-d', '@-',
-                `${domain}/mcp`
+                '-X',
+                'POST',
+                '-H',
+                'Content-Type: application/json',
+                '-H',
+                'Authorization: Bearer ${DISCO_MCP_TOKEN}',
+                '-d',
+                '@-',
+                `${domain}/mcp`,
               ],
               env: {
-                DISCO_MCP_TOKEN: '<your-jwt-token>'
-              }
-            }
-          }
-        }
+                DISCO_MCP_TOKEN: '<your-jwt-token>',
+              },
+            },
+          },
+        },
       },
       local_development: {
         steps: [
@@ -3895,7 +3983,7 @@ app.get('/mcp-setup', (_req, res) => {
           'cd disco',
           'npm install',
           'npm run build',
-          'npm start'
+          'npm start',
         ],
         config: {
           servers: {
@@ -3904,12 +3992,12 @@ app.get('/mcp-setup', (_req, res) => {
               args: ['/path/to/disco/dist/server.js'],
               env: {
                 PORT: '3000',
-                NODE_ENV: 'development'
-              }
-            }
-          }
-        }
-      }
+                NODE_ENV: 'development',
+              },
+            },
+          },
+        },
+      },
     },
     authentication: {
       description: 'Authentication via GitHub OAuth or API key',
@@ -3919,39 +4007,40 @@ app.get('/mcp-setup', (_req, res) => {
         description: 'Login with GitHub OAuth',
         url: `${domain}/api/v1/auth/github`,
         method: 'GET',
-        response: 'Redirects to GitHub OAuth, returns with JWT token'
+        response: 'Redirects to GitHub OAuth, returns with JWT token',
       },
       api_key_example: {
         method: 'POST',
         url: `${domain}/api/v1/auth/login`,
         body: {
-          apiKey: 'your-api-key'
+          apiKey: 'your-api-key',
         },
         response: {
           token: 'jwt-token-here',
-          expires: 1640995200000
-        }
-      }
+          expires: 1640995200000,
+        },
+      },
     },
     troubleshooting: {
       common_issues: [
         {
           issue: 'MODULE_NOT_FOUND error with placeholder path',
-          solution: 'Replace /home/braden/path/to/disco/server with actual server URL or local path',
-          fix: `Update your MCP client configuration to use: ${domain}/mcp`
+          solution:
+            'Replace /home/braden/path/to/disco/server with actual server URL or local path',
+          fix: `Update your MCP client configuration to use: ${domain}/mcp`,
         },
         {
           issue: 'Connection refused',
           solution: 'Ensure server is running and accessible',
-          fix: `Test with: curl ${domain}/health`
+          fix: `Test with: curl ${domain}/health`,
         },
         {
           issue: 'Authentication failed',
           solution: 'Use GitHub OAuth or obtain valid API key',
-          fix: `Visit ${domain}/api/v1/auth/github for OAuth or POST to ${domain}/api/v1/auth/login with API key`
-        }
-      ]
-    }
+          fix: `Visit ${domain}/api/v1/auth/github for OAuth or POST to ${domain}/api/v1/auth/login with API key`,
+        },
+      ],
+    },
   });
 });
 
@@ -3973,8 +4062,8 @@ app.get('/api/v1', (req: Request, res: Response) => {
       '/api/v1/rag',
       '/api/v1/collaboration',
       '/api/v1/teams',
-      '/api/v1/providers'
-    ]
+      '/api/v1/providers',
+    ],
   });
 });
 app.use('/api/v1/auth', authLimiter, authRouter);
@@ -4490,10 +4579,10 @@ app.get('/status', async (_req, res) => {
     const containerStats = containerManager.getStats();
     const redisStats = await redisSessionManager.getStats();
     const browserStats = browserAutomationManager.getStats();
-    
+
     const memoryUsage = process.memoryUsage();
     const uptime = process.uptime();
-    
+
     const status = {
       server: {
         status: 'operational',
@@ -4502,61 +4591,76 @@ app.get('/status', async (_req, res) => {
           used: Math.round(memoryUsage.heapUsed / 1024 / 1024),
           total: Math.round(memoryUsage.heapTotal / 1024 / 1024),
           external: Math.round(memoryUsage.external / 1024 / 1024),
-          rss: Math.round(memoryUsage.rss / 1024 / 1024)
+          rss: Math.round(memoryUsage.rss / 1024 / 1024),
         },
         environment: process.env.NODE_ENV || 'development',
         node_version: process.version,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
-      
+
       features: {
         webcontainer_integration: {
           status: containerStats.webContainerAvailable ? 'enabled' : 'server-mode',
-          description: containerStats.webContainerAvailable 
+          description: containerStats.webContainerAvailable
             ? 'Real WebContainer API integration active'
             : 'Running in server mode - WebContainer features available via client-side integration',
-          implementation: 'REAL' // This is not stubbed
+          implementation: 'REAL', // This is not stubbed
         },
-        
+
         file_operations: {
           status: 'enabled',
           description: 'Real WebContainer.fs API calls implemented',
           implementation: 'REAL',
-          endpoints: ['GET /files/:id', 'POST /files/:id', 'PUT /files/:id', 'DELETE /files/:id']
+          endpoints: ['GET /files/:id', 'POST /files/:id', 'PUT /files/:id', 'DELETE /files/:id'],
         },
-        
+
         git_operations: {
-          status: 'enabled', 
+          status: 'enabled',
           description: 'Real container.spawn() git commands implemented',
           implementation: 'REAL',
-          endpoints: ['POST /git/:id/clone', 'POST /git/:id/commit', 'POST /git/:id/push', 'POST /git/:id/pull', 'GET /git/:id/status']
+          endpoints: [
+            'POST /git/:id/clone',
+            'POST /git/:id/commit',
+            'POST /git/:id/push',
+            'POST /git/:id/pull',
+            'GET /git/:id/status',
+          ],
         },
-        
+
         terminal_operations: {
           status: 'enabled',
           description: 'Real container.spawn() command execution with enhanced security',
           implementation: 'REAL',
           security: 'Enhanced command validation and injection prevention',
-          endpoints: ['POST /terminal/:id/execute', 'POST /terminal/:id/stream']
+          endpoints: ['POST /terminal/:id/execute', 'POST /terminal/:id/stream'],
         },
-        
+
         computer_use: {
           status: browserStats.activeSessions > 0 ? 'active' : 'ready',
           description: 'Real Playwright browser automation integration',
           implementation: 'REAL',
           active_sessions: browserStats.activeSessions,
-          endpoints: ['POST /computer-use/:id/screenshot', 'POST /computer-use/:id/click', 'POST /computer-use/:id/type']
+          endpoints: [
+            'POST /computer-use/:id/screenshot',
+            'POST /computer-use/:id/click',
+            'POST /computer-use/:id/type',
+          ],
         },
-        
+
         rag_search: {
           status: 'enabled',
           description: 'Enhanced semantic code search with multiple matching strategies',
           implementation: 'ENHANCED',
-          features: ['Multi-strategy matching', 'File type prioritization', 'Context extraction', 'Relevance scoring'],
-          endpoints: ['POST /rag/:id/search', 'POST /rag/:id/index']
-        }
+          features: [
+            'Multi-strategy matching',
+            'File type prioritization',
+            'Context extraction',
+            'Relevance scoring',
+          ],
+          endpoints: ['POST /rag/:id/search', 'POST /rag/:id/index'],
+        },
       },
-      
+
       infrastructure: {
         containers: {
           active: containerStats.activeSessions,
@@ -4564,64 +4668,67 @@ app.get('/status', async (_req, res) => {
           pool_ready: containerStats.poolReady,
           pool_initializing: containerStats.poolInitializing,
           environment: containerStats.environment,
-          functionality_available: containerStats.webContainerAvailable
+          functionality_available: containerStats.webContainerAvailable,
         },
-        
+
         redis: {
           status: redisStats.connected ? 'connected' : 'disabled',
           total_sessions: redisStats.totalSessions || 0,
-          url_configured: redisStats.redisUrl === 'configured'
+          url_configured: redisStats.redisUrl === 'configured',
         },
-        
+
         browser_automation: {
           status: 'enabled',
           active_sessions: browserStats.activeSessions,
-          containers: browserStats.sessionsByContainer || []
+          containers: browserStats.sessionsByContainer || [],
         },
-        
+
         authentication: {
           jwt_configured: !!process.env.JWT_SECRET,
           github_oauth: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
-          rate_limiting: 'enhanced'
-        }
+          rate_limiting: 'enhanced',
+        },
       },
-      
+
       security: {
         websocket_exposure: 'FIXED - No longer exposed in /config endpoint',
         command_validation: 'ENHANCED - 100% accuracy in security tests',
         input_validation: 'ENHANCED - Comprehensive validation middleware',
         rate_limiting: 'MULTI-TIER - Different limits for different endpoints',
         cors_configuration: process.env.NODE_ENV === 'production' ? 'ENFORCED' : 'DEVELOPMENT',
-        security_headers: 'ENABLED - Helmet with CSP'
+        security_headers: 'ENABLED - Helmet with CSP',
       },
-      
+
       implementation_status: {
         core_webcontainer_api: 'COMPLETE - Real WebContainer.fs and spawn() calls',
         missing_api_endpoints: 'COMPLETE - All endpoints implemented with real functionality',
         redis_session_management: redisStats.connected ? 'ACTIVE' : 'CONFIGURED',
         background_worker: 'COMPLETE - Cleanup, monitoring, and maintenance tasks',
-        oauth_security: (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) ? 'CONFIGURED' : 'NEEDS_SETUP'
-      }
+        oauth_security:
+          process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+            ? 'CONFIGURED'
+            : 'NEEDS_SETUP',
+      },
     };
-    
+
     // Determine overall health
-    const hasIssues = !redisStats.connected || 
-                     !process.env.GITHUB_CLIENT_ID || 
-                     memoryUsage.heapUsed > memoryUsage.heapTotal * 0.8;
-    
+    const hasIssues =
+      !redisStats.connected ||
+      !process.env.GITHUB_CLIENT_ID ||
+      memoryUsage.heapUsed > memoryUsage.heapTotal * 0.8;
+
     res.status(hasIssues ? 503 : 200).json({
       status: hasIssues ? 'warning' : 'healthy',
-      ...status
+      ...status,
     });
-    
   } catch (error) {
     console.error('Status endpoint error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: 'STATUS_ERROR',
-        message: 'Failed to get system status'
-      }
+        message: 'Failed to get system status',
+      },
     });
   }
 });
@@ -4663,28 +4770,28 @@ app.get('/status', async (_req, res) => {
  */
 app.get('/capabilities', (_req, res) => {
   res.json({
-    version: "1.0",
+    version: '1.0',
     capabilities: [
-      "file:read",
-      "file:write", 
-      "file:delete",
-      "file:list",
-      "git:clone",
-      "git:commit",
-      "git:push",
-      "git:pull",
-      "terminal:execute",
-      "terminal:stream",
-      "computer-use:screenshot",
-      "computer-use:click",
-      "computer-use:type",
-      "rag:search"
+      'file:read',
+      'file:write',
+      'file:delete',
+      'file:list',
+      'git:clone',
+      'git:commit',
+      'git:push',
+      'git:pull',
+      'terminal:execute',
+      'terminal:stream',
+      'computer-use:screenshot',
+      'computer-use:click',
+      'computer-use:type',
+      'rag:search',
     ],
     environment: {
-      os: "linux",
+      os: 'linux',
       node_version: process.version,
-      npm_version: process.env.npm_version || "9.6.7"
-    }
+      npm_version: process.env.npm_version || '9.6.7',
+    },
   });
 });
 
@@ -4708,8 +4815,8 @@ app.use('/api', (_req, res) => {
     status: 'error',
     error: {
       code: 'NOT_FOUND',
-      message: 'Endpoint not found'
-    }
+      message: 'Endpoint not found',
+    },
   });
 });
 
@@ -4735,17 +4842,17 @@ const io = new SocketIOServer(server, {
 });
 
 // WebSocket connection handling
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   console.log('Client connected:', socket.id);
-  
+
   // Add client to metrics service for real-time updates
   metricsService.addClient(socket);
-  
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
-  
-  socket.on('error', (error) => {
+
+  socket.on('error', error => {
     console.error('Socket error:', error);
   });
 });
@@ -4757,36 +4864,36 @@ app.set('io', io);
 initializeCollaborationManager(io);
 console.log('🤝 Collaboration manager initialized');
 
-// Initialize team collaboration manager  
+// Initialize team collaboration manager
 initializeTeamCollaborationManager();
 console.log('👥 Team collaboration manager initialized');
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
   console.log('🔄 Starting graceful shutdown...');
-  
+
   // Stop accepting new connections
   server.close(() => {
     console.log('📡 HTTP server closed');
   });
-  
+
   // Close Socket.IO connections
   io.close(() => {
     console.log('🔌 Socket.IO server closed');
   });
-  
+
   // Cleanup container manager
   await containerManager.shutdown();
   console.log('🗃️  Container manager shutdown complete');
-  
+
   // Cleanup browser automation manager
   await browserAutomationManager.shutdown();
   console.log('🌐 Browser automation manager shutdown complete');
-  
+
   // Cleanup Redis session manager
   await redisSessionManager.shutdown();
   console.log('📝 Redis session manager shutdown complete');
-  
+
   console.log('✅ Graceful shutdown complete');
   process.exit(0);
 };
@@ -4800,7 +4907,7 @@ server.listen(port, '0.0.0.0', async () => {
   // Prepare Next.js and ensure data directory exists before starting
   await prepareNextApp();
   await ensureDataDirectory();
-  
+
   console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📁 Data directory: ${dataPath}`);
@@ -4810,19 +4917,29 @@ server.listen(port, '0.0.0.0', async () => {
   // Determine WebContainer integration status using WEBCONTAINER_CLIENT_ID.
   // This variable replaces the previous WEBCONTAINER_API_KEY to align with
   // StackBlitz WebContainer client expectations.
-  const webcontainerStatus = process.env.WEBCONTAINER_CLIENT_ID ? 'Enabled' : 'Server-mode (client-side integration)';
+  const webcontainerStatus = process.env.WEBCONTAINER_CLIENT_ID
+    ? 'Enabled'
+    : 'Server-mode (client-side integration)';
   console.log(`🔧 WebContainer integration: ${webcontainerStatus}`);
-  
+
   if (process.env.WEBCONTAINER_CLIENT_ID) {
     console.log('✅ WebContainer client-side integration ready');
   } else {
-    console.log('ℹ️  WebContainer running in server mode - full functionality available via browser client');
+    console.log(
+      'ℹ️  WebContainer running in server mode - full functionality available via browser client'
+    );
   }
-  
+
   // Log new endpoints
-  console.log(`📋 MCP Manifest: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/mcp-manifest.json`);
-  console.log(`🚀 WebContainer Loader: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/webcontainer-loader`);
-  console.log(`🤖 Provider Management: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/api/v1/providers`);
+  console.log(
+    `📋 MCP Manifest: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/mcp-manifest.json`
+  );
+  console.log(
+    `🚀 WebContainer Loader: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/webcontainer-loader`
+  );
+  console.log(
+    `🤖 Provider Management: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/api/v1/providers`
+  );
 });
 
 export { app, io, dataPath };

@@ -16,7 +16,7 @@ describe('MCP Compliance Tests', () => {
           jsonrpc: '2.0',
           id: 1,
           method: 'initialize',
-          params: {}
+          params: {},
         })
         .expect(200)
         .expect('Content-Type', /json/);
@@ -37,17 +37,14 @@ describe('MCP Compliance Tests', () => {
       // Check SSE headers
       expect(response.headers['cache-control']).toBe('no-cache');
       expect(response.headers['connection']).toBe('keep-alive');
-      
+
       // Check for endpoint event in response
       expect(response.text).toContain('event: endpoint');
       expect(response.text).toContain('/mcp');
     });
 
     test('should handle GET requests without SSE Accept header', async () => {
-      const response = await request(app)
-        .get('/mcp')
-        .expect(200)
-        .expect('Content-Type', /json/);
+      const response = await request(app).get('/mcp').expect(200).expect('Content-Type', /json/);
 
       expect(response.body.transport).toBe('http-stream');
       expect(response.body.methods).toEqual(['POST', 'GET']);
@@ -60,7 +57,7 @@ describe('MCP Compliance Tests', () => {
           jsonrpc: '2.0',
           id: 2,
           method: 'tools/list',
-          params: {}
+          params: {},
         })
         .expect(200);
 
@@ -77,7 +74,7 @@ describe('MCP Compliance Tests', () => {
           jsonrpc: '2.0',
           id: 3,
           method: 'tools/call',
-          params: {}
+          params: {},
         })
         .expect(401);
 
@@ -91,7 +88,7 @@ describe('MCP Compliance Tests', () => {
         .send({
           jsonrpc: '1.0', // Invalid version
           id: 4,
-          method: 'initialize'
+          method: 'initialize',
         })
         .expect(400);
 
@@ -105,7 +102,7 @@ describe('MCP Compliance Tests', () => {
         .send({
           jsonrpc: '2.0',
           id: 5,
-          method: 'unknown_method'
+          method: 'unknown_method',
         })
         .expect(400);
 
@@ -124,7 +121,7 @@ describe('MCP Compliance Tests', () => {
       // Check SSE headers
       expect(response.headers['cache-control']).toBe('no-cache');
       expect(response.headers['connection']).toBe('keep-alive');
-      
+
       // Check for endpoint event pointing to /messages
       expect(response.text).toContain('event: endpoint');
       expect(response.text).toContain('/messages');
@@ -138,7 +135,7 @@ describe('MCP Compliance Tests', () => {
           jsonrpc: '2.0',
           id: 1,
           method: 'initialize',
-          params: {}
+          params: {},
         })
         .expect(200)
         .expect('Content-Type', /json/);
@@ -150,14 +147,14 @@ describe('MCP Compliance Tests', () => {
 
     test('should handle session headers', async () => {
       const sessionId = 'test-session-123';
-      
+
       const response = await request(app)
         .post('/messages')
         .set('Mcp-Session-Id', sessionId)
         .send({
           jsonrpc: '2.0',
           id: 1,
-          method: 'initialize'
+          method: 'initialize',
         })
         .expect(200);
 
@@ -175,11 +172,11 @@ describe('MCP Compliance Tests', () => {
       // Should use MCP-compliant endpoints
       expect(response.body.api_base_url).toMatch(/\/mcp$/);
       expect(response.body.stream_base_url).toMatch(/\/mcp$/);
-      
+
       // Should have legacy SSE endpoints for backward compatibility
       expect(response.body.sse_endpoint).toMatch(/\/sse$/);
       expect(response.body.messages_endpoint).toMatch(/\/messages$/);
-      
+
       // Should indicate MCP compliance
       expect(response.body.mcp_transport).toBe('http-stream');
       expect(response.body.mcp_version).toBe('2024-11-05');
@@ -202,7 +199,7 @@ describe('MCP Compliance Tests', () => {
         .send({
           jsonrpc: '2.0',
           id: 1,
-          method: 'initialize'
+          method: 'initialize',
         })
         .expect(200); // Should still work with default JSON parsing
     });
@@ -210,9 +207,7 @@ describe('MCP Compliance Tests', () => {
 
   describe('Headers and Content Types', () => {
     test('should set correct headers for SSE responses', async () => {
-      const response = await request(app)
-        .get('/sse')
-        .expect(200);
+      const response = await request(app).get('/sse').expect(200);
 
       expect(response.headers['content-type']).toBe('text/event-stream');
       expect(response.headers['cache-control']).toBe('no-cache');
@@ -225,7 +220,7 @@ describe('MCP Compliance Tests', () => {
         .send({
           jsonrpc: '2.0',
           id: 1,
-          method: 'initialize'
+          method: 'initialize',
         })
         .expect(200);
 

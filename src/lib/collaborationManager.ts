@@ -1,6 +1,9 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import { conflictResolver, ConflictResolution as AdvancedConflictResolution } from './conflictResolver.js';
+import {
+  conflictResolver,
+  ConflictResolution as AdvancedConflictResolution,
+} from './conflictResolver.js';
 
 /**
  * Real-time Collaboration Manager
@@ -71,13 +74,12 @@ class CollaborationManager {
       console.log('🤝 Collaboration client connected:', socket.id);
 
       // Join collaboration session
-      socket.on('join-collaboration', async (data: { 
-        containerId: string; 
-        filePath: string; 
-        userId: string 
-      }) => {
-        await this.handleJoinCollaboration(socket, data);
-      });
+      socket.on(
+        'join-collaboration',
+        async (data: { containerId: string; filePath: string; userId: string }) => {
+          await this.handleJoinCollaboration(socket, data);
+        }
+      );
 
       // Leave collaboration session
       socket.on('leave-collaboration', async (data: { sessionId: string; userId: string }) => {
@@ -85,49 +87,48 @@ class CollaborationManager {
       });
 
       // File content update
-      socket.on('file-update', async (data: {
-        sessionId: string;
-        content: string;
-        userId: string;
-        version: number;
-      }) => {
-        await this.handleFileUpdate(socket, data);
-      });
+      socket.on(
+        'file-update',
+        async (data: { sessionId: string; content: string; userId: string; version: number }) => {
+          await this.handleFileUpdate(socket, data);
+        }
+      );
 
       // File lock/unlock
-      socket.on('file-lock', async (data: {
-        sessionId: string;
-        filePath: string;
-        userId: string;
-        lock: boolean;
-      }) => {
-        await this.handleFileLock(socket, data);
-      });
+      socket.on(
+        'file-lock',
+        async (data: { sessionId: string; filePath: string; userId: string; lock: boolean }) => {
+          await this.handleFileLock(socket, data);
+        }
+      );
 
       // Cursor position sharing
-      socket.on('cursor-position', (data: {
-        sessionId: string;
-        userId: string;
-        position: { line: number; column: number };
-      }) => {
-        this.handleCursorPosition(socket, data);
-      });
+      socket.on(
+        'cursor-position',
+        (data: {
+          sessionId: string;
+          userId: string;
+          position: { line: number; column: number };
+        }) => {
+          this.handleCursorPosition(socket, data);
+        }
+      );
 
       // Manual conflict resolution
-      socket.on('resolve-conflict', async (data: {
-        sessionId: string;
-        resolvedContent: string;
-        userId: string;
-        strategy: string;
-      }) => {
-        await this.handleManualConflictResolution(socket, data);
-      });
+      socket.on(
+        'resolve-conflict',
+        async (data: {
+          sessionId: string;
+          resolvedContent: string;
+          userId: string;
+          strategy: string;
+        }) => {
+          await this.handleManualConflictResolution(socket, data);
+        }
+      );
 
       // Get file history
-      socket.on('get-file-history', (data: {
-        sessionId: string;
-        limit?: number;
-      }) => {
+      socket.on('get-file-history', (data: { sessionId: string; limit?: number }) => {
         this.handleGetFileHistory(socket, data);
       });
 
@@ -138,11 +139,14 @@ class CollaborationManager {
     });
   }
 
-  private async handleJoinCollaboration(socket: Socket, data: {
-    containerId: string;
-    filePath: string;
-    userId: string;
-  }) {
+  private async handleJoinCollaboration(
+    socket: Socket,
+    data: {
+      containerId: string;
+      filePath: string;
+      userId: string;
+    }
+  ) {
     const sessionKey = `${data.containerId}:${data.filePath}`;
     let session = this.sessions.get(sessionKey);
 
@@ -158,7 +162,7 @@ class CollaborationManager {
         version: 1,
         locks: new Map(),
         baseContent: '', // Initialize base content for 3-way merge
-        history: []
+        history: [],
       };
       this.sessions.set(sessionKey, session);
     }
@@ -180,7 +184,7 @@ class CollaborationManager {
     socket.to(session.id).emit('user-joined', {
       userId: data.userId,
       sessionId: session.id,
-      userCount: session.users.size
+      userCount: session.users.size,
     });
 
     // Send current state to new user
@@ -189,13 +193,16 @@ class CollaborationManager {
       content: session.content,
       version: session.version,
       users: Array.from(session.users),
-      locks: Object.fromEntries(session.locks)
+      locks: Object.fromEntries(session.locks),
     });
 
     console.log(`👥 User ${data.userId} joined collaboration session for ${data.filePath}`);
   }
 
-  private async handleLeaveCollaboration(socket: Socket, data: { sessionId: string; userId: string }) {
+  private async handleLeaveCollaboration(
+    socket: Socket,
+    data: { sessionId: string; userId: string }
+  ) {
     const session = this.sessions.get(this.findSessionKey(data.sessionId));
     if (!session) return;
 
@@ -217,7 +224,7 @@ class CollaborationManager {
     socket.to(data.sessionId).emit('user-left', {
       userId: data.userId,
       sessionId: data.sessionId,
-      userCount: session.users.size
+      userCount: session.users.size,
     });
 
     // Cleanup empty session
@@ -228,12 +235,15 @@ class CollaborationManager {
     console.log(`👋 User ${data.userId} left collaboration session`);
   }
 
-  private async handleFileUpdate(socket: Socket, data: {
-    sessionId: string;
-    content: string;
-    userId: string;
-    version: number;
-  }) {
+  private async handleFileUpdate(
+    socket: Socket,
+    data: {
+      sessionId: string;
+      content: string;
+      userId: string;
+      version: number;
+    }
+  ) {
     const session = this.sessions.get(this.findSessionKey(data.sessionId));
     if (!session) {
       socket.emit('error', { message: 'Session not found' });
@@ -243,20 +253,20 @@ class CollaborationManager {
     // Version conflict detection - enhanced with 3-way merge
     if (data.version !== session.version) {
       const resolution = await this.resolveAdvancedConflict(session, data.content, data.userId);
-      
+
       if (resolution.metadata?.autoResolved) {
         // Auto-resolved conflict - apply and notify
         session.content = resolution.resolvedContent;
         session.version += 1;
         session.lastModified = new Date();
-        
+
         // Add to history
         session.history.push({
           version: session.version,
           content: resolution.resolvedContent,
           userId: data.userId,
           timestamp: new Date(),
-          operation: 'merge'
+          operation: 'merge',
         });
 
         // Broadcast auto-resolved update
@@ -265,7 +275,7 @@ class CollaborationManager {
           version: session.version,
           resolution,
           userId: data.userId,
-          timestamp: session.lastModified
+          timestamp: session.lastModified,
         });
       } else {
         // Manual resolution required
@@ -273,7 +283,7 @@ class CollaborationManager {
           sessionId: data.sessionId,
           resolution,
           currentVersion: session.version,
-          requiresManualResolution: true
+          requiresManualResolution: true,
         });
       }
       return;
@@ -292,7 +302,7 @@ class CollaborationManager {
       content: data.content,
       userId: data.userId,
       timestamp: new Date(),
-      operation: 'update'
+      operation: 'update',
     });
 
     // Broadcast to other users
@@ -300,18 +310,23 @@ class CollaborationManager {
       content: data.content,
       version: session.version,
       userId: data.userId,
-      timestamp: session.lastModified
+      timestamp: session.lastModified,
     });
 
-    console.log(`📝 File updated by ${data.userId} in session ${data.sessionId} (v${session.version})`);
+    console.log(
+      `📝 File updated by ${data.userId} in session ${data.sessionId} (v${session.version})`
+    );
   }
 
-  private async handleFileLock(socket: Socket, data: {
-    sessionId: string;
-    filePath: string;
-    userId: string;
-    lock: boolean;
-  }) {
+  private async handleFileLock(
+    socket: Socket,
+    data: {
+      sessionId: string;
+      filePath: string;
+      userId: string;
+      lock: boolean;
+    }
+  ) {
     const session = this.sessions.get(this.findSessionKey(data.sessionId));
     if (!session) return;
 
@@ -321,7 +336,7 @@ class CollaborationManager {
       if (existingLock && existingLock.userId !== data.userId) {
         socket.emit('lock-failed', {
           filePath: data.filePath,
-          lockedBy: existingLock.userId
+          lockedBy: existingLock.userId,
         });
         return;
       }
@@ -329,7 +344,7 @@ class CollaborationManager {
       // Set lock
       session.locks.set(data.filePath, {
         userId: data.userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     } else {
       // Remove lock
@@ -340,28 +355,34 @@ class CollaborationManager {
     this.io.to(data.sessionId).emit('file-lock-changed', {
       filePath: data.filePath,
       locked: data.lock,
-      userId: data.userId
+      userId: data.userId,
     });
   }
 
-  private handleCursorPosition(socket: Socket, data: {
-    sessionId: string;
-    userId: string;
-    position: { line: number; column: number };
-  }) {
+  private handleCursorPosition(
+    socket: Socket,
+    data: {
+      sessionId: string;
+      userId: string;
+      position: { line: number; column: number };
+    }
+  ) {
     // Broadcast cursor position to other users
     socket.to(data.sessionId).emit('cursor-moved', {
       userId: data.userId,
-      position: data.position
+      position: data.position,
     });
   }
 
-  private async handleManualConflictResolution(socket: Socket, data: {
-    sessionId: string;
-    resolvedContent: string;
-    userId: string;
-    strategy: string;
-  }) {
+  private async handleManualConflictResolution(
+    socket: Socket,
+    data: {
+      sessionId: string;
+      resolvedContent: string;
+      userId: string;
+      strategy: string;
+    }
+  ) {
     const session = this.sessions.get(this.findSessionKey(data.sessionId));
     if (!session) {
       socket.emit('error', { message: 'Session not found' });
@@ -379,7 +400,7 @@ class CollaborationManager {
       content: data.resolvedContent,
       userId: data.userId,
       timestamp: new Date(),
-      operation: 'conflict-resolution'
+      operation: 'conflict-resolution',
     });
 
     // Broadcast resolution to all users
@@ -388,16 +409,19 @@ class CollaborationManager {
       version: session.version,
       userId: data.userId,
       strategy: data.strategy,
-      timestamp: session.lastModified
+      timestamp: session.lastModified,
     });
 
     console.log(`✅ Manual conflict resolved by ${data.userId} using ${data.strategy} strategy`);
   }
 
-  private handleGetFileHistory(socket: Socket, data: {
-    sessionId: string;
-    limit?: number;
-  }) {
+  private handleGetFileHistory(
+    socket: Socket,
+    data: {
+      sessionId: string;
+      limit?: number;
+    }
+  ) {
     const session = this.sessions.get(this.findSessionKey(data.sessionId));
     if (!session) {
       socket.emit('error', { message: 'Session not found' });
@@ -412,7 +436,7 @@ class CollaborationManager {
     socket.emit('file-history', {
       sessionId: data.sessionId,
       history,
-      totalVersions: session.history.length
+      totalVersions: session.history.length,
     });
   }
 
@@ -441,7 +465,7 @@ class CollaborationManager {
   ): Promise<AdvancedConflictResolution> {
     const baseContent = session.baseContent || session.content;
     const currentContent = session.content;
-    
+
     try {
       // Use advanced 3-way merge conflict resolution
       const resolution = await conflictResolver.resolveConflict(
@@ -452,12 +476,17 @@ class CollaborationManager {
         userId
       );
 
-      console.log(`🔀 Advanced conflict resolution: ${resolution.strategy} (auto: ${resolution.metadata?.autoResolved})`);
-      
+      console.log(
+        `🔀 Advanced conflict resolution: ${resolution.strategy} (auto: ${resolution.metadata?.autoResolved})`
+      );
+
       return resolution;
     } catch (error) {
-      console.error('Advanced conflict resolution failed, falling back to simple resolution:', error);
-      
+      console.error(
+        'Advanced conflict resolution failed, falling back to simple resolution:',
+        error
+      );
+
       // Fallback to simple last-write-wins
       return {
         strategy: 'last-write-wins',
@@ -468,8 +497,8 @@ class CollaborationManager {
           severity: 'medium',
           autoResolved: true,
           userId,
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       };
     }
   }
@@ -485,8 +514,9 @@ class CollaborationManager {
 
   // Public API methods
   public getActiveCollaborations(containerId: string): CollaborationSession[] {
-    return Array.from(this.sessions.values())
-      .filter(session => session.containerId === containerId);
+    return Array.from(this.sessions.values()).filter(
+      session => session.containerId === containerId
+    );
   }
 
   public getSessionUsers(sessionId: string): string[] {
@@ -499,7 +529,7 @@ class CollaborationManager {
     sessions.forEach(session => {
       this.io.to(session.id).emit('system-message', {
         message,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     });
   }
@@ -512,7 +542,7 @@ class CollaborationManager {
   ) {
     const sessionKey = `${containerId}:${filePath}`;
     const session = this.sessions.get(sessionKey);
-    
+
     if (session) {
       session.content = content;
       session.version += 1;
@@ -523,7 +553,7 @@ class CollaborationManager {
         content,
         version: session.version,
         filePath,
-        excludeUserId
+        excludeUserId,
       });
     }
   }
@@ -561,7 +591,7 @@ class CollaborationManager {
       content: resolvedContent,
       userId,
       timestamp: new Date(),
-      operation: 'conflict-resolution'
+      operation: 'conflict-resolution',
     });
 
     // Broadcast resolution to all users
@@ -570,14 +600,14 @@ class CollaborationManager {
       version: session.version,
       userId,
       strategy,
-      timestamp: session.lastModified
+      timestamp: session.lastModified,
     });
 
     console.log(`✅ Manual conflict resolved by ${userId} using ${strategy} strategy`);
-    
+
     return {
       version: session.version,
-      timestamp: session.lastModified
+      timestamp: session.lastModified,
     };
   }
 }

@@ -83,7 +83,7 @@ export interface WorkspaceSettings {
   backupIntervalHours: number;
 }
 
-export type TeamPermission = 
+export type TeamPermission =
   | 'create_containers'
   | 'delete_containers'
   | 'share_containers'
@@ -134,15 +134,15 @@ class TeamCollaborationManager {
       type: 'frontend',
       preInstalled: ['node', 'npm', 'yarn', 'git', 'vscode-server'],
       environment: {
-        'NODE_ENV': 'development',
-        'PORT': '3000'
+        NODE_ENV: 'development',
+        PORT: '3000',
       },
       ports: [3000, 3001, 8080],
       resources: {
         cpu: '1',
         memory: '2Gi',
-        storage: '10Gi'
-      }
+        storage: '10Gi',
+      },
     });
 
     // Backend template
@@ -151,15 +151,15 @@ class TeamCollaborationManager {
       type: 'backend',
       preInstalled: ['node', 'python', 'git', 'docker', 'postgresql-client'],
       environment: {
-        'NODE_ENV': 'development',
-        'DATABASE_URL': 'postgresql://localhost:5432/dev'
+        NODE_ENV: 'development',
+        DATABASE_URL: 'postgresql://localhost:5432/dev',
       },
       ports: [3000, 5000, 8000, 5432],
       resources: {
         cpu: '2',
         memory: '4Gi',
-        storage: '20Gi'
-      }
+        storage: '20Gi',
+      },
     });
 
     // Data Science template
@@ -168,15 +168,15 @@ class TeamCollaborationManager {
       type: 'data-science',
       preInstalled: ['python', 'jupyter', 'pandas', 'numpy', 'scikit-learn', 'git'],
       environment: {
-        'JUPYTER_PORT': '8888',
-        'PYTHON_VERSION': '3.9'
+        JUPYTER_PORT: '8888',
+        PYTHON_VERSION: '3.9',
       },
       ports: [8888, 8080],
       resources: {
         cpu: '4',
         memory: '8Gi',
-        storage: '50Gi'
-      }
+        storage: '50Gi',
+      },
     });
   }
 
@@ -190,13 +190,13 @@ class TeamCollaborationManager {
     settings?: Partial<TeamSettings>
   ): Team {
     const teamId = this.generateTeamId();
-    
+
     const defaultSettings: TeamSettings = {
       allowGuestAccess: false,
       defaultRole: 'developer',
       requireApprovalForJoin: true,
       sessionTimeoutMinutes: 480, // 8 hours
-      ...settings
+      ...settings,
     };
 
     const owner: TeamMember = {
@@ -207,10 +207,16 @@ class TeamCollaborationManager {
       joinedAt: new Date(),
       lastActive: new Date(),
       permissions: new Set([
-        'create_containers', 'delete_containers', 'share_containers',
-        'manage_members', 'view_analytics', 'manage_billing', 'admin_access',
-        'create_workspaces', 'manage_templates'
-      ])
+        'create_containers',
+        'delete_containers',
+        'share_containers',
+        'manage_members',
+        'view_analytics',
+        'manage_billing',
+        'admin_access',
+        'create_workspaces',
+        'manage_templates',
+      ]),
     };
 
     const team: Team = {
@@ -222,11 +228,11 @@ class TeamCollaborationManager {
       createdAt: new Date(),
       updatedAt: new Date(),
       settings: defaultSettings,
-      containerShares: new Map()
+      containerShares: new Map(),
     };
 
     this.teams.set(teamId, team);
-    
+
     // Update user teams mapping
     if (!this.userTeams.has(ownerId)) {
       this.userTeams.set(ownerId, new Set());
@@ -234,7 +240,7 @@ class TeamCollaborationManager {
     this.userTeams.get(ownerId)!.add(teamId);
 
     this.logActivity(teamId, ownerId, 'team_created', 'team', teamId, {
-      teamName: name
+      teamName: name,
     });
 
     return team;
@@ -270,7 +276,7 @@ class TeamCollaborationManager {
       role,
       joinedAt: new Date(),
       lastActive: new Date(),
-      permissions: this.getDefaultPermissions(role)
+      permissions: this.getDefaultPermissions(role),
     };
 
     team.members.set(userId, member);
@@ -284,7 +290,7 @@ class TeamCollaborationManager {
 
     this.logActivity(teamId, invitedBy, 'member_added', 'user', userId, {
       role,
-      memberCount: team.members.size
+      memberCount: team.members.size,
     });
 
     return true;
@@ -321,7 +327,7 @@ class TeamCollaborationManager {
       accessLevel,
       expiresAt,
       allowedOperations,
-      metadata: metadata || {}
+      metadata: metadata || {},
     };
 
     team.containerShares.set(containerId, containerShare);
@@ -330,7 +336,7 @@ class TeamCollaborationManager {
     this.logActivity(teamId, sharedBy, 'container_shared', 'container', containerId, {
       accessLevel,
       expiresAt: expiresAt?.toISOString(),
-      memberCount: team.members.size
+      memberCount: team.members.size,
     });
 
     return containerShare;
@@ -367,7 +373,7 @@ class TeamCollaborationManager {
       allowPublicAccess: false,
       backupEnabled: true,
       backupIntervalHours: 24,
-      ...customSettings
+      ...customSettings,
     };
 
     const workspace: TeamWorkspace = {
@@ -379,12 +385,12 @@ class TeamCollaborationManager {
       createdBy,
       createdAt: new Date(),
       containers: [],
-      settings: defaultSettings
+      settings: defaultSettings,
     };
 
     this.logActivity(teamId, createdBy, 'workspace_created', 'workspace', workspace.id, {
       workspaceName: name,
-      templateName
+      templateName,
     });
 
     return workspace;
@@ -454,9 +460,7 @@ class TeamCollaborationManager {
    */
   public getTeamActivity(teamId: string, limit: number = 100): ActivityLog[] {
     const logs = this.activityLogs.get(teamId) || [];
-    return logs
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit);
+    return logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, limit);
   }
 
   /**
@@ -489,7 +493,7 @@ class TeamCollaborationManager {
         permissions.add('view_analytics');
         permissions.add('create_workspaces');
         permissions.add('manage_templates');
-        // fall through
+      // fall through
       case 'developer':
         permissions.add('create_containers');
         permissions.add('share_containers');
@@ -503,7 +507,9 @@ class TeamCollaborationManager {
     return permissions;
   }
 
-  private getOperationsForAccessLevel(accessLevel: 'read' | 'write' | 'admin'): Set<ContainerOperation> {
+  private getOperationsForAccessLevel(
+    accessLevel: 'read' | 'write' | 'admin'
+  ): Set<ContainerOperation> {
     const operations = new Set<ContainerOperation>();
 
     switch (accessLevel) {
@@ -511,12 +517,12 @@ class TeamCollaborationManager {
         operations.add('manage_processes');
         operations.add('access_network');
         operations.add('install_packages');
-        // fall through
+      // fall through
       case 'write':
         operations.add('write_files');
         operations.add('execute_commands');
         operations.add('manage_git');
-        // fall through
+      // fall through
       case 'read':
         operations.add('read_files');
         operations.add('view_terminal');
@@ -546,7 +552,7 @@ class TeamCollaborationManager {
       timestamp: new Date(),
       metadata,
       ipAddress,
-      userAgent
+      userAgent,
     };
 
     if (!this.activityLogs.has(teamId)) {

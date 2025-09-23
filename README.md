@@ -7,6 +7,7 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
 ### Local Development
 
 1. **Clone and install dependencies:**
+
    ```bash
    git clone https://github.com/Arcane-Fly/disco.git
    cd disco
@@ -14,12 +15,14 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
    ```
 
 2. **Set up environment:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 3. **Build and run:**
+
    ```bash
    npm run build
    npm start
@@ -34,6 +37,7 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
 ### Production Testing
 
 You can also test the live Railway deployment:
+
 ```bash
 curl https://disco-mcp.up.railway.app/health
 curl https://disco-mcp.up.railway.app/capabilities
@@ -42,6 +46,7 @@ curl https://disco-mcp.up.railway.app/capabilities
 ### Railway Deployment
 
 1. **Install Railway CLI:**
+
    ```bash
    npm install -g @railway/cli
    ```
@@ -158,6 +163,7 @@ npm run railway:report
 ### Logging
 
 The server provides comprehensive logging for:
+
 - Request/response cycles
 - Container operations
 - Authentication events
@@ -166,6 +172,7 @@ The server provides comprehensive logging for:
 ## 🔄 Background Tasks
 
 The worker process handles:
+
 - Container cleanup (inactive containers)
 - Pool pre-warming (faster startup)
 - Memory monitoring
@@ -189,14 +196,14 @@ For production use:
 
 ## 📝 Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | Yes | Secret for JWT token signing |
-| `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
-| `ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
-| `REDIS_URL` | No | Redis connection string |
-| `GITHUB_CLIENT_ID` | No | GitHub OAuth client ID |
-| `GITHUB_CLIENT_SECRET` | No | GitHub OAuth client secret |
+| Variable               | Required | Description                     |
+| ---------------------- | -------- | ------------------------------- |
+| `JWT_SECRET`           | Yes      | Secret for JWT token signing    |
+| `WEBCONTAINER_API_KEY` | Yes      | StackBlitz WebContainer API key |
+| `ALLOWED_ORIGINS`      | Yes      | Comma-separated allowed origins |
+| `REDIS_URL`            | No       | Redis connection string         |
+| `GITHUB_CLIENT_ID`     | No       | GitHub OAuth client ID          |
+| `GITHUB_CLIENT_SECRET` | No       | GitHub OAuth client secret      |
 
 ## 🧪 Testing
 
