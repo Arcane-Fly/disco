@@ -228,7 +228,7 @@ export const useAppStore = create<AppState & AppActions>()(
   devtools(
     persist(
       subscribeWithSelector(
-        immer((set, get) => ({
+        immer((set, _get) => ({
           ...defaultState,
           
           // Workflow actions

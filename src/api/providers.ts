@@ -248,7 +248,7 @@ router.post('/quantum/route', async (req: Request, res: Response) => {
 /**
  * Simulate provider health check
  */
-async function checkProviderHealth(provider: any): Promise<{
+async function checkProviderHealth(_provider: any): Promise<{
   healthy: boolean;
   latency: number;
   issues?: string[];

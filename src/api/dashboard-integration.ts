@@ -6,7 +6,6 @@
  */
 
 import express from 'express';
-import { DynamicDashboard } from '../components/DynamicDashboard.js';
 import { mcpEnhancementEngine } from '../lib/mcpEnhancementEngine.js';
 import { performanceOptimizer } from '../lib/performanceOptimizer.js';
 

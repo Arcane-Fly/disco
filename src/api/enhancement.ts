@@ -344,7 +344,7 @@ router.post('/optimize',
     }
 
     try {
-      const { type, intensity = 'moderate', duration = 300 } = req.body;
+      const { type, intensity = 'moderate', _duration = 300 } = req.body;
       const startTime = Date.now();
 
       let results: any = {};
@@ -432,7 +432,7 @@ async function optimizeCache(intensity: string): Promise<any> {
   }
 }
 
-async function optimizeMemory(intensity: string): Promise<any> {
+async function optimizeMemory(_intensity: string): Promise<any> {
   const memBefore = process.memoryUsage();
   
   // Trigger garbage collection if available

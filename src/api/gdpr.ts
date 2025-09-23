@@ -376,16 +376,16 @@ router.post('/restrict/:userId',
 
 // Helper functions
 
-async function getAuditLogs(userId: string, days: number): Promise<any[]> {
+async function getAuditLogs(_userId: string, _days: number): Promise<any[]> {
   // Implementation would fetch from actual audit log storage
   return [];
 }
 
-async function deleteAuditLogs(userId: string): Promise<void> {
+async function deleteAuditLogs(_userId: string): Promise<void> {
   // Implementation would delete from actual audit log storage
 }
 
-async function getApiUsageStats(userId: string): Promise<any> {
+async function getApiUsageStats(_userId: string): Promise<any> {
   // Implementation would fetch from metrics storage
   return {
     totalRequests: 0,
@@ -394,25 +394,25 @@ async function getApiUsageStats(userId: string): Promise<any> {
   };
 }
 
-async function deleteApiUsageStats(userId: string): Promise<void> {
+async function deleteApiUsageStats(_userId: string): Promise<void> {
   // Implementation would delete from metrics storage
 }
 
-async function getFileMetadata(userId: string): Promise<any[]> {
+async function getFileMetadata(_userId: string): Promise<any[]> {
   // Implementation would fetch file metadata
   return [];
 }
 
-async function getUserPreferences(userId: string): Promise<any> {
+async function getUserPreferences(_userId: string): Promise<any> {
   // Implementation would fetch user preferences
   return {};
 }
 
-async function deleteUserPreferences(userId: string): Promise<void> {
+async function deleteUserPreferences(_userId: string): Promise<void> {
   // Implementation would delete user preferences
 }
 
-async function restrictProcessing(userId: string, categories: string[], reason: string): Promise<void> {
+async function restrictProcessing(_userId: string, _categories: string[], _reason: string): Promise<void> {
   // Implementation would restrict processing for specified categories
 }
 
