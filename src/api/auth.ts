@@ -1,8 +1,15 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, AuthResponse, ErrorCode } from '../types/index.js';
+import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
 
 const router = Router();
+
+/**
+ * GET /api/v1/auth/status
+ * Enhanced authentication status with token refresh information
+ */
+router.get('/status', enhancedAuthMiddleware, createAuthStatusEndpoint());
 
 /**
  * GET /api/v1/auth
