@@ -372,7 +372,8 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       });
     }
 
-    // Parse state to get PKCE data  
+    // Parse state to get redirect and OAuth data
+    let redirectTo = '/';
     let codeChallenge = '';
     let codeChallengeMethod = 'S256';
     let clientId = 'disco-mcp-client';
@@ -380,6 +381,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     if (state) {
       try {
         const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
+        redirectTo = stateData.redirectTo || '/';
         codeChallenge = stateData.codeChallenge || '';
         codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
         clientId = stateData.clientId || 'disco-mcp-client';
@@ -388,7 +390,42 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       }
     }
 
-    // For MCP OAuth 2.1 compliance, generate an authorization code
+    // Check if this is a ChatGPT OAuth flow (redirect back to /oauth/authorize)
+    const isChatGPTFlow = redirectTo.includes('/oauth/authorize');
+    
+    if (isChatGPTFlow) {
+      // For ChatGPT OAuth flow, redirect back to the authorize endpoint with user info
+      // The authorize endpoint will handle the consent and token generation
+      const redirectUrl = new URL(redirectTo, `${req.protocol}://${req.get('host')}`);
+      
+      // Add user authentication via a temporary token in the authorization header
+      const tempToken = jwt.sign(
+        { 
+          sub: `github:${userData.login}`,
+          username: userData.login,
+          name: userData.name,
+          email: userData.email,
+          provider: 'github',
+          temp: true
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: '10m' } // Short-lived for OAuth flow
+      );
+      
+      // Set authentication cookie to pass to the authorize endpoint
+      res.cookie('temp-auth-token', tempToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 10 * 60 * 1000, // 10 minutes
+        path: '/'
+      });
+      
+      console.log(`🔐 GitHub user authenticated for ChatGPT OAuth: ${userData.login}, redirecting to consent`);
+      return res.redirect(redirectUrl.toString());
+    }
+
+    // For MCP OAuth 2.1 compliance with PKCE, generate an authorization code
     // and store the user data for later token exchange
     const { generateAuthorizationCode, storeAuthCodeData } = await import('../lib/oauthState.js');
     

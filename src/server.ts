@@ -2307,8 +2307,11 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
     description_for_human: 'Full development environment with repository access, terminal operations, and computer use capabilities.',
     description_for_model: 'Provides complete development environment through WebContainers with file operations, git integration, terminal access, and browser automation for code development and testing.',
     auth: {
-      type: 'service_http',
-      authorization_type: 'bearer'
+      type: 'oauth',
+      client_url: `${domain}/oauth/authorize`,
+      scope: 'mcp:tools mcp:resources mcp:prompts',
+      authorization_url: `${domain}/oauth/authorize`,
+      authorization_content_type: 'application/x-www-form-urlencoded'
     },
     api: {
       type: 'openapi',
@@ -2318,6 +2321,401 @@ app.get('/.well-known/ai-plugin.json', (_req, res) => {
     contact_email: 'support@disco-mcp.dev',
     legal_info_url: `${domain}/legal`
   });
+});
+
+// OAuth Authorization Endpoint (Required for ChatGPT Integration)
+/**
+ * @swagger
+ * /oauth/authorize:
+ *   get:
+ *     tags: [OAuth Authorization]
+ *     summary: OAuth authorization endpoint for ChatGPT integration
+ *     description: Provides user consent flow required by ChatGPT connectors with PKCE support
+ *     parameters:
+ *       - in: query
+ *         name: client_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: OAuth client identifier
+ *       - in: query
+ *         name: redirect_uri
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ChatGPT callback URI
+ *       - in: query
+ *         name: response_type
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [code]
+ *         description: OAuth response type (must be 'code')
+ *       - in: query
+ *         name: scope
+ *         schema:
+ *           type: string
+ *         description: Requested OAuth scopes
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *         description: OAuth state parameter for CSRF protection
+ *       - in: query
+ *         name: code_challenge
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: PKCE code challenge
+ *       - in: query
+ *         name: code_challenge_method
+ *         schema:
+ *           type: string
+ *           enum: [S256]
+ *         description: PKCE code challenge method
+ *     responses:
+ *       302:
+ *         description: Redirect to user consent or callback
+ *       400:
+ *         description: Invalid request parameters
+ */
+app.get('/oauth/authorize', async (req, res) => {
+  try {
+    const { 
+      client_id, 
+      redirect_uri, 
+      response_type, 
+      scope, 
+      state, 
+      code_challenge, 
+      code_challenge_method = 'S256' 
+    } = req.query;
+
+    // Validate required parameters
+    if (!client_id || !redirect_uri || !response_type || !code_challenge) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Missing required parameters: client_id, redirect_uri, response_type, code_challenge'
+      });
+    }
+
+    // Validate response type
+    if (response_type !== 'code') {
+      return res.status(400).json({
+        error: 'unsupported_response_type',
+        error_description: 'Only authorization_code flow is supported'
+      });
+    }
+
+    // Validate redirect URI for ChatGPT
+    const allowedRedirectUris = [
+      'https://chat.openai.com/oauth/callback',
+      'https://chatgpt.com/oauth/callback'
+    ];
+    
+    if (!allowedRedirectUris.includes(redirect_uri as string)) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'Invalid redirect_uri. Must be a ChatGPT callback URL.'
+      });
+    }
+
+    // Check if user is already authenticated
+    const authHeader = req.headers.authorization;
+    const tempAuthCookie = req.cookies?.['temp-auth-token'];
+    let userId = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        userId = decoded.sub;
+      } catch (jwtError) {
+        // Token invalid, will redirect to login
+      }
+    } else if (tempAuthCookie) {
+      try {
+        const decoded = jwt.verify(tempAuthCookie, process.env.JWT_SECRET!) as any;
+        userId = decoded.sub;
+        // Clear the temporary cookie after use
+        res.clearCookie('temp-auth-token');
+      } catch (jwtError) {
+        // Invalid temp token
+      }
+    }
+
+    // If not authenticated, redirect to GitHub OAuth for authentication
+    if (!userId) {
+      const { generateOAuthState } = await import('./lib/oauthState.js');
+      const oauthState = generateOAuthState(
+        `${req.protocol}://${req.get('host')}/oauth/authorize?${new URLSearchParams(req.query as any).toString()}`,
+        code_challenge as string,
+        code_challenge_method as string,
+        client_id as string
+      );
+
+      const githubClientId = process.env.GITHUB_CLIENT_ID;
+      const callbackUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/github/callback`;
+      
+      const githubAuthUrl = `https://github.com/login/oauth/authorize?` +
+        `client_id=${githubClientId}&` +
+        `redirect_uri=${encodeURIComponent(callbackUrl)}&` +
+        `scope=user:email&` +
+        `state=${oauthState}`;
+
+      console.log(`🔐 ChatGPT OAuth: Redirecting to GitHub authentication for client: ${client_id}`);
+      return res.redirect(githubAuthUrl);
+    }
+
+    // User is authenticated, show consent UI
+    const requestedScope = scope || 'mcp:tools mcp:resources';
+    const consentHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize ChatGPT Access - Disco MCP Server</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: #3b82f6;
+            border-radius: 12px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        .subtitle {
+            color: #64748b;
+            margin: 0;
+        }
+        .consent-details {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .scope-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+        }
+        .scope-icon {
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            border-radius: 4px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        .security-note {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">D</div>
+            <h1 class="title">Authorize ChatGPT Access</h1>
+            <p class="subtitle">ChatGPT is requesting access to your Disco MCP Server</p>
+        </div>
+
+        <div class="consent-details">
+            <h3>Requested Permissions:</h3>
+            <div class="scope-item">
+                <div class="scope-icon">✓</div>
+                <div>
+                    <strong>MCP Tools Access</strong><br>
+                    <small>Execute development tools and commands</small>
+                </div>
+            </div>
+            <div class="scope-item">
+                <div class="scope-icon">✓</div>
+                <div>
+                    <strong>MCP Resources Access</strong><br>
+                    <small>Read and write files in WebContainers</small>
+                </div>
+            </div>
+            <div class="scope-item">
+                <div class="scope-icon">✓</div>
+                <div>
+                    <strong>MCP Prompts Access</strong><br>
+                    <small>Use prompt templates and completions</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <form method="post" action="/oauth/authorize" style="flex: 1;">
+                <input type="hidden" name="client_id" value="${client_id}">
+                <input type="hidden" name="redirect_uri" value="${redirect_uri}">
+                <input type="hidden" name="response_type" value="${response_type}">
+                <input type="hidden" name="scope" value="${requestedScope}">
+                <input type="hidden" name="state" value="${state || ''}">
+                <input type="hidden" name="code_challenge" value="${code_challenge}">
+                <input type="hidden" name="code_challenge_method" value="${code_challenge_method}">
+                <input type="hidden" name="user_id" value="${userId}">
+                <input type="hidden" name="action" value="deny">
+                <button type="submit" class="btn btn-secondary">Deny Access</button>
+            </form>
+            <form method="post" action="/oauth/authorize" style="flex: 1;">
+                <input type="hidden" name="client_id" value="${client_id}">
+                <input type="hidden" name="redirect_uri" value="${redirect_uri}">
+                <input type="hidden" name="response_type" value="${response_type}">
+                <input type="hidden" name="scope" value="${requestedScope}">
+                <input type="hidden" name="state" value="${state || ''}">
+                <input type="hidden" name="code_challenge" value="${code_challenge}">
+                <input type="hidden" name="code_challenge_method" value="${code_challenge_method}">
+                <input type="hidden" name="user_id" value="${userId}">
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-primary">Authorize</button>
+            </form>
+        </div>
+
+        <div class="security-note">
+            <strong>🔒 Security Notice:</strong> This authorization uses OAuth 2.0 with PKCE for secure authentication. 
+            Your credentials are never shared with ChatGPT.
+        </div>
+    </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(consentHtml);
+
+  } catch (error) {
+    console.error('OAuth authorize error:', error);
+    res.status(500).json({
+      error: 'server_error',
+      error_description: 'Authorization request failed'
+    });
+  }
+});
+
+// OAuth Authorization POST handler (consent response)
+/**
+ * @swagger
+ * /oauth/authorize:
+ *   post:
+ *     tags: [OAuth Authorization]
+ *     summary: Handle OAuth consent response
+ *     description: Process user consent and redirect to ChatGPT with authorization code
+ */
+app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req, res) => {
+  try {
+    const { 
+      client_id, 
+      redirect_uri, 
+      scope, 
+      state, 
+      code_challenge, 
+      code_challenge_method, 
+      user_id, 
+      action 
+    } = req.body;
+
+    // Handle denial
+    if (action === 'deny') {
+      const errorUrl = `${redirect_uri}?error=access_denied&error_description=User denied authorization&state=${encodeURIComponent(state || '')}`;
+      console.log(`❌ ChatGPT OAuth: User denied authorization for client: ${client_id}`);
+      return res.redirect(errorUrl);
+    }
+
+    // Generate authorization code for approval
+    const { generateAuthorizationCode, storeAuthCodeData } = await import('./lib/oauthState.js');
+    const authCode = generateAuthorizationCode();
+
+    // Store authorization data for token exchange
+    storeAuthCodeData(authCode, {
+      userId: user_id,
+      scope: scope || 'mcp:tools mcp:resources',
+      codeChallenge: code_challenge,
+      codeChallengeMethod: code_challenge_method || 'S256',
+      clientId: client_id
+    });
+
+    // Redirect to ChatGPT with authorization code
+    const callbackUrl = `${redirect_uri}?code=${authCode}&state=${encodeURIComponent(state || '')}`;
+    console.log(`✅ ChatGPT OAuth: Authorization granted for client: ${client_id}, user: ${user_id}`);
+    
+    res.redirect(callbackUrl);
+
+  } catch (error) {
+    console.error('OAuth authorize POST error:', error);
+    const errorUrl = `${req.body.redirect_uri}?error=server_error&error_description=Authorization processing failed&state=${encodeURIComponent(req.body.state || '')}`;
+    res.redirect(errorUrl);
+  }
 });
 
 // OAuth Token Exchange Endpoint (PKCE support for MCP OAuth 2.1 compliance)

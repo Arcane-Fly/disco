@@ -1,19 +1,49 @@
 {
   "version": "1",
-  "metadata": {
-    "name": "disco"
+  "packages": {
+    "python": "3.12.11",
+    "node": "22.11.0",
+    "yarn": "4.9.2"
   },
-  "build": {
-    "provider": "node",
-    "nodeVersion": "20.x",
-    "buildCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable && yarn build:server && yarn build:next",
-    "installCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable"
-  },
+  "install": [
+    {
+      "command": "python -m venv /app/.venv",
+      "cache": "/app/.venv"
+    },
+    {
+      "command": "source /app/.venv/bin/activate && pip install -r requirements.txt",
+      "dependsOn": ["requirements.txt", "pyproject.toml"]
+    },
+    {
+      "command": "corepack enable && corepack prepare yarn@4.9.2 --activate",
+      "description": "Enable Yarn 4"
+    },
+    {
+      "command": "yarn install --immutable",
+      "dependsOn": ["package.json", "yarn.lock"],
+      "cache": "node_modules"
+    },
+    {
+      "command": "yarn build:server",
+      "dependsOn": ["src/"],
+      "output": "dist/"
+    },
+    {
+      "command": "yarn build:next",
+      "dependsOn": ["frontend/"],
+      "output": "frontend/.next"
+    }
+  ],
   "deploy": {
-    "startCommand": "node dist/server.js",
-    "healthCheckPath": "/health",
-    "healthCheckTimeout": 300,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "command": "/app/.venv/bin/python /app/run_server.py || node /app/dist/server.js",
+    "healthcheck": {
+      "path": "/health",
+      "interval": "30s",
+      "timeout": "5s"
+    }
+  },
+  "environment": {
+    "NODE_ENV": "production",
+    "PYTHON_ENV": "production"
   }
 }
