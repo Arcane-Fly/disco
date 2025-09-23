@@ -621,6 +621,137 @@ app.get('/legacy-root', (req: CSPRequest, res) => {
             margin: 16px 0;
             display: none;
         }
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin: 8px 0;
+        }
+        .connection-status.checking {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        .connection-status.connected {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .connection-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #dc2626;
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .setup-wizard {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        .wizard-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+        }
+        .wizard-step.active {
+            border-color: #3b82f6;
+            background: #f8faff;
+        }
+        .wizard-step.completed {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            background: #94a3b8;
+            flex-shrink: 0;
+        }
+        .wizard-step.active .step-number {
+            background: #3b82f6;
+        }
+        .wizard-step.completed .step-number {
+            background: #10b981;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-title {
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+        .step-description {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-indicator.checking {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-indicator.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-indicator.offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 16px 20px;
+            border-left: 4px solid #3b82f6;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 400px;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            border-left-color: #10b981;
+        }
+        .notification.error {
+            border-left-color: #dc2626;
+        }
+        .notification.info {
+            border-left-color: #3b82f6;
+        }
         .platform-urls {
             background: white;
             padding: 24px;
