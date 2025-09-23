@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { specs } from '../lib/openapi.js';
 
 const router = Router();
 

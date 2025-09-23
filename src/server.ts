@@ -3,7 +3,6 @@ import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import lusca from 'lusca';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketIOServer } from 'socket.io';
 import swaggerUi from 'swagger-ui-express';
@@ -33,7 +32,7 @@ import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
-import { enhancedCSPMiddleware, nextjsCSPMiddleware, CSPRequest } from './middleware/csp.js';
+import { enhancedCSPMiddleware, CSPRequest } from './middleware/csp.js';
 
 // Import route handlers
 import { metricsHandler } from './routes/metrics.js';

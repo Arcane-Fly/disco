@@ -5,6 +5,9 @@
     "node": "22.11.0",
     "yarn": "4.9.2"
   },
+  "build": {
+    "commands": ["yarn build"]
+  },
   "install": [
     {
       "command": "python -m venv /app/.venv",
@@ -35,7 +38,7 @@
     }
   ],
   "deploy": {
-    "command": "/app/.venv/bin/python /app/run_server.py || node /app/dist/server.js",
+    "startCommand": "node /app/dist/server.js",
     "healthcheck": {
       "path": "/health",
       "interval": "30s",
