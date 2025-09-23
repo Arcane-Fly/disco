@@ -1496,12 +1496,13 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             statusElement.className = 'connection-status ' + status;
             
             const icons = {
-                'checking': '<span class="spin">⚡</span>',
+                'checking': '⚡',
                 'connected': '✅',
                 'error': '❌'
             };
             
-            statusElement.innerHTML = icons[status] + ' ' + message;
+            // Safely set text content to prevent XSS
+            statusElement.textContent = icons[status] + ' ' + message;
         }
         
         function updateWizardProgress() {
@@ -1558,12 +1559,22 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         function showNotification(type, message) {
             const notification = document.createElement('div');
             notification.className = \`notification \${type}\`;
-            notification.innerHTML = \`
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span>\${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
-                    <span>\${message}</span>
-                </div>
-            \`;
+            
+            // Create elements safely to prevent XSS
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.gap = '8px';
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message; // Safe text content instead of innerHTML
+            
+            container.appendChild(iconSpan);
+            container.appendChild(messageSpan);
+            notification.appendChild(container);
             
             document.body.appendChild(notification);
             
@@ -1614,8 +1625,14 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 loginSection.classList.add('hidden');
                 authenticatedSection.classList.remove('hidden');
                 
-                // Show user info
-                userInfo.innerHTML = \`<strong>Logged in as:</strong> \${currentUser || 'Unknown'}\`;
+                // Show user info safely to prevent XSS
+                userInfo.innerHTML = '';
+                const strongElement = document.createElement('strong');
+                strongElement.textContent = 'Logged in as: ';
+                const userElement = document.createElement('span');
+                userElement.textContent = currentUser || 'Unknown';
+                userInfo.appendChild(strongElement);
+                userInfo.appendChild(userElement);
                 userInfo.style.display = 'block';
 
                 // Show authenticated configs
@@ -4449,8 +4466,10 @@ app.get('/ui', (_req, res) => {
             const avgResponseTime = dashboardData.platforms.reduce((sum, p) => sum + p.responseTime, 0) / dashboardData.platforms.length || 0;
             const totalUsers = dashboardData.platforms.reduce((sum, p) => sum + p.activeUsers, 0);
             
-            // Clear previous metrics
-            metricsContainer.innerHTML = '';
+            // Clear previous metrics safely
+            while (metricsContainer.firstChild) {
+                metricsContainer.removeChild(metricsContainer.firstChild);
+            }
             
             // Helper to create a metric card
             function createMetricCard(icon, title, value) {
@@ -4485,8 +4504,10 @@ app.get('/ui', (_req, res) => {
         function renderPlatforms() {
             const platformsContainer = document.getElementById('platforms');
             
-            // Clear previous content
-            platformsContainer.innerHTML = '';
+            // Clear previous content safely
+            while (platformsContainer.firstChild) {
+                platformsContainer.removeChild(platformsContainer.firstChild);
+            }
             
             if (!dashboardData.platforms.length) {
                 const noDataMsg = document.createElement('p');
