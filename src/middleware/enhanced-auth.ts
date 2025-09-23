@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 interface EnhancedAuthRequest extends Request {
   user?: {
     userId: string;
-    provider: string;
+    provider?: string;
     exp: number;
     iat: number;
   };

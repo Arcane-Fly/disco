@@ -175,6 +175,11 @@ export interface JWTPayload {
   userId: string;
   iat: number;
   exp: number;
+  provider?: string;
+  sub?: string;
+  username?: string;
+  name?: string;
+  email?: string;
 }
 
 // API Response types

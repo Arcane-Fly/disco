@@ -48,11 +48,17 @@
   },
   "authentication": {
     "type": "oauth2",
-    "authorization_endpoint": "https://disco-mcp.up.railway.app/api/v1/auth/github",
-    "token_endpoint": "https://disco-mcp.up.railway.app/oauth/token",
-    "scopes": ["openid", "profile", "mcp:tools", "mcp:resources", "mcp:prompts", "mcp:completions"],
+    "authorization_url": "https://disco-mcp.up.railway.app/oauth/authorize",
+    "token_url": "https://disco-mcp.up.railway.app/oauth/token",
+    "redirect_uris": [
+      "https://chat.openai.com/oauth/callback",
+      "https://chatgpt.com/oauth/callback"
+    ],
+    "scopes": ["mcp:tools", "mcp:resources", "mcp:prompts"],
     "pkce_required": true,
+    "client_id": "chatgpt-connector",
     "alternative_auth": {
+      "github_oauth": "https://disco-mcp.up.railway.app/api/v1/auth/github",
       "api_key": "https://disco-mcp.up.railway.app/api/v1/auth/api-key",
       "bearer_token": "https://disco-mcp.up.railway.app/api/v1/auth/bearer"
     }
