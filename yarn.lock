@@ -4023,7 +4023,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"escape-html@npm:~1.0.3":
+"escape-html@npm:^1.0.3, escape-html@npm:~1.0.3":
   version: 1.0.3
   resolution: "escape-html@npm:1.0.3"
   checksum: 10c0/524c739d776b36c3d29fa08a22e03e8824e3b2fd57500e5e44ecf3cc4707c34c60f9ca0781c0e33d191f2991161504c295e98f68c78fe7baa6e57081ec6ac0a3
@@ -6108,6 +6108,7 @@ __metadata:
     crypto-js: "npm:^4.2.0"
     dockerode: "npm:^4.0.7"
     dotenv: "npm:^16.3.1"
+    escape-html: "npm:^1.0.3"
     eslint: "npm:^8.55.0"
     express: "npm:^4.18.2"
     express-rate-limit: "npm:^7.1.5"
