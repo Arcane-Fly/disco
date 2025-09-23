@@ -1,11 +1,18 @@
 import request from 'supertest';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 
 // Create a test app that mimics the real server OAuth implementation
 const createFullTestApp = () => {
   const app = express();
+
+  // Rate limiter: limit to 10 requests per minute for oauth/authorize GET
+  const authorizeRateLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // limit each IP to 10 requests per windowMs
+  });
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
@@ -14,7 +21,7 @@ const createFullTestApp = () => {
   process.env.JWT_SECRET = 'test-secret-key';
   
   // Mock OAuth authorize endpoint (full implementation test)
-  app.get('/oauth/authorize', async (req, res) => {
+  app.get('/oauth/authorize', authorizeRateLimiter, async (req, res) => {
     try {
       const { 
         client_id, 
