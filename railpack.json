@@ -19,7 +19,7 @@
       "description": "Enable Yarn 4"
     },
     {
-      "command": "yarn install --immutable",
+      "command": "yarn install --check-cache",
       "dependsOn": ["package.json", "yarn.lock"],
       "cache": "node_modules"
     },
