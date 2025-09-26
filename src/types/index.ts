@@ -2,6 +2,29 @@
 export * from './metrics.js';
 export * from './theme.js';
 
+// Auth types
+export interface AuthStatusResponse {
+  authenticated: boolean;
+  authentication_required: boolean;
+  available_methods: string[];
+  github_oauth: {
+    configured: boolean;
+    client_id?: string;
+    redirect_uri?: string;
+  };
+  user_id?: string;
+  provider?: string;
+  token_expires_at?: number;
+}
+
+export interface JWTPayload {
+  userId: string;
+  provider: string;
+  email?: string;
+  iat: number;
+  exp: number;
+}
+
 // Container types
 export interface ContainerSession {
   id: string;
