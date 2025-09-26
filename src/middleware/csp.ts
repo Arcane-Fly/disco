@@ -23,7 +23,7 @@ export function enhancedCSPMiddleware(req: CSPRequest, res: Response, next: Next
     `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval' https://unpkg.com`, // Keep compatibility with existing setup
     `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' blob: data: https:",
+    "img-src 'self' blob: data: https: https://avatars.githubusercontent.com", // Explicitly allow GitHub avatars
     "connect-src 'self' wss: ws: https://webcontainer.io",
     "frame-ancestors 'self' https://chat.openai.com https://chatgpt.com https://claude.ai",
     "worker-src 'self' blob:",
@@ -58,7 +58,7 @@ export function nextjsCSPMiddleware(req: CSPRequest, res: Response, next: NextFu
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`, // Keep unsafe-eval for development
     `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' blob: data: https:",
+    "img-src 'self' blob: data: https: https://avatars.githubusercontent.com", // Explicitly allow GitHub avatars
     "connect-src 'self' wss: ws: https://webcontainer.io",
     "frame-ancestors 'self' https://chat.openai.com https://chatgpt.com https://claude.ai",
     "worker-src 'self' blob:",
