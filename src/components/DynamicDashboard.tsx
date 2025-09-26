@@ -24,7 +24,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 // Replaced react-beautiful-dnd with modern @dnd-kit for better performance and accessibility
 import { DragDropProvider } from './ui/DragDropProvider';
-import { Button } from './ui/Button';
 import { EventEmitter } from 'events';
 
 // =====================================================================================
@@ -434,7 +433,7 @@ class DashboardStateManager extends EventEmitter {
     }
   }
 
-  private loadStateFromStorage() {
+  private _loadStateFromStorage() {
     try {
       const saved = localStorage.getItem('dashboardState');
       if (saved) {
@@ -486,7 +485,7 @@ const BaseWidget: React.FC<BaseWidgetProps & { children: React.ReactNode }> = ({
   children
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(widget.isLoading || false);
+  const [isLoading, _setIsLoading] = useState(widget.isLoading || false);
 
   const widgetStyle = useMemo(() => ({
     width: '100%',
@@ -629,7 +628,7 @@ const PerformanceMetricsWidget: React.FC<BaseWidgetProps> = ({ widget, onUpdate,
  * System Health Widget
  */
 const SystemHealthWidget: React.FC<BaseWidgetProps> = ({ widget, onUpdate, onRemove }) => {
-  const [healthStatus, setHealthStatus] = useState({
+  const [healthStatus, _setHealthStatus] = useState({
     overall: 'excellent',
     services: [
       { name: 'API Gateway', status: 'healthy', uptime: 99.9 },

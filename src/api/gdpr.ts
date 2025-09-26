@@ -91,7 +91,7 @@ router.get(
       // 2. Redis Session Data
       if (redisSessionManager.isAvailable()) {
         // Get all sessions for the user from Redis
-        const userSessions = [];
+        const userSessions: any[] = [];
         userData.dataCategories.sessionStorage = userSessions;
       }
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { JWTPayload } from '../types/index.js';
 
 interface EnhancedAuthRequest extends Request {
   user?: {
@@ -39,7 +40,7 @@ export function enhancedAuthMiddleware(
   const token = authHeader.substring(7);
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
 
     const now = Math.floor(Date.now() / 1000);
     const timeToExpiry = decoded.exp - now;

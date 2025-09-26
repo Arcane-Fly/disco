@@ -31,7 +31,7 @@ export interface WorkflowNode {
   data: {
     label: string;
     description?: string;
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
     status?: 'idle' | 'running' | 'success' | 'error';
     lastExecuted?: number;
   };

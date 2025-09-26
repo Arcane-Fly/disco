@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { containerManager } from '../lib/containerManager.js';
-import { ErrorCode } from '../types/index.js';
+import { ErrorCode, ContainerSession } from '../types/index.js';
 
 /**
  * Extended Request interface to include validated session
  */
 export interface SessionValidatedRequest extends Request {
-  session?: any; // Container session object
+  session?: ContainerSession; // Container session object
 }
 
 /**

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { useAuth } from '../contexts/AuthContext';
@@ -138,7 +139,13 @@ export default function Profile() {
             <div className="profile-header">
               <div className="profile-avatar">
                 {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.username} className="avatar-image" />
+                  <Image 
+                    src={user.avatar_url} 
+                    alt={user.username} 
+                    className="avatar-image"
+                    width={48}
+                    height={48}
+                  />
                 ) : (
                   <User className="w-12 h-12" />
                 )}

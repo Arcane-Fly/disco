@@ -215,8 +215,8 @@ router.post('/quantum/route', async (req: Request, res: Response) => {
 
     // Select best provider based on routing score
     const bestProvider = routingResults
-      .filter(r => r.status === 'success')
-      .sort((a, b) => (b as any).routingScore - (a as any).routingScore)[0];
+      .filter((r: any) => r.status === 'success')
+      .sort((a: any, b: any) => (b as any).routingScore - (a as any).routingScore)[0];
 
     res.json({
       status: 'success',
