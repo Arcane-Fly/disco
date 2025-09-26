@@ -6,7 +6,7 @@
 
 import React, { forwardRef } from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
-import { theme, getTheme } from '../../types/theme';
+import { theme, getTheme } from '../../../types/theme';
 
 export interface CardProps extends HTMLMotionProps<'div'> {
   variant?: 'default' | 'outlined' | 'elevated';
