@@ -107,7 +107,7 @@ export default function ApiConfig() {
             <div className="mb-4">
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
                 Use this URL in your MCP client (Claude, ChatGPT, etc.) to connect to your Disco MCP server.
-                Similar to Tavily's MCP URL format.
+                Similar to Tavily&apos;s MCP URL format.
               </p>
               
               <div className="flex items-center space-x-2">

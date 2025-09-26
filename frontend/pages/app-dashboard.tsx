@@ -78,7 +78,7 @@ export default function Dashboard() {
                   Welcome back, {user?.username || 'Demo User'}! 👋
                 </h1>
                 <p className="dashboard-subtitle">
-                  Here's what's happening with your MCP server
+                  Here&apos;s what&apos;s happening with your MCP server
                 </p>
               </div>
               <div className="dashboard-status">

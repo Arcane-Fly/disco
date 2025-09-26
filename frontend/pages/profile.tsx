@@ -246,7 +246,7 @@ export default function Profile() {
                       <div className="security-item">
                         <div className="security-item-info">
                           <h3>Account Security</h3>
-                          <p>Your account is protected by GitHub's security measures</p>
+                          <p>Your account is protected by GitHub&apos;s security measures</p>
                         </div>
                         <div className="security-item-status">
                           <span className="status-badge success">Secure</span>
