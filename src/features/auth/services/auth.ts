@@ -2,6 +2,19 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, AuthResponse, ErrorCode, AuthStatusResponse, JWTPayload } from '../types/index.js';
 // import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
+import rateLimit from 'express-rate-limit';
+
+const verifyLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 5, // max 5 requests per windowMs per IP
+  message: {
+    status: 'error',
+    error: {
+      code: ErrorCode.RATE_LIMITED || "RATE_LIMITED",
+      message: 'Too many requests: please try again later.'
+    }
+  }
+});
 
 const router = Router();
 
@@ -176,7 +189,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
  * GET /api/v1/auth/verify
  * Verify current token
  */
-router.get('/verify', async (req: Request, res: Response) => {
+router.get('/verify', verifyLimiter, async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
 
