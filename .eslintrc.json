@@ -1,23 +1,80 @@
 {
   "parser": "@typescript-eslint/parser",
-  "plugins": ["@typescript-eslint"],
-  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
+  "plugins": [
+    "@typescript-eslint",
+    "import"
+  ],
+  "extends": [
+    "eslint:recommended", 
+    "plugin:@typescript-eslint/recommended", 
+    "prettier"
+  ],
   "env": {
     "node": true,
-    "es2022": true
+    "es2022": true,
+    "jest": true
   },
   "parserOptions": {
     "ecmaVersion": 2022,
-    "sourceType": "module"
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
   },
   "rules": {
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
     "no-console": "off",
     "prefer-const": "error",
-    "no-var": "error"
+    "no-var": "error",
+    "import/no-restricted-paths": [
+      "error",
+      {
+        "zones": [
+          {
+            "target": "./src/features/auth",
+            "from": "./src/features",
+            "except": ["./auth"]
+          },
+          {
+            "target": "./src/features/dashboard",
+            "from": "./src/features", 
+            "except": ["./dashboard"]
+          },
+          {
+            "target": "./src/features/workflow",
+            "from": "./src/features",
+            "except": ["./workflow"]
+          },
+          {
+            "target": "./src/features/analytics",
+            "from": "./src/features",
+            "except": ["./analytics"]
+          },
+          {
+            "target": "./src/features/collaboration", 
+            "from": "./src/features",
+            "except": ["./collaboration"]
+          },
+          {
+            "target": "./src/features",
+            "from": "./src/app"
+          },
+          {
+            "target": [
+              "./src/shared/components",
+              "./src/shared/hooks", 
+              "./src/shared/lib",
+              "./src/shared/types",
+              "./src/shared/utils"
+            ],
+            "from": ["./src/features", "./src/app"]
+          }
+        ]
+      }
+    ]
   },
   "ignorePatterns": ["dist/", "node_modules/", "*.js"]
 }

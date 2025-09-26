@@ -46,7 +46,30 @@ jest.mock('fs/promises', () => ({
   stat: jest.fn().mockResolvedValue({ isDirectory: () => true, isFile: () => true }),
 }));
 
+// Import test utilities
+import { releaseAllPorts } from './utils/port-manager';
+
 // Global test environment setup
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-key-for-testing-only';
 process.env.WEBCONTAINER_CLIENT_ID = 'test-webcontainer-id';
+
+// Global test cleanup
+afterEach(() => {
+  // Release any ports used in tests
+  releaseAllPorts();
+  
+  // Clear any timers
+  jest.clearAllTimers();
+  
+  // Clear any mocks
+  jest.clearAllMocks();
+});
+
+// Global test teardown
+afterAll(() => {
+  // Ensure all async operations are cleaned up
+  return new Promise(resolve => {
+    setTimeout(resolve, 100);
+  });
+});

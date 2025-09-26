@@ -1,0 +1,250 @@
+{
+  "issues_headline": {
+    "summary": "Current architecture mixes technical and feature-based organization patterns, lacks component co-location, and has TypeScript configuration gaps. Test infrastructure needs async operation cleanup and proper server lifecycle management.",
+    "recommended_actions": "Implement feature-based architecture migration, establish component co-location patterns, enhance TypeScript strict mode, fix test infrastructure, and optimize bundle configuration for modern performance standards."
+  },
+  "issues": [
+    {
+      "priority": "P0",
+      "title": "Fix Test Infrastructure and CI/CD Pipeline",
+      "evidence": "Tests failing with 'EADDRINUSE' errors, async operations not properly cleaned up, rate limiting trust proxy warnings, and missing authentication tokens in test responses",
+      "root_cause": "Test servers not properly isolated, async operations not awaited/cleaned up, and test setup lacks proper lifecycle management",
+      "decision": "Implement proper test isolation with unique ports, fix async cleanup, and configure rate limiting for test environments",
+      "tasks": [
+        {
+          "task": "Fix test server port conflicts and async cleanup",
+          "commands": [
+            "mkdir -p /tmp/test-fixes",
+            "find test -name '*.test.ts' -exec grep -l 'listen.*3000' {} \\;"
+          ],
+          "diffs": [
+            {
+              "file": "jest.config.json",
+              "content": "Add setupFilesAfterEnv and testTimeout configuration for proper async handling"
+            }
+          ]
+        },
+        {
+          "task": "Configure rate limiting for test environment",
+          "commands": [],
+          "diffs": [
+            {
+              "file": "src/middleware/test-helpers.ts",
+              "content": "Create test-specific middleware that disables rate limiting in test environment"
+            }
+          ]
+        }
+      ],
+      "validation": [
+        "All tests pass without port conflicts",
+        "No async operation warnings",
+        "CI/CD pipeline runs successfully"
+      ]
+    },
+    {
+      "priority": "P0", 
+      "title": "Implement Feature-Based Architecture Migration",
+      "evidence": "Current structure mixes technical grouping (src/components, src/hooks, src/utils) with business domains, violating modern React architecture patterns",
+      "root_cause": "Technical-first organization makes scaling difficult, increases coupling between domains, and hinders team collaboration on feature boundaries",
+      "decision": "Migrate to feature-based architecture following bulletproof-react patterns with proper domain separation",
+      "tasks": [
+        {
+          "task": "Create new feature-based folder structure",
+          "commands": [
+            "mkdir -p src/features/{auth,dashboard,workflow,analytics,collaboration}",
+            "mkdir -p src/features/{auth,dashboard,workflow,analytics,collaboration}/{components,hooks,services,types,utils}",
+            "mkdir -p src/shared/{components,hooks,lib,types,utils}"
+          ],
+          "diffs": [
+            {
+              "file": "src/features/README.md",
+              "content": "# Feature-Based Architecture\\n\\nEach feature is self-contained with:\\n- components/: Feature-specific UI components\\n- hooks/: Feature-specific custom hooks\\n- services/: API and business logic\\n- types/: TypeScript definitions\\n- utils/: Feature utilities"
+            }
+          ]
+        },
+        {
+          "task": "Migrate authentication feature to feature-based structure",
+          "commands": [
+            "mv src/api/auth.ts src/features/auth/services/",
+            "mv src/middleware/auth.ts src/features/auth/services/middleware.ts"
+          ],
+          "diffs": [
+            {
+              "file": "src/features/auth/index.ts",
+              "content": "export * from './services/auth';\nexport * from './services/middleware';\nexport * from './types';"
+            }
+          ]
+        }
+      ],
+      "validation": [
+        "Feature folders contain isolated, domain-specific code",
+        "No cross-feature imports except through shared modules",
+        "Each feature has proper barrel exports"
+      ]
+    },
+    {
+      "priority": "P1",
+      "title": "Implement Component Co-location Patterns",
+      "evidence": "Components scattered across multiple directories without tests, styles, or stories co-located. UI components lack proper index files for barrel exports.",
+      "root_cause": "Traditional technical grouping prevents component maintainability and makes it difficult to understand component dependencies",
+      "decision": "Implement component co-location with test files, styles, and proper barrel exports following modern React patterns",
+      "tasks": [
+        {
+          "task": "Restructure UI components with co-location",
+          "commands": [
+            "cd src/components/ui",
+            "for component in Button Card Input; do mkdir -p $component; mv $component.tsx $component/; done"
+          ],
+          "diffs": [
+            {
+              "file": "src/components/ui/Button/index.ts", 
+              "content": "export { Button } from './Button';\nexport type { ButtonProps } from './Button';"
+            },
+            {
+              "file": "src/components/ui/Button/Button.test.tsx",
+              "content": "import { render, screen } from '@testing-library/react';\nimport { Button } from './Button';\n\ndescribe('Button', () => {\n  test('renders with correct text', () => {\n    render(<Button>Test Button</Button>);\n    expect(screen.getByRole('button')).toHaveTextContent('Test Button');\n  });\n});"
+            }
+          ]
+        }
+      ],
+      "validation": [
+        "Each component has co-located test file",
+        "Barrel exports work correctly",
+        "Component dependencies are clear"
+      ]
+    },
+    {
+      "priority": "P1",
+      "title": "Enhance TypeScript Configuration for Domain Modeling",
+      "evidence": "TypeScript configuration lacks strict mode features, branded types, and domain modeling patterns. Missing proper type definitions for business domains.",
+      "root_cause": "Basic TypeScript setup doesn't leverage advanced type safety features that prevent runtime errors and improve developer experience",
+      "decision": "Enable strict TypeScript configuration with branded types and domain-specific type modeling",
+      "tasks": [
+        {
+          "task": "Enable strict TypeScript configuration",
+          "commands": [],
+          "diffs": [
+            {
+              "file": "tsconfig.json", 
+              "content": "Add strict: true, noUncheckedIndexedAccess: true, exactOptionalPropertyTypes: true"
+            }
+          ]
+        },
+        {
+          "task": "Implement branded types for domain modeling",
+          "commands": [],
+          "diffs": [
+            {
+              "file": "src/shared/types/branded.ts",
+              "content": "// Branded types for type safety\nexport type Brand<T, K> = T & { __brand: K };\n\nexport type UserId = Brand<string, 'UserId'>;\nexport type ContainerId = Brand<string, 'ContainerId'>;\nexport type SessionId = Brand<string, 'SessionId'>;\n\n// Type guards\nexport const isUserId = (value: string): value is UserId => value.length > 0;\nexport const isContainerId = (value: string): value is ContainerId => value.startsWith('container_');"
+            }
+          ]
+        }
+      ],
+      "validation": [
+        "TypeScript strict mode enabled without errors", 
+        "Branded types prevent type confusion",
+        "Domain models are properly typed"
+      ]
+    },
+    {
+      "priority": "P2",
+      "title": "Optimize Bundle Configuration and Performance",
+      "evidence": "Next.js configuration lacks modern optimization features like dynamic imports, bundle analysis, and tree-shaking optimization",
+      "root_cause": "Basic Next.js setup doesn't leverage advanced bundling and optimization features available in 2025",
+      "decision": "Implement comprehensive bundle optimization with code splitting, tree-shaking, and performance monitoring",
+      "tasks": [
+        {
+          "task": "Enhance Next.js configuration for optimal bundling",
+          "commands": [],
+          "diffs": [
+            {
+              "file": "next.config.cjs",
+              "content": "Add bundle analyzer, optimize CSS, enable SWC minification, configure dynamic imports"
+            }
+          ]
+        },
+        {
+          "task": "Implement dynamic imports for large components",
+          "commands": [],
+          "diffs": [
+            {
+              "file": "src/components/ui/DynamicComponents.tsx",
+              "content": "// Dynamic imports for heavy components\nimport dynamic from 'next/dynamic';\n\nexport const WorkflowBuilder = dynamic(() => import('./WorkflowBuilder'), {\n  loading: () => <div>Loading workflow builder...</div>,\n  ssr: false\n});"
+            }
+          ]
+        }
+      ],
+      "validation": [
+        "Bundle size reduced by >20%",
+        "Lighthouse performance score >90",
+        "Tree-shaking eliminates unused code"
+      ]
+    },
+    {
+      "priority": "P2", 
+      "title": "Implement Modern Development Tooling",
+      "evidence": "Missing modern development tools like strict ESLint rules for architecture, import sorting, and automated quality checks",
+      "root_cause": "Basic tooling setup doesn't enforce architectural patterns or provide optimal developer experience",
+      "decision": "Implement comprehensive tooling with architectural linting, import management, and automated quality gates",
+      "tasks": [
+        {
+          "task": "Configure architectural ESLint rules",
+          "commands": [],
+          "diffs": [
+            {
+              "file": ".eslintrc.json",
+              "content": "Add import/no-restricted-paths rules to enforce feature isolation and unidirectional imports"
+            }
+          ]
+        },
+        {
+          "task": "Add import sorting and organization",
+          "commands": [
+            "yarn add -D eslint-plugin-import eslint-plugin-simple-import-sort"
+          ],
+          "diffs": [
+            {
+              "file": ".eslintrc.json", 
+              "content": "Add simple-import-sort and import organization rules"
+            }
+          ]
+        }
+      ],
+      "validation": [
+        "ESLint enforces architectural boundaries",
+        "Imports are automatically sorted and organized", 
+        "Code quality metrics improve by >30%"
+      ]
+    }
+  ],
+  "global_plan": {
+    "phase_1": "Foundation Work (P0 Issues): Fix test infrastructure, implement feature-based architecture migration, establish proper TypeScript configuration. Focus on core architectural patterns that enable other improvements.",
+    "phase_2": "Enhancement Work (P1 Issues): Implement component co-location patterns, enhance TypeScript domain modeling, establish shared component library patterns. Build on foundation to improve developer experience.",
+    "phase_3": "Optimization Work (P2 Issues): Bundle optimization, performance improvements, advanced tooling setup. Polish and optimize the modernized architecture for production readiness.",
+    "ordering": "Phase 1 must complete before Phase 2 (architectural foundation required). Phase 2 can partially overlap with Phase 3. Test fixes must be first priority to enable CI/CD validation of other changes.",
+    "rollback_strategy": "Each phase maintains backward compatibility. Feature flags control new architecture adoption. Git tags mark stable points for rollback. Database/API contracts remain unchanged during migration."
+  },
+  "knowledge": {
+    "queries_run": [
+      "React architecture patterns 2025",
+      "Feature-based folder structure best practices",
+      "TypeScript strict mode and branded types", 
+      "Next.js 14+ optimization patterns",
+      "Component co-location React patterns"
+    ],
+    "citations": [
+      "Bulletproof React architecture guide",
+      "Next.js 14+ documentation",
+      "React 18+ best practices",
+      "TypeScript 5+ advanced patterns"
+    ],
+    "repo_analysis": "Mixed technical/feature architecture with Next.js 14, React 18, TypeScript 5.3. Has modern foundation but needs architectural modernization. Test infrastructure requires cleanup. Contains comprehensive MCP server implementation with WebContainer integration.",
+    "gaps": [
+      "Team workflow preferences for gradual migration",
+      "Performance budget requirements", 
+      "Deployment environment constraints",
+      "Legacy component usage patterns"
+    ]
+  }
+}
