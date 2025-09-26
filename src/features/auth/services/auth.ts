@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, AuthResponse, ErrorCode, AuthStatusResponse, JWTPayload } from '../types/index.js';
-import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
+// import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
 
 const router = Router();
 
@@ -9,7 +9,7 @@ const router = Router();
  * GET /api/v1/auth/status
  * Enhanced authentication status with token refresh information
  */
-router.get('/status', enhancedAuthMiddleware, createAuthStatusEndpoint());
+// router.get('/status', enhancedAuthMiddleware, createAuthStatusEndpoint());
 
 /**
  * GET /api/v1/auth
@@ -435,9 +435,9 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
     // For MCP OAuth 2.1 compliance with PKCE, generate an authorization code
     // and store the user data for later token exchange
-    const { generateAuthorizationCode, storeAuthCodeData } = await import('../lib/oauthState.js');
+    // const { generateAuthorizationCode, storeAuthCodeData } = await import('../lib/oauthState.js');
 
-    const authCode = generateAuthorizationCode();
+    // const authCode = generateAuthorizationCode();
     const userId = `github:${userData.login}`;
     const scope = 'mcp:tools mcp:resources';
 

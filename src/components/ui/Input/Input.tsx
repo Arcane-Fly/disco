@@ -4,7 +4,7 @@
  */
 
 import React, { forwardRef, useState } from 'react';
-import { theme, getTheme } from '../../types/theme';
+import { theme, getTheme } from '../../../types/theme';
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   variant?: 'default' | 'outlined';
