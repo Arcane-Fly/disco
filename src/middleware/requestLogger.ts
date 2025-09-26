@@ -23,7 +23,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
   // Override res.json to log response
   const originalJson = res.json;
-  res.json = function (body: any) {
+  res.json = function (body: unknown) {
     const duration = Date.now() - start;
 
     // Log response

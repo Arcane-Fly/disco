@@ -8,19 +8,49 @@ export interface AuthStatusResponse {
   authentication_required: boolean;
   available_methods: string[];
   github_oauth: {
+    available?: boolean;
     configured: boolean;
+    has_placeholders?: boolean;
+    login_url?: string | null;
+    callback_url?: string | null;
+    setup_required?: boolean;
     client_id?: string;
     redirect_uri?: string;
+  };
+  api_key_auth?: {
+    available: boolean;
+    login_url: string;
+  };
+  token_verification?: {
+    url: string;
+  };
+  token_refresh?: {
+    url: string;
+  };
+  oauth_discovery?: {
+    authorization_server: string;
+    protected_resource: string;
+  };
+  setup_instructions?: {
+    step_1: string;
+    step_2: string;
+    step_3: string;
+    step_4: string;
+    note: string;
   };
   user_id?: string;
   provider?: string;
   token_expires_at?: number;
+  token_status?: string;
 }
 
 export interface JWTPayload {
   userId: string;
-  provider: string;
+  provider?: string;
   email?: string;
+  sub?: string;
+  username?: string;
+  name?: string;
   iat: number;
   exp: number;
 }
@@ -29,12 +59,15 @@ export interface JWTPayload {
 export interface ContainerSession {
   id: string;
   userId: string;
-  container: any; // WebContainer instance
+  container: any; // WebContainer instance - keeping as any due to external API complexity
   createdAt: Date;
   lastActive: Date;
   repositoryUrl?: string;
   status: 'initializing' | 'ready' | 'error' | 'terminated';
   url?: string;
+  // Extended properties
+  bootstrapConfig?: Record<string, unknown>;
+  sessionId?: string;
 }
 
 export interface ContainerCreateRequest {
@@ -180,7 +213,39 @@ export interface GitPushRequest {
 export interface GitResponse {
   success: boolean;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
+}
+
+// Common API response types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
+}
+
+export interface ErrorResponse {
+  error: string;
+  code?: string;
+  details?: string;
+  timestamp?: string;
+}
+
+// Express middleware types
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    userId: string;
+    email?: string;
+    provider?: string;
+  };
+}
+
+// Container-related types for API responses
+export interface ContainerResponse {
+  containerId: string;
+  status: 'initializing' | 'ready' | 'error' | 'terminated';
+  url?: string;
+  message?: string;
 }
 
 // Authentication types
@@ -194,16 +259,6 @@ export interface AuthResponse {
   userId: string;
 }
 
-export interface JWTPayload {
-  userId: string;
-  iat: number;
-  exp: number;
-  provider?: string;
-  sub?: string;
-  username?: string;
-  name?: string;
-  email?: string;
-}
 
 // API Response types
 export interface APIResponse<T = any> {

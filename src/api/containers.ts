@@ -288,8 +288,8 @@ router.post('/bootstrap', async (req: Request, res: Response) => {
     // Update session with bootstrap config
     if (session.container) {
       // Store bootstrap config in session metadata
-      (session as any).bootstrapConfig = bootstrapConfig;
-      (session as any).sessionId = sessionId;
+      session.bootstrapConfig = bootstrapConfig;
+      session.sessionId = sessionId;
     }
 
     const response = {

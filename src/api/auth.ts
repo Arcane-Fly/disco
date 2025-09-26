@@ -26,9 +26,10 @@ router.get('/', (req: Request, res: Response) => {
   const githubOAuthConfigured = !!(githubClientId && githubClientSecret);
 
   // Check for placeholder values
-  const hasPlaceholders =
+  const hasPlaceholders = Boolean(
     (githubClientId && githubClientId.includes('your-github-client-id')) ||
-    (githubClientSecret && githubClientSecret.includes('your-github-client-secret'));
+    (githubClientSecret && githubClientSecret.includes('your-github-client-secret'))
+  );
 
   const responseData: AuthStatusResponse = {
     authenticated: false,
