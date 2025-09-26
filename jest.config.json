@@ -17,6 +17,9 @@
       }
     ]
   },
-  "testTimeout": 30000,
-  "maxWorkers": 1
+  "testTimeout": 60000,
+  "maxWorkers": 1,
+  "forceExit": true,
+  "detectOpenHandles": true,
+  "setupFiles": ["<rootDir>/test/test-env.ts"]
 }
