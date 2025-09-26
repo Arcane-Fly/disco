@@ -612,7 +612,7 @@ export class MCPEnhancementEngine extends EventEmitter {
     return recommendations;
   }
 
-  private generateStrategicInsights(improvements: { [key: string]: number }): string[] {
+  private generateStrategicInsights(_improvements: { [key: string]: number }): string[] {
     const insights: string[] = [
       'System demonstrates strong potential for 10x improvement across all metrics',
       'AI-powered optimization strategies show highest ROI potential',

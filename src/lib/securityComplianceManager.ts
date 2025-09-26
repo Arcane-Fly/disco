@@ -111,7 +111,7 @@ export class SecurityComplianceManager {
     req: Request,
     action: string,
     resource: string,
-    additionalData?: any
+    _additionalData?: any
   ): Promise<string> {
     const logId = crypto.randomUUID();
     const timestamp = new Date();
@@ -447,11 +447,11 @@ export class SecurityComplianceManager {
     return Math.min(score, 1.0);
   }
 
-  private async detectAnomalies(req: Request, action: string, resource: string): Promise<string[]> {
+  private async detectAnomalies(_req: Request, _action: string, _resource: string): Promise<string[]> {
     const anomalies: string[] = [];
 
     // Unusual user agent
-    const userAgent = req.headers['user-agent'] || '';
+    const userAgent = _req.headers['user-agent'] || '';
     if (userAgent.includes('curl') || userAgent.includes('wget') || userAgent.length < 10) {
       anomalies.push('suspicious_user_agent');
     }
@@ -466,7 +466,7 @@ export class SecurityComplianceManager {
 
   private classifyData(
     resource: string,
-    data: any
+    _data: any
   ): 'public' | 'internal' | 'confidential' | 'restricted' {
     const publicResources = ['health', 'status', 'docs'];
     const confidentialResources = ['users', 'credentials', 'sessions'];
@@ -488,7 +488,7 @@ export class SecurityComplianceManager {
     return 'standard';
   }
 
-  private determineJurisdiction(req: Request): string {
+  private determineJurisdiction(_req: Request): string {
     // Would implement GeoIP lookup for actual jurisdiction determination
     return 'US';
   }
@@ -625,7 +625,7 @@ export class SecurityComplianceManager {
   }
 
   private async analyzeBehavior(
-    req: Request
+    _req: Request
   ): Promise<{ passed: boolean; score: number; reason: string }> {
     // This would implement behavioral analysis based on user patterns
     // For now, return a baseline score
@@ -635,7 +635,7 @@ export class SecurityComplianceManager {
   private async verifyResourceAccess(
     req: Request,
     resource: string,
-    action: string
+    _action: string
   ): Promise<{ passed: boolean; score: number; reason: string }> {
     const user = (req as any).user;
     const dataClass = this.classifyData(resource, req.body);
