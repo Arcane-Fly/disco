@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthRequest, AuthResponse, ErrorCode } from '../types/index.js';
+import { AuthRequest, AuthResponse, ErrorCode, AuthStatusResponse, JWTPayload } from '../types/index.js';
 import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
 
 const router = Router();
@@ -30,7 +30,7 @@ router.get('/', (req: Request, res: Response) => {
     (githubClientId && githubClientId.includes('your-github-client-id')) ||
     (githubClientSecret && githubClientSecret.includes('your-github-client-secret'));
 
-  const responseData: any = {
+  const responseData: AuthStatusResponse = {
     authenticated: false,
     authentication_required: true,
     available_methods: [
@@ -77,7 +77,7 @@ router.get('/', (req: Request, res: Response) => {
   if (hasValidToken) {
     try {
       const token = authHeader.substring(7);
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
       responseData.authenticated = true;
       responseData.user_id = decoded.userId;
       responseData.provider = decoded.provider || 'unknown';

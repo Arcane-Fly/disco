@@ -164,17 +164,39 @@ class RailwayConfigValidator {
     
     if (!this.config) return;
 
-    // Check for build steps
-    if (!this.config.steps?.build) {
-      this.warnings.push('No build step defined in Railway config');
-      this.fixes.push('Add build step: { "commands": ["npm run build"] }');
-    } else {
-      const buildCommands = this.config.steps.build.commands || [];
-      if (!buildCommands.includes('npm run build') && !buildCommands.includes('yarn build')) {
-        this.warnings.push('Build step should include npm run build or yarn build');
-      } else {
-        console.log('✅ Build configuration looks good');
+    // Check for build steps in different config formats
+    let hasBuildSteps = false;
+    
+    // Check railpack.json format (install array with build commands)
+    if (this.config.install && Array.isArray(this.config.install)) {
+      const buildCommands = this.config.install.filter(step => 
+        step.command && (
+          step.command.includes('build:server') || 
+          step.command.includes('build:next') ||
+          step.command.includes('yarn build') ||
+          step.command.includes('npm run build')
+        )
+      );
+      
+      if (buildCommands.length > 0) {
+        hasBuildSteps = true;
+        console.log('✅ Build configuration looks good (railpack.json format)');
       }
+    }
+    
+    // Check traditional Railway format (steps.build)
+    if (!hasBuildSteps && this.config.steps?.build) {
+      const buildCommands = this.config.steps.build.commands || [];
+      if (buildCommands.includes('npm run build') || buildCommands.includes('yarn build')) {
+        hasBuildSteps = true;
+        console.log('✅ Build configuration looks good (traditional format)');
+      }
+    }
+
+    // If no build steps found, add warnings/fixes
+    if (!hasBuildSteps) {
+      this.warnings.push('No build step defined in Railway config');
+      this.fixes.push('Add build step to railpack.json install array or railway config');
     }
 
     // Check package.json for build script
@@ -211,8 +233,15 @@ class RailwayConfigValidator {
     }
 
     // Check for proper Node.js runtime
-    if (this.config.provider !== 'node' && !deploy.base?.image?.includes('node')) {
+    const hasNodeRuntime = this.config.provider === 'node' || 
+                          deploy.base?.image?.includes('node') ||
+                          this.config.packages?.node ||  // railpack.json format
+                          deploy.startCommand?.includes('node');
+                          
+    if (!hasNodeRuntime) {
       this.warnings.push('Consider using Node.js runtime for better Railway integration');
+    } else {
+      console.log('✅ Node.js runtime configured');
     }
   }
 

@@ -106,12 +106,13 @@
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^9.0.7",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^6.13.1",
-    "@typescript-eslint/parser": "^6.13.1",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "autoprefixer": "^10.4.21",
     "axios": "^1.11.0",
     "concurrently": "^9.2.1",
     "eslint": "^8.55.0",
+    "eslint-config-next": "^15.5.4",
     "eslint-config-prettier": "^9.1.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
@@ -122,7 +123,7 @@
     "tailwindcss": "^4.1.13",
     "ts-jest": "^29.1.1",
     "tsx": "^4.6.2",
-    "typescript": "^5.3.3"
+    "typescript": "5.3.3"
   },
   "engines": {
     "node": ">=20.0.0",

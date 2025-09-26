@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: '0 2 * * 1'  # Run weekly on Mondays at 2 AM
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
@@ -32,6 +37,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        # Full git history is not required for CodeQL
+        fetch-depth: 0
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -53,8 +61,18 @@ jobs:
         config-file: ./.github/codeql/codeql-config.yml
         # Additional security and quality queries
         queries: security-extended,security-and-quality
+        # Specify source root to improve analysis
+        source-root: src
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+        upload: true
+        wait-for-processing: true
+
+    - name: Upload CodeQL results to GitHub
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ runner.workspace }}/results/javascript-typescript.sarif
