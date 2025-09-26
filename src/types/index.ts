@@ -2,6 +2,8 @@
 export * from './metrics.js';
 export * from './theme.js';
 
+import type { Request, Response as ExpressResponse, NextFunction } from 'express';
+
 // Auth types
 export interface AuthStatusResponse {
   authenticated: boolean;
@@ -55,18 +57,33 @@ export interface JWTPayload {
   exp: number;
 }
 
+// Common utility types to replace any
+export type UnknownRecord = Record<string, unknown>;
+export type UnknownFunction = (...args: unknown[]) => unknown;
+export type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
+
+// Express-related types
+export interface RequestWithUser extends Request {
+  user?: JWTPayload;
+  body: Record<string, unknown>;
+}
+
+export interface ExpressHandler {
+  (req: RequestWithUser, res: ExpressResponse, next: NextFunction): void | Promise<void>;
+}
+
 // Container types
 export interface ContainerSession {
   id: string;
   userId: string;
-  container: any; // WebContainer instance - keeping as any due to external API complexity
+  container: any; // WebContainer instance - external API, keeping as any for compatibility
   createdAt: Date;
   lastActive: Date;
   repositoryUrl?: string;
   status: 'initializing' | 'ready' | 'error' | 'terminated';
   url?: string;
   // Extended properties
-  bootstrapConfig?: Record<string, unknown>;
+  bootstrapConfig?: UnknownRecord;
   sessionId?: string;
 }
 
@@ -233,11 +250,7 @@ export interface ErrorResponse {
 
 // Express middleware types
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email?: string;
-    provider?: string;
-  };
+  user?: JWTPayload;
 }
 
 // Container-related types for API responses
@@ -261,13 +274,13 @@ export interface AuthResponse {
 
 
 // API Response types
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   status: 'success' | 'error';
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -328,9 +341,62 @@ export interface RAGSearchResult {
 export interface WorkerJob {
   id: string;
   type: 'cleanup' | 'preWarm' | 'backup';
-  data: any;
+  data: UnknownRecord;
   priority: number;
   createdAt: Date;
+}
+
+// Additional utility types for common patterns
+export interface EventHandler {
+  (event: Event): void | Promise<void>;
+}
+
+export interface AsyncEventHandler {
+  (...args: unknown[]): Promise<void>;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings?: string[];
+}
+
+export interface ProcessingResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  metadata?: UnknownRecord;
+}
+
+// Git-related types
+export interface GitCommitInfo {
+  hash: string;
+  message: string;
+  author: string;
+  date: Date;
+  files?: string[];
+}
+
+export interface GitBranchInfo {
+  name: string;
+  current: boolean;
+  commit: string;
+  upstream?: string;
+}
+
+// Terminal/Process types  
+export interface ProcessOptions {
+  cwd?: string;
+  env?: UnknownRecord;
+  timeout?: number;
+  shell?: boolean;
+}
+
+export interface ProcessResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  signal?: string;
 }
 
 // Configuration types

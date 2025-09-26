@@ -1,4 +1,7 @@
-export const metricsHandler = async (req: any, res: any) => {
+import type { Response } from 'express';
+import type { RequestWithUser } from '../types/index.js';
+
+export const metricsHandler = async (req: RequestWithUser, res: Response) => {
   const containerManager = req.app.locals.containerManager || {
     getStats: () => ({ activeSessions: 0 }),
   };

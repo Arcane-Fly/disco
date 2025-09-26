@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -88,7 +89,13 @@ export default function Navigation() {
                   onClick={handleUserMenuToggle}
                 >
                   {user.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.username} className="user-avatar" />
+                    <Image 
+                      src={user.avatar_url} 
+                      alt={user.username} 
+                      className="user-avatar"
+                      width={20}
+                      height={20}
+                    />
                   ) : (
                     <User className="w-5 h-5" />
                   )}
