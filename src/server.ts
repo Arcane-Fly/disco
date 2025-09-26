@@ -32,6 +32,7 @@ import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
+import { mcpRouter } from './api/mcp.js';
 import { enhancedCSPMiddleware, CSPRequest } from './middleware/csp.js';
 
 // Import route handlers
@@ -39,6 +40,7 @@ import { metricsHandler } from './routes/metrics.js';
 
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
+import { flexibleAuthMiddleware } from './middleware/flexibleAuth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import {
   securityAuditMiddleware,
@@ -3419,7 +3421,7 @@ app.options('/mcp', (req, res) => {
 });
 
 // Handle GET requests for HTTP Stream transport (SSE)
-app.get('/mcp', (req, res) => {
+app.get('/mcp', flexibleAuthMiddleware, (req, res) => {
   const acceptHeader = req.headers.accept;
 
   // Check if client wants SSE
@@ -3481,7 +3483,7 @@ app.get('/mcp', (req, res) => {
 });
 
 // Handle POST requests for JSON-RPC
-app.post('/mcp', express.json(), (req, res) => {
+app.post('/mcp', express.json(), flexibleAuthMiddleware, (req, res) => {
   try {
     const { jsonrpc, id, method } = req.body;
 
@@ -4108,6 +4110,7 @@ app.use('/api/v1/performance', authMiddleware, apiLimiter, performanceRouter);
 app.use('/api/v1/security', authMiddleware, apiLimiter, securityRouter);
 app.use('/api/v1/enhancement', authMiddleware, apiLimiter, enhancementRouter);
 app.use('/api/v1/strategic-ux', authMiddleware, apiLimiter, strategicUXRouter);
+app.use('/api/v1/mcp', authMiddleware, apiLimiter, mcpRouter);
 
 // Platform Connectors - Public endpoints for easy integration
 app.use('/', platformConnectorsRouter);

@@ -46,6 +46,7 @@ router.get('/session', (req: Request, res: Response) => {
     res.status(200).json({
       authenticated: true,
       user,
+      token, // Include the token in the response
     });
   } catch (error) {
     console.error('Session verification failed:', error);
