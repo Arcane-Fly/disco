@@ -7,7 +7,6 @@ export default function ApiConfig() {
   const { user, token } = useAuth();
   const [mcpUrl, setMcpUrl] = useState('');
   const [copied, setCopied] = useState(false);
-  const [apiKey, setApiKey] = useState('');
   const [currentToken, setCurrentToken] = useState('');
 
   useEffect(() => {
@@ -17,7 +16,7 @@ export default function ApiConfig() {
       
       if (typeof document !== 'undefined') {
         const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        for (const cookie of cookies) {
           const [name, value] = cookie.trim().split('=');
           if (name === 'auth-token') {
             return value;
@@ -54,26 +53,6 @@ export default function ApiConfig() {
       document.body.removeChild(textarea);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const generateApiKey = async () => {
-    try {
-      const response = await fetch('/api/v1/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ apiKey: `user-${Date.now()}` })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setApiKey(data.data.token);
-      }
-    } catch (error) {
-      console.error('Failed to generate API key:', error);
     }
   };
 
