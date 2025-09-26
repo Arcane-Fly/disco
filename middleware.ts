@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { NextRequest, NextResponse } from 'next/server'
+
 export function middleware(request: NextRequest) {
   // Generate a unique nonce for this request
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
@@ -15,26 +17,8 @@ export function middleware(request: NextRequest) {
     }
   })
   
-  // Only set CSP if not already set by Express (to avoid conflicts)
-  if (!response.headers.get('Content-Security-Policy')) {
-    // Build CSP header with nonce support and Google Fonts
-    const cspHeader = [
-      "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-      `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`,
-      "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' blob: data: https:",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      "upgrade-insecure-requests"
-    ].join('; ')
-    
-    response.headers.set('Content-Security-Policy', cspHeader)
-  }
-  
-  // Add nonce to response headers for potential use by pages
+  // CSP is now handled by next.config.cjs headers() for Railway compatibility
+  // Only add nonce to response headers for potential use by pages
   response.headers.set('X-Nonce', nonce)
   
   return response
