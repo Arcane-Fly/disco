@@ -535,7 +535,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
    * Strategic Enhancement: Semantic analysis of page changes
    */
   private async analyzePageSemantics(
-    page: any,
+    _page: any,
     _testName: string
   ): Promise<SemanticAnalysisResult> {
     const structuralChanges: StructuralChange[] = [];
@@ -615,7 +615,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
   /**
    * Strategic Enhancement: Usability scoring algorithm
    */
-  private async calculateUsabilityScore(page: any, action: UXAutomationAction): Promise<number> {
+  private async calculateUsabilityScore(page: any, _action: UXAutomationAction): Promise<number> {
     let score = 100;
 
     try {
@@ -705,7 +705,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     return false;
   }
 
-  private async checkColorContrast(element: any): Promise<number> {
+  private async checkColorContrast(_element: any): Promise<number> {
     // Simplified contrast calculation - in practice would use more sophisticated color analysis
     // Future enhancement: color contrast calculation using computed styles
     /*
@@ -788,7 +788,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
 
   private async generateJourneyImprovementSuggestions(
     page: any,
-    action: UXAutomationAction
+    _action: UXAutomationAction
   ): Promise<string[]> {
     const suggestions: string[] = [];
 
@@ -808,7 +808,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
 
   private async comparePerformanceMetrics(
     page: any,
-    testName: string
+    _testName: string
   ): Promise<PerformanceComparison> {
     const current = await this.capturePerformanceMetrics(page);
 
@@ -922,7 +922,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
 
   private async performComprehensiveValidation(
     page: any,
-    action: UXAutomationAction
+    _action: UXAutomationAction
   ): Promise<void> {
     // Perform comprehensive page validation including accessibility, performance, and usability
     console.log('🔍 Performing comprehensive validation...');
