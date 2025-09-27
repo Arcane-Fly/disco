@@ -39,13 +39,13 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     // Configure trust proxy safely for tests - only trust loopback
     app.set('trust proxy', 'loopback');
     app.use(express.json());
-    // Add test-specific rate limiting middleware that's less strict
+    // Add test-specific rate limiting middleware that's safe for tests
     const authLimiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // Higher limit for tests to prevent interference
+      max: 10, // Keep the original limit for test functionality
       standardHeaders: true,
       legacyHeaders: false,
-      skip: () => process.env.NODE_ENV === 'test', // Skip rate limiting in tests
+      // Don't skip in tests, but use safer settings
       message: {
         status: 'error',
         error: {
