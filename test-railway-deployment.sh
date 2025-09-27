@@ -51,7 +51,7 @@ fi
 
 # Step 5: Check TypeScript version alignment
 echo "🔍 Verifying TypeScript version alignment..."
-if yarn info typescript version | grep -q "5.9.2"; then
+if yarn info typescript version | grep -q "5.3.3"; then
     echo "✅ TypeScript version correctly resolved"
 else
     echo "❌ FAIL: TypeScript version mismatch"
@@ -60,8 +60,8 @@ fi
 
 # Step 6: Check lockfile alignment
 echo "🔍 Verifying lockfile alignment..."
-if grep -q "typescript@npm:\^5.3.3" yarn.lock; then
-    echo "✅ Lockfile correctly shows typescript@^5.3.3"
+if grep -q "typescript@npm:5.3.3" yarn.lock; then
+    echo "✅ Lockfile correctly shows typescript@5.3.3"
 else
     echo "❌ FAIL: Lockfile still shows incorrect TypeScript version"
     exit 1
