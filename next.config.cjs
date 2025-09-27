@@ -76,24 +76,33 @@ const nextConfig = {
   // Output configuration for proper ES module handling
   output: 'standalone',
   
-  // Enhanced CSP headers for Railway deployment
+  // Enhanced headers for WebContainer and Railway deployment
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
+          // Critical WebContainer headers for SharedArrayBuffer support
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'credentialless',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com", // Allow inline for WebContainer compatibility
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.skypack.dev https://*.webcontainer.io", // WebContainer compatibility
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Allow inline styles for components  
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' blob: data: https: https://avatars.githubusercontent.com", // Explicitly allow GitHub avatars
-              "connect-src 'self' wss: ws: https://webcontainer.io",
+              "connect-src 'self' wss: ws: https://webcontainer.io https://*.webcontainer.io https://*.stackblitz.com",
               "frame-ancestors 'self' https://chat.openai.com https://chatgpt.com https://claude.ai",
-              "worker-src 'self' blob:",
-              "child-src 'self' blob:",
+              "worker-src 'self' blob: https://*.webcontainer.io",
+              "child-src 'self' blob: https://*.webcontainer.io",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

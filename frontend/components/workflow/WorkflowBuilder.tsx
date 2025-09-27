@@ -23,11 +23,13 @@
  * - AR/VR support for immersive workflow visualization
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import CanvasGrid from './CanvasGrid';
+import WebContainerCompatibilityCheck from '../WebContainerCompatibilityCheck';
 import { 
   Play, 
   Square, 
@@ -683,6 +685,14 @@ export const WorkflowBuilder: React.FC = () => {
         </div>
       </div>
 
+      {/* WebContainer Compatibility Check */}
+      <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <WebContainerCompatibilityCheck 
+          showDetails={false}
+          className="mb-0"
+        />
+      </div>
+
       {/* Main Content */}
       <div className="flex-1 flex">
         {/* Node Palette */}
@@ -719,57 +729,60 @@ export const WorkflowBuilder: React.FC = () => {
           </div>
         </div>
 
-        {/* Canvas Area */}
+        {/* Canvas Area with hydration-safe rendering */}
         <div className="flex-1 relative overflow-hidden">
-          <svg
-            ref={svgRef}
-            width="100%"
-            height="100%"
-            className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+          <CanvasGrid 
+            className="absolute inset-0 w-full h-full"
+            onCanvasReady={(canvas) => {
+              console.log('Canvas ready for WebContainer integration');
+            }}
           >
-            {/* Grid background */}
-            <defs>
-              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="1" opacity="0.3"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+            {/* SVG overlay for workflow elements */}
+            <div className="absolute inset-0 w-full h-full" suppressHydrationWarning>
+              <svg
+                ref={svgRef}
+                width="100%"
+                height="100%"
+                className="absolute inset-0"
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                style={{ background: 'transparent' }}
+              >
+                {/* Render connections */}
+                {connections.map(connection => {
+                  const sourceNode = nodes.find(n => n.id === connection.sourceNodeId);
+                  const targetNode = nodes.find(n => n.id === connection.targetNodeId);
+                  
+                  if (sourceNode && targetNode) {
+                    return (
+                      <ConnectionLine
+                        key={connection.id}
+                        connection={connection}
+                        sourceNode={sourceNode}
+                        targetNode={targetNode}
+                        isActive={isRunning}
+                      />
+                    );
+                  }
+                  return null;
+                })}
 
-            {/* Render connections */}
-            {connections.map(connection => {
-              const sourceNode = nodes.find(n => n.id === connection.sourceNodeId);
-              const targetNode = nodes.find(n => n.id === connection.targetNodeId);
-              
-              if (sourceNode && targetNode) {
-                return (
-                  <ConnectionLine
-                    key={connection.id}
-                    connection={connection}
-                    sourceNode={sourceNode}
-                    targetNode={targetNode}
-                    isActive={isRunning}
+                {/* Render nodes */}
+                {nodes.map(node => (
+                  <VisualNode
+                    key={node.id}
+                    node={node}
+                    isSelected={selectedNode?.id === node.id}
+                    onSelect={handleNodeSelect}
+                    _onUpdate={handleNodeUpdate}
+                    onDelete={handleNodeDelete}
+                    onDragStart={handleDragStart}
                   />
-                );
-              }
-              return null;
-            })}
-
-            {/* Render nodes */}
-            {nodes.map(node => (
-              <VisualNode
-                key={node.id}
-                node={node}
-                isSelected={selectedNode?.id === node.id}
-                onSelect={handleNodeSelect}
-                _onUpdate={handleNodeUpdate}
-                onDelete={handleNodeDelete}
-                onDragStart={handleDragStart}
-              />
-            ))}
-          </svg>
+                ))}
+              </svg>
+            </div>
+          </CanvasGrid>
 
           {/* Status overlays */}
           {isRunning && (
