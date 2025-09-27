@@ -136,7 +136,7 @@ const CanvasGrid: React.FC<CanvasGridProps> = ({
         className="absolute inset-0 w-full h-full"
         style={{ 
           background: 'transparent',
-          imageRendering: 'pixelated' // Prevent canvas blur in WebContainer
+          imageRendering: 'crisp-edges' // Prevent canvas blur in WebContainer
         }}
       />
       {canvasReady && children && (
