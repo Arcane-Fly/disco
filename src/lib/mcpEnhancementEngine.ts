@@ -47,6 +47,10 @@ export class MCPEnhancementEngine extends EventEmitter {
   private metrics: EnhancementMetrics[] = [];
   private innovations: InnovationOpportunity[] = [];
   private activeOptimizations = new Set<string>();
+  
+  // Timer references for cleanup
+  private innovationTimer?: NodeJS.Timeout;
+  private reportTimer?: NodeJS.Timeout;
 
   // Future enhancement: baseline metrics for comparison
   /*
@@ -62,7 +66,10 @@ export class MCPEnhancementEngine extends EventEmitter {
   constructor() {
     super();
     this.initializeOptimizationStrategies();
-    this.startContinuousImprovement();
+    // Start continuous improvement only if not in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      this.startContinuousImprovement();
+    }
     console.log('🚀 MCP Enhancement Engine initialized - 10x improvement framework active');
   }
 
@@ -626,7 +633,7 @@ export class MCPEnhancementEngine extends EventEmitter {
 
   private startContinuousImprovement(): void {
     // Run enhancement analysis every hour
-    setInterval(
+    this.innovationTimer = setInterval(
       () => {
         this.analyzeInnovationOpportunities().catch(console.error);
       },
@@ -634,13 +641,30 @@ export class MCPEnhancementEngine extends EventEmitter {
     );
 
     // Generate performance reports every 30 minutes
-    setInterval(
+    this.reportTimer = setInterval(
       () => {
         const report = this.generatePerformanceReport();
         this.emit('performance-report', report);
       },
       30 * 60 * 1000
     );
+  }
+
+  /**
+   * Cleanup method to stop all timers
+   */
+  public shutdown(): void {
+    if (this.innovationTimer) {
+      clearInterval(this.innovationTimer);
+      this.innovationTimer = undefined;
+    }
+    if (this.reportTimer) {
+      clearInterval(this.reportTimer);
+      this.reportTimer = undefined;
+    }
+    // Clear all active optimizations
+    this.activeOptimizations.clear();
+    console.log('🚀 MCP Enhancement Engine shutdown complete');
   }
 
   getInnovationOpportunities(): InnovationOpportunity[] {

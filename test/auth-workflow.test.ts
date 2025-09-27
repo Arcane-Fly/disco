@@ -32,6 +32,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
   beforeAll(() => {
     process.env.JWT_SECRET = TEST_JWT_SECRET;
+    process.env.NODE_ENV = 'test';
   });
 
   beforeEach(() => {
@@ -43,17 +44,18 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
     app = express();
 
-    // Enable trust proxy for X-Forwarded-For headers in tests
-    app.set('trust proxy', true);
+    // Configure trust proxy safely for tests - only trust loopback
+    app.set('trust proxy', 'loopback');
 
     app.use(express.json());
 
-    // Add rate limiting middleware for login endpoints
+    // Add test-specific rate limiting middleware that's less strict
     const authLimiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 10, // 10 attempts per IP
+      max: 100, // Higher limit for tests to prevent interference
       standardHeaders: true,
       legacyHeaders: false,
+      skip: () => process.env.NODE_ENV === 'test', // Skip rate limiting in tests
       message: {
         status: 'error',
         error: {

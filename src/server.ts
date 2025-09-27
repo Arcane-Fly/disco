@@ -58,6 +58,9 @@ import { specs } from './lib/openapi.js';
 import { initializeCollaborationManager } from './lib/collaborationManager.js';
 import { initializeTeamCollaborationManager } from './lib/teamCollaborationManager.js';
 import { metricsService } from './services/metricsService.js';
+import { performanceOptimizer } from './lib/performanceOptimizer.js';
+import { mcpEnhancementEngine } from './lib/mcpEnhancementEngine.js';
+import { enhancedBrowserManager } from './lib/enhanced-browser.js';
 
 // Load environment variables
 dotenv.config();
@@ -4928,6 +4931,18 @@ const gracefulShutdown = async () => {
   await redisSessionManager.shutdown();
   console.log('📝 Redis session manager shutdown complete');
 
+  // Cleanup performance optimizer
+  performanceOptimizer.shutdown();
+  console.log('🚀 Performance optimizer shutdown complete');
+
+  // Cleanup MCP enhancement engine
+  mcpEnhancementEngine.shutdown();
+  console.log('🚀 MCP enhancement engine shutdown complete');
+
+  // Cleanup enhanced browser manager
+  enhancedBrowserManager.destroy();
+  console.log('🌐 Enhanced browser manager shutdown complete');
+
   console.log('✅ Graceful shutdown complete');
   process.exit(0);
 };
@@ -4937,14 +4952,16 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 // Start server - Railway compliance with 0.0.0.0 binding
-server.listen(port, '0.0.0.0', async () => {
-  // Prepare Next.js and ensure data directory exists before starting
-  await prepareNextApp();
-  await ensureDataDirectory();
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(port, '0.0.0.0', async () => {
+    // Prepare Next.js and ensure data directory exists before starting
+    await prepareNextApp();
+    await ensureDataDirectory();
 
-  console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📁 Data directory: ${dataPath}`);
+    console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📁 Data directory: ${dataPath}`);
   // Determine WebContainer integration status using WEBCONTAINER_CLIENT_ID.
   // This variable replaces the previous WEBCONTAINER_API_KEY to align with
   // StackBlitz WebContainer client expectations.
@@ -4974,7 +4991,8 @@ server.listen(port, '0.0.0.0', async () => {
   console.log(
     `🤖 Provider Management: ${process.env.NODE_ENV === 'production' ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}` : `http://localhost:${port}`}/api/v1/providers`
   );
-});
+  });
+}
 
 export { app, io, dataPath };
 

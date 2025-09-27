@@ -51,11 +51,19 @@ export class PerformanceOptimizer {
   private readonly maxPatternHistory = 1000;
   private readonly maxMetricsHistory = 10000;
   private isOptimizationEnabled = true;
+  
+  // Timer references for cleanup
+  private optimizationTimer?: NodeJS.Timeout;
+  private metricsTimer?: NodeJS.Timeout;
+  private scalingTimer?: NodeJS.Timeout;
+  private resourceTimer?: NodeJS.Timeout;
 
   constructor() {
-    // Start optimization cycles
-    this.startOptimizationCycle();
-    this.startMetricsCollection();
+    // Start optimization cycles only if not in test environment
+    if (process.env.NODE_ENV !== 'test') {
+      this.startOptimizationCycle();
+      this.startMetricsCollection();
+    }
     console.log('🚀 Performance Optimizer initialized - Smart scaling and prewarming enabled');
   }
 
@@ -554,7 +562,7 @@ export class PerformanceOptimizer {
 
   private startOptimizationCycle(): void {
     // Run optimization cycle every 5 minutes
-    setInterval(
+    this.optimizationTimer = setInterval(
       () => {
         this.analyzeUsagePatternsAndPrewarm().catch(console.error);
       },
@@ -562,7 +570,7 @@ export class PerformanceOptimizer {
     );
 
     // Run scaling analysis every 2 minutes
-    setInterval(
+    this.scalingTimer = setInterval(
       () => {
         this.analyzeAndScale().catch(console.error);
       },
@@ -570,7 +578,7 @@ export class PerformanceOptimizer {
     );
 
     // Run resource optimization every 10 minutes
-    setInterval(
+    this.resourceTimer = setInterval(
       () => {
         this.optimizeResourceUsage().catch(console.error);
       },
@@ -580,7 +588,7 @@ export class PerformanceOptimizer {
 
   private startMetricsCollection(): void {
     // Collect metrics every 30 seconds
-    setInterval(async () => {
+    this.metricsTimer = setInterval(async () => {
       try {
         const metrics = await this.collectCurrentMetrics();
         this.recordMetrics(metrics);
@@ -588,6 +596,30 @@ export class PerformanceOptimizer {
         console.error('Metrics collection failed:', error);
       }
     }, 30 * 1000);
+  }
+
+  /**
+   * Cleanup method to stop all timers
+   */
+  public shutdown(): void {
+    if (this.optimizationTimer) {
+      clearInterval(this.optimizationTimer);
+      this.optimizationTimer = undefined;
+    }
+    if (this.scalingTimer) {
+      clearInterval(this.scalingTimer);
+      this.scalingTimer = undefined;
+    }
+    if (this.resourceTimer) {
+      clearInterval(this.resourceTimer);
+      this.resourceTimer = undefined;
+    }
+    if (this.metricsTimer) {
+      clearInterval(this.metricsTimer);
+      this.metricsTimer = undefined;
+    }
+    this.isOptimizationEnabled = false;
+    console.log('🚀 Performance Optimizer shutdown complete');
   }
 }
 
