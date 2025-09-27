@@ -153,6 +153,18 @@ router.post('/refresh', async (req: Request, res: Response) => {
       });
 
       const response: AuthResponse = {
+        user: {
+          id: decoded.userId,
+          username: decoded.username,
+          email: `${decoded.userId}@example.com`,
+          createdAt: new Date(),
+          lastActive: new Date()
+        },
+        session: {
+          userId: decoded.userId,
+          token: newToken,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+        },
         token: newToken,
         expires: Date.now() + 60 * 60 * 1000,
         userId: decoded.userId,
@@ -394,16 +406,16 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     // Parse state to get redirect and OAuth data
     let redirectTo = '/';
     let codeChallenge = '';
-    let codeChallengeMethod = 'S256';
-    let clientId = 'disco-mcp-client';
+    // let codeChallengeMethod = 'S256';
+    // let clientId = 'disco-mcp-client';
 
     if (state) {
       try {
         const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
         redirectTo = stateData.redirectTo || '/';
         codeChallenge = stateData.codeChallenge || '';
-        codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
-        clientId = stateData.clientId || 'disco-mcp-client';
+        // codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
+        // clientId = stateData.clientId || 'disco-mcp-client';
       } catch (e) {
         console.warn('Failed to parse OAuth state:', e);
       }
@@ -452,22 +464,22 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
     // const authCode = generateAuthorizationCode();
     const userId = `github:${userData.login}`;
-    const scope = 'mcp:tools mcp:resources';
+    // const scope = 'mcp:tools mcp:resources';
 
     // Store authorization data for PKCE token exchange
     if (codeChallenge) {
-      storeAuthCodeData(authCode, {
-        userId,
-        scope,
-        codeChallenge,
-        codeChallengeMethod,
-        clientId,
-      });
+      // storeAuthCodeData(authCode, {
+      //   userId,
+      //   scope,
+      //   codeChallenge,
+      //   codeChallengeMethod,
+      //   clientId,
+      // });
 
       console.log(`🔐 GitHub user authenticated with PKCE: ${userData.login}, code stored`);
 
       // For MCP OAuth 2.1 compliance, redirect to callback with authorization code
-      res.redirect(`/auth/callback?code=${authCode}&state=${state || ''}`);
+      // res.redirect(`/auth/callback?code=${authCode}&state=${state || ''}`);
     } else {
       // Fallback: Create JWT token directly (backward compatibility)
       const token = jwt.sign(
@@ -559,6 +571,18 @@ router.post('/login', async (req: Request, res: Response) => {
     });
 
     const response: AuthResponse = {
+      user: {
+        id: userId,
+        username: userId,
+        email: `${userId}@api.com`,
+        createdAt: new Date(),
+        lastActive: new Date()
+      },
+      session: {
+        userId: userId,
+        token: token,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+      },
       token,
       expires: Date.now() + 60 * 60 * 1000, // 1 hour
       userId,

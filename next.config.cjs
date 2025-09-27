@@ -2,16 +2,22 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  poweredByHeader: false,
   experimental: {
     esmExternals: true,
     serverComponentsExternalPackages: ['sharp'],
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
-  // Fix image optimization for Railway deployment
+  // Image optimization for Railway deployment
   images: {
     domains: ['avatars.githubusercontent.com'],
     unoptimized: true, // Disable optimization for Railway
+    formats: ['image/avif', 'image/webp'],
   },
-  webpack: (config, { isServer }) => {
+  // Compression and optimization
+  compress: true,
+  
+  webpack: (config, { isServer, dev }) => {
     // Fix for the "module is not defined in ES module scope" error
     config.module.rules.push({
       test: /\.m?js$/,
@@ -30,10 +36,46 @@ const nextConfig = {
       };
     }
 
+    // Bundle optimization
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: 10,
+            reuseExistingChunk: true,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            priority: 5,
+            reuseExistingChunk: true,
+          },
+          ui: {
+            name: 'ui',
+            test: /[\\/]components[\\/]ui[\\/]/,
+            priority: 20,
+            reuseExistingChunk: true,
+          },
+        },
+      },
+    };
+
+    // Tree shaking optimization
+    if (!dev) {
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
+    }
+
     return config;
   },
+  
   // Output configuration for proper ES module handling
   output: 'standalone',
+  
   // Enhanced CSP headers for Railway deployment
   async headers() {
     return [
@@ -57,6 +99,18 @@ const nextConfig = {
               "form-action 'self'",
               'upgrade-insecure-requests',
             ].join('; '),
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
           },
         ],
       },

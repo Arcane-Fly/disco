@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWTPayload, ErrorCode } from '../types/index.js';
 
-// Extend Express Request type to include user
+// Extend Express Request type to include user for this feature
 declare module 'express-serve-static-core' {
   interface Request {
-    user?: JWTPayload;
+    featureAuthUser?: JWTPayload;
   }
 }
 
@@ -51,7 +51,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
-      req.user = decoded;
+      req.featureAuthUser = decoded;
       next();
     } catch (jwtError) {
       return res.status(401).json({

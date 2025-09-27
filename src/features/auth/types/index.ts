@@ -48,6 +48,12 @@ export interface AuthStatusResponse {
   token_expires_at?: number;
   token_status?: string;
   available_methods?: string[];
+  github_oauth?: any;
+  api_key_auth?: any;
+  token_verification?: any;
+  token_refresh?: any;
+  oauth_discovery?: any;
+  [key: string]: any; // Allow additional properties for flexibility
 }
 
 export interface JWTPayload {
@@ -65,5 +71,6 @@ export enum ErrorCode {
   INVALID_TOKEN = 'INVALID_TOKEN',
   AUTH_FAILED = 'AUTH_FAILED',
   INVALID_REQUEST = 'INVALID_REQUEST',
-  INTERNAL_ERROR = 'INTERNAL_ERROR'
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  RATE_LIMITED = 'RATE_LIMITED'
 }
