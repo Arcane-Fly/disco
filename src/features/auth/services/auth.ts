@@ -318,6 +318,18 @@ router.get('/github', (req: Request, res: Response) => {
     })
   ).toString('base64');
 
+  // Sanitize user input for logging to prevent log injection
+  function sanitizeForLog(value: any): string {
+    if (typeof value !== "string") {
+      value = String(value ?? "");
+    }
+    // Remove CR and LF characters
+    return value.replace(/[\r\n]/g, "");
+  }
+
+  const rawRedirect = req.query.redirect_to || req.headers.referer || '/';
+  const safeRedirect = sanitizeForLog(rawRedirect);
+
   const githubUrl =
     `https://github.com/login/oauth/authorize?` +
     `client_id=${clientId}&` +
@@ -326,7 +338,7 @@ router.get('/github', (req: Request, res: Response) => {
     `state=${state}`;
 
   console.log(
-    `🔐 Initiating GitHub OAuth flow for redirect: ${req.query.redirect_to || req.headers.referer || '/'}`
+    `🔐 Initiating GitHub OAuth flow for redirect: ${safeRedirect}`
   );
   res.redirect(githubUrl);
 });
