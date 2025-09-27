@@ -134,10 +134,10 @@ export const WebContainerCompatibilityCheck: React.FC<{
       onCompatibilityChange?.(isCompatible);
     };
 
-    // Add a small delay to prevent hydration issues
-    const timer = setTimeout(checkCompatibility, 100);
+    // Run compatibility check after component mounts (client-side)
+    checkCompatibility();
     
-    return () => clearTimeout(timer);
+    // No cleanup needed
   }, [onCompatibilityChange]);
 
   if (state.loading) {
