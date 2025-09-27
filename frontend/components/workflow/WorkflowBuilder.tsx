@@ -23,7 +23,7 @@
  * - AR/VR support for immersive workflow visualization
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import { Button } from '../ui/Button';
@@ -733,7 +733,7 @@ export const WorkflowBuilder: React.FC = () => {
         <div className="flex-1 relative overflow-hidden">
           <CanvasGrid 
             className="absolute inset-0 w-full h-full"
-            onCanvasReady={(canvas) => {
+            onCanvasReady={(_canvas) => {
               console.log('Canvas ready for WebContainer integration');
             }}
           >

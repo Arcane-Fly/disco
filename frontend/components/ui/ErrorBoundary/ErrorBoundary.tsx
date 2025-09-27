@@ -69,7 +69,7 @@ interface DefaultErrorFallbackProps {
   resetError: () => void;
 }
 
-function DefaultErrorFallback({ error, errorInfo, resetError }: DefaultErrorFallbackProps) {
+function DefaultErrorFallback({ error, errorInfo: _, resetError }: DefaultErrorFallbackProps) {
   const isWebContainerError = error?.message.includes('WebContainer') || error?.message.includes('SharedArrayBuffer');
   const isHydrationError = error?.message.includes('Hydration') || error?.message.includes('hydration');
   

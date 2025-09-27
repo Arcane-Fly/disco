@@ -48,18 +48,13 @@ export const WorkflowBuilder = dynamic(() =>
   ssr: false
 });
 
-// Canvas Grid - WebContainer-compatible canvas component
-export const CanvasGrid = dynamic(() => 
-  import('../components/workflow/CanvasGrid'), {
-  loading: () => <HydrationSafeLoading minimal />,
-  ssr: false
-});
+// Canvas Grid - WebContainer-compatible canvas component (available as direct import)
+// Note: CanvasGrid is used directly in WorkflowBuilder, not as dynamic import to avoid conflicts
 
 // Create a default export object
 const DynamicComponents = {
   AnalyticsDashboard,
   WorkflowBuilder,
-  CanvasGrid,
 };
 
 export default DynamicComponents;
