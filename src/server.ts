@@ -62,6 +62,19 @@ import { performanceOptimizer } from './lib/performanceOptimizer.js';
 import { mcpEnhancementEngine } from './lib/mcpEnhancementEngine.js';
 import { enhancedBrowserManager } from './lib/enhanced-browser.js';
 
+// Transport interface for manifest
+interface ManifestTransport {
+  url?: string;
+  sse_endpoint?: string;
+  messages_endpoint?: string;
+  [key: string]: unknown;
+}
+
+// Helper function to register authenticated API routes with rate limiting
+function registerAPIRoute(path: string, router: express.Router) {
+  app.use(`/api/v1/${path}`, authMiddleware, apiLimiter, router);
+}
+
 // Load environment variables
 dotenv.config();
 
@@ -331,7 +344,7 @@ app.use(performanceMonitor);
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const userAgent = req.get('User-Agent') || 'unknown';
-  const ip = req.ip || (req.connection as any)?.remoteAddress || 'unknown';
+  const ip = req.ip || (req.connection as unknown as { remoteAddress?: string })?.remoteAddress || 'unknown';
 
   // Security monitoring flags
   const securityFlags: string[] = [];
@@ -357,7 +370,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Override res.json to log response
   const originalJson = res.json.bind(res);
-  res.json = function (body: any) {
+  res.json = function (body: unknown) {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
     const statusIcon =
@@ -418,7 +431,7 @@ app.get('/mcp-manifest.json', async (_req, res) => {
     manifest.authentication.token_endpoint = `${domain}/oauth/token`;
 
     // Update transport URLs
-    manifest.transports.forEach((transport: any) => {
+    manifest.transports.forEach((transport: ManifestTransport) => {
       if (transport.url) {
         transport.url = transport.url.replace('https://disco-mcp.up.railway.app', domain);
       }
@@ -4100,20 +4113,21 @@ app.get('/api/v1', (req: Request, res: Response) => {
 });
 app.use('/api/v1/auth', authLimiter, authRouter);
 app.use('/api/v1/auth', sessionRouter); // Session endpoints (no auth required for session check)
-app.use('/api/v1/containers', authMiddleware, apiLimiter, containersRouter);
-app.use('/api/v1/files', authMiddleware, apiLimiter, filesRouter);
-app.use('/api/v1/terminal', authMiddleware, apiLimiter, terminalRouter);
-app.use('/api/v1/git', authMiddleware, apiLimiter, gitRouter);
-app.use('/api/v1/computer-use', authMiddleware, apiLimiter, computerUseRouter);
-app.use('/api/v1/rag', authMiddleware, apiLimiter, ragRouter);
-app.use('/api/v1/collaboration', authMiddleware, apiLimiter, collaborationRouter);
-app.use('/api/v1/teams', authMiddleware, apiLimiter, teamCollaborationRouter);
-app.use('/api/v1/providers', authMiddleware, apiLimiter, providersRouter);
-app.use('/api/v1/performance', authMiddleware, apiLimiter, performanceRouter);
-app.use('/api/v1/security', authMiddleware, apiLimiter, securityRouter);
-app.use('/api/v1/enhancement', authMiddleware, apiLimiter, enhancementRouter);
-app.use('/api/v1/strategic-ux', authMiddleware, apiLimiter, strategicUXRouter);
-app.use('/api/v1/mcp', authMiddleware, apiLimiter, mcpRouter);
+// Register authenticated API routes with consistent middleware
+registerAPIRoute('containers', containersRouter);
+registerAPIRoute('files', filesRouter);
+registerAPIRoute('terminal', terminalRouter);
+registerAPIRoute('git', gitRouter);
+registerAPIRoute('computer-use', computerUseRouter);
+registerAPIRoute('rag', ragRouter);
+registerAPIRoute('collaboration', collaborationRouter);
+registerAPIRoute('teams', teamCollaborationRouter);
+registerAPIRoute('providers', providersRouter);
+registerAPIRoute('performance', performanceRouter);
+registerAPIRoute('security', securityRouter);
+registerAPIRoute('enhancement', enhancementRouter);
+registerAPIRoute('strategic-ux', strategicUXRouter);
+registerAPIRoute('mcp', mcpRouter);
 
 // Platform Connectors - Public endpoints for easy integration
 app.use('/', platformConnectorsRouter);
