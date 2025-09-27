@@ -23,18 +23,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
-    // Handle WebContainer-specific errors
-    if (error.message.includes('WebContainer') || error.message.includes('SharedArrayBuffer')) {
-      console.warn('WebContainer compatibility issue detected:', error.message);
-    }
-    
     // Suppress hydration warnings in development
     if (process.env.NODE_ENV === 'development' && 
         (error.message.includes('Hydration') || error.message.includes('hydration'))) {
       console.warn('Hydration mismatch suppressed:', error.message);
       return;
+    }
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Handle WebContainer-specific errors
+    if (error.message.includes('WebContainer') || error.message.includes('SharedArrayBuffer')) {
+      console.warn('WebContainer compatibility issue detected:', error.message);
     }
     
     this.setState({ errorInfo });
