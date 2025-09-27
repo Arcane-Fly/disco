@@ -3,6 +3,7 @@ import React from 'react';
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
+  errorInfo?: React.ErrorInfo;
 }
 
 interface ErrorBoundaryProps {
@@ -23,11 +24,25 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    // Handle WebContainer-specific errors
+    if (error.message.includes('WebContainer') || error.message.includes('SharedArrayBuffer')) {
+      console.warn('WebContainer compatibility issue detected:', error.message);
+    }
+    
+    // Suppress hydration warnings in development
+    if (process.env.NODE_ENV === 'development' && 
+        (error.message.includes('Hydration') || error.message.includes('hydration'))) {
+      console.warn('Hydration mismatch suppressed:', error.message);
+      return;
+    }
+    
+    this.setState({ errorInfo });
     this.props.onError?.(error, errorInfo);
   }
 
   resetError = () => {
-    this.setState({ hasError: false, error: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
   render() {
@@ -37,7 +52,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         return <Fallback error={this.state.error} resetError={this.resetError} />;
       }
 
-      return <DefaultErrorFallback error={this.state.error} resetError={this.resetError} />;
+      return <DefaultErrorFallback 
+        error={this.state.error} 
+        errorInfo={this.state.errorInfo}
+        resetError={this.resetError} 
+      />;
     }
 
     return this.props.children;
@@ -46,12 +65,16 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
 interface DefaultErrorFallbackProps {
   error?: Error;
+  errorInfo?: React.ErrorInfo;
   resetError: () => void;
 }
 
-function DefaultErrorFallback({ error, resetError }: DefaultErrorFallbackProps) {
+function DefaultErrorFallback({ error, errorInfo, resetError }: DefaultErrorFallbackProps) {
+  const isWebContainerError = error?.message.includes('WebContainer') || error?.message.includes('SharedArrayBuffer');
+  const isHydrationError = error?.message.includes('Hydration') || error?.message.includes('hydration');
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full">
           <svg
@@ -70,19 +93,37 @@ function DefaultErrorFallback({ error, resetError }: DefaultErrorFallbackProps) 
         </div>
         <div className="mt-4 text-center">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            Something went wrong
+            {isWebContainerError ? 'WebContainer Error' : 
+             isHydrationError ? 'Rendering Issue' : 
+             'Something went wrong'}
           </h3>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            An unexpected error occurred. Please try refreshing the page.
+            {isWebContainerError ? 
+              'WebContainer features may not be fully supported in this environment.' :
+             isHydrationError ?
+              'A rendering mismatch occurred. This is usually harmless.' :
+              'An unexpected error occurred. Please try refreshing the page.'}
           </p>
-          {error && (
+          
+          {isWebContainerError && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md text-left">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">Troubleshooting:</h4>
+              <ul className="mt-2 text-xs text-blue-700 dark:text-blue-400 space-y-1">
+                <li>• Ensure your browser supports SharedArrayBuffer</li>
+                <li>• Try using Chrome or Firefox with HTTPS</li>
+                <li>• Check if cross-origin isolation is enabled</li>
+              </ul>
+            </div>
+          )}
+          
+          {error && !isHydrationError && (
             <details className="mt-4 text-left">
               <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                 Error details
               </summary>
-              <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-800 dark:text-gray-200 overflow-auto">
+              <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-800 dark:text-gray-200 overflow-auto max-h-32">
                 {error.message}
-                {error.stack && `\n\n${error.stack}`}
+                {error.stack && `\n\n${error.stack.split('\n').slice(0, 5).join('\n')}`}
               </pre>
             </details>
           )}
