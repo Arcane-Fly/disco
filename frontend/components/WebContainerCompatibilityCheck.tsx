@@ -90,21 +90,14 @@ export const WebContainerCompatibilityCheck: React.FC<{
       }
 
       // Check cross-origin isolation
-      if (typeof window !== 'undefined') {
-        try {
-          // This will throw if not cross-origin isolated
-          new SharedArrayBuffer(1);
-        } catch (error) {
-          if (error instanceof TypeError && error.message.includes('SharedArrayBuffer')) {
-            issues.push({
-              type: 'warning',
-              feature: 'Cross-Origin Isolation',
-              message: 'Cross-origin isolation may not be properly configured',
-              recommendation: 'Ensure proper COEP and COOP headers are set',
-              fixable: true
-            });
-          }
-        }
+      if (typeof window !== 'undefined' && !window.crossOriginIsolated) {
+        issues.push({
+          type: 'warning',
+          feature: 'Cross-Origin Isolation',
+          message: 'Cross-origin isolation is not enabled',
+          recommendation: 'Ensure proper COEP and COOP headers are set',
+          fixable: true
+        });
       }
 
       // Check for third-party cookie restrictions
