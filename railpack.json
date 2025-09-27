@@ -2,8 +2,7 @@
   "version": "1",
   "packages": {
     "python": "3.12.11",
-    "node": "22.11.0",
-    "yarn": "4.9.2"
+    "node": "22.11.0"
   },
   "install": [
     {
@@ -15,21 +14,17 @@
       "dependsOn": ["requirements.txt", "pyproject.toml"]
     },
     {
-      "command": "corepack enable && corepack prepare yarn@4.9.2 --activate",
-      "description": "Enable Yarn 4"
-    },
-    {
-      "command": "yarn install --check-cache",
-      "dependsOn": ["package.json", "yarn.lock"],
+      "command": "npm install --production=false",
+      "dependsOn": ["package.json", "package-lock.json"],
       "cache": "node_modules"
     },
     {
-      "command": "yarn build:server",
+      "command": "npm run build:server",
       "dependsOn": ["src/"],
       "output": "dist/"
     },
     {
-      "command": "yarn build:next",
+      "command": "npm run build:next",
       "dependsOn": ["frontend/"],
       "output": "frontend/.next"
     }

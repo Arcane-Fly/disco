@@ -33,12 +33,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
           
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm install
         
       - name: Install Railway CLI
         run: |
@@ -46,10 +44,10 @@ jobs:
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
           
       - name: Validate TypeScript compilation
-        run: yarn build
+        run: npm run build
         
       - name: Run ESLint
-        run: yarn lint
+        run: npm run lint
         
       - name: Validate Railway configuration
         run: |
