@@ -1,7 +1,17 @@
 import React from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { cn } from '../../utils/cn';
+// Simplified card components for now
+const Card = ({ children, className, ...props }: { children: React.ReactNode; className?: string }) => 
+  <div className={`bg-white dark:bg-gray-800 rounded-lg border shadow-sm ${className || ''}`} {...props}>{children}</div>;
+const CardHeader = ({ children, className, ...props }: { children: React.ReactNode; className?: string }) => 
+  <div className={`p-6 pb-2 ${className || ''}`} {...props}>{children}</div>;
+const CardTitle = ({ children, className, ...props }: { children: React.ReactNode; className?: string }) => 
+  <h3 className={`text-lg font-semibold ${className || ''}`} {...props}>{children}</h3>;
+const CardContent = ({ children, className, ...props }: { children: React.ReactNode; className?: string }) => 
+  <div className={`p-6 pt-2 ${className || ''}`} {...props}>{children}</div>;
+
+// Simple className utility
+const cn = (...classes: (string | undefined)[]) => classes.filter(Boolean).join(' ');
 
 interface MetricCardProps {
   title: string;
