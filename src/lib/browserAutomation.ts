@@ -14,11 +14,13 @@ interface BrowserSession {
  */
 class BrowserAutomationManager {
   private sessions: Map<string, BrowserSession> = new Map();
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval?: NodeJS.Timeout;
 
   constructor() {
-    // Clean up inactive browser sessions every 5 minutes
-    this.cleanupInterval = setInterval(() => this.cleanupInactiveSessions(), 5 * 60 * 1000);
+    // Clean up inactive browser sessions every 5 minutes (skip in tests)
+    if (process.env.NODE_ENV !== 'test') {
+      this.cleanupInterval = setInterval(() => this.cleanupInactiveSessions(), 5 * 60 * 1000);
+    }
   }
 
   /**

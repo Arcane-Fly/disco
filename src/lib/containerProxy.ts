@@ -121,8 +121,10 @@ export class ContainerProxy extends EventEmitter {
       void this.setupRedis(this.config.redisUrl);
     }
 
-    // Start cleanup interval
-    this.startCleanupInterval();
+    // Start cleanup interval (skip in tests)
+    if (process.env.NODE_ENV !== 'test') {
+      this.startCleanupInterval();
+    }
   }
 
   /**

@@ -29,7 +29,7 @@ interface ContainerPool {
 class ContainerManager {
   private sessions: Map<string, ContainerSession> = new Map();
   private pool: ContainerPool = { ready: [], initializing: [] };
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval?: NodeJS.Timeout;
   private readonly maxInactiveMinutes: number;
   private readonly maxContainers: number;
   private readonly poolSize: number;
@@ -65,8 +65,10 @@ class ContainerManager {
       console.log('✅ Container creation circuit breaker closed - service recovered');
     });
 
-    // Start cleanup interval (check every 5 minutes)
-    this.cleanupInterval = setInterval(() => this.cleanupInactive(), 5 * 60 * 1000);
+    // Start cleanup interval (check every 5 minutes) - skip in tests
+    if (process.env.NODE_ENV !== 'test') {
+      this.cleanupInterval = setInterval(() => this.cleanupInactive(), 5 * 60 * 1000);
+    }
 
     // Only pre-warm container pool in browser environments
     if (isBrowserEnvironment) {

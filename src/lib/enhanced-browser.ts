@@ -40,17 +40,19 @@ export interface VisualRegressionResult {
 
 export class EnhancedBrowserAutomationManager {
   private sessions: Map<string, BrowserSession> = new Map();
-  private sessionCleanupInterval: NodeJS.Timeout;
+  private sessionCleanupInterval?: NodeJS.Timeout;
   private baselineScreenshots: Map<string, Buffer> = new Map();
 
   constructor() {
-    // Clean up inactive sessions every 30 minutes
-    this.sessionCleanupInterval = setInterval(
-      () => {
-        this.cleanupInactiveSessions();
-      },
-      30 * 60 * 1000
-    );
+    // Clean up inactive sessions every 30 minutes (skip in tests)
+    if (process.env.NODE_ENV !== 'test') {
+      this.sessionCleanupInterval = setInterval(
+        () => {
+          this.cleanupInactiveSessions();
+        },
+        30 * 60 * 1000
+      );
+    }
   }
 
   async createSession(
@@ -529,7 +531,9 @@ export class EnhancedBrowserAutomationManager {
   }
 
   destroy(): void {
-    clearInterval(this.sessionCleanupInterval);
+    if (this.sessionCleanupInterval) {
+      clearInterval(this.sessionCleanupInterval);
+    }
 
     // Close all sessions
     for (const sessionId of this.sessions.keys()) {

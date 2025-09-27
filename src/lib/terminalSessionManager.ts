@@ -23,11 +23,13 @@ class TerminalSessionManager {
   private sessions: Map<string, TerminalSession> = new Map();
   private readonly SESSION_TIMEOUT_MINUTES = 60; // Sessions expire after 1 hour of inactivity
   private readonly MAX_HISTORY_ENTRIES = 1000; // Maximum command history per session
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval?: NodeJS.Timeout;
 
   constructor() {
-    // Start cleanup interval (check every 10 minutes)
-    this.cleanupInterval = setInterval(() => this.cleanupExpiredSessions(), 10 * 60 * 1000);
+    // Start cleanup interval (check every 10 minutes) - skip in tests
+    if (process.env.NODE_ENV !== 'test') {
+      this.cleanupInterval = setInterval(() => this.cleanupExpiredSessions(), 10 * 60 * 1000);
+    }
     console.log('🖥️  Terminal Session Manager initialized');
   }
 
