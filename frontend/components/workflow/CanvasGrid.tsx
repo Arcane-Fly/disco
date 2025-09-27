@@ -32,33 +32,6 @@ const CanvasGrid: React.FC<CanvasGridProps> = ({
     setIsClient(true);
   }, []);
 
-  // Initialize canvas grid when client-side mounted
-  useEffect(() => {
-    if (!isClient || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) return;
-
-    // Set canvas dimensions
-    const container = containerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      canvas.width = rect.width || width;
-      canvas.height = rect.height || height;
-    } else {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    // Draw grid
-    drawGrid(ctx, canvas.width, canvas.height, gridSize);
-    
-    setCanvasReady(true);
-    onCanvasReady?.(canvas);
-  }, [isClient, width, height, gridSize, onCanvasReady]);
-
   const drawGrid = useCallback((
     ctx: CanvasRenderingContext2D, 
     canvasWidth: number, 
@@ -90,6 +63,33 @@ const CanvasGrid: React.FC<CanvasGridProps> = ({
 
     ctx.globalAlpha = 1;
   }, []);
+
+  // Initialize canvas grid when client-side mounted
+  useEffect(() => {
+    if (!isClient || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+
+    // Set canvas dimensions
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width || width;
+      canvas.height = rect.height || height;
+    } else {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    // Draw grid
+    drawGrid(ctx, canvas.width, canvas.height, gridSize);
+    
+    setCanvasReady(true);
+    onCanvasReady?.(canvas);
+  }, [isClient, width, height, gridSize, onCanvasReady, drawGrid]);
 
   // Handle window resize
   useEffect(() => {
