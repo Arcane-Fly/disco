@@ -108,7 +108,13 @@ export const WebContainerCompatibilityCheck: React.FC<{
       }
 
       // Check for third-party cookie restrictions
-      if (typeof window !== 'undefined' && window.location.hostname.includes('webcontainer.io')) {
+      if (
+        typeof window !== 'undefined' &&
+        (
+          window.location.hostname === 'webcontainer.io' ||
+          window.location.hostname.endsWith('.webcontainer.io')
+        )
+      ) {
         issues.push({
           type: 'info',
           feature: 'Third-Party Cookies',
