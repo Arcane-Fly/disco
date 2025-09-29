@@ -4,8 +4,8 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import type { ApiResponse, ApiError, AuthenticatedUser } from '../types/api';
-import type { ValidationResult } from '../types';
+import type { ApiResponse, ApiError, AuthenticatedUser } from './api';
+import type { ValidationResult } from './index';
 
 // Enhanced Request interface with type safety
 export interface TypedRequest<
