@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import RateLimit from 'express-rate-limit';
 import type { 
   AsyncRouteHandler, 
   TypedRequest, 
@@ -21,6 +22,18 @@ import {
 } from '../../shared/types/express';
 
 const router = Router();
+
+// Set up rate limiter for refresh token endpoint (max 5 requests/minute per IP)
+const refreshLimiter = RateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    status: 'error',
+    error: 'Too many requests. Please try again later.',
+  },
+  standardHeaders: true, // Return rate limit info in the RateLimit-* headers
+  legacyHeaders: false, // Disable the X-RateLimit-* headers
+});
 
 // Define specific types for auth routes
 interface RefreshTokenBody {
@@ -183,7 +196,7 @@ const githubAuthHandler: AsyncRouteHandler<{ redirectUrl: string }, never, { red
 };
 
 // Apply the fixed handlers to routes
-router.post('/refresh', asyncHandler(refreshTokenHandler));
+router.post('/refresh', refreshLimiter, asyncHandler(refreshTokenHandler));
 router.post('/login', asyncHandler(loginHandler));
 router.get('/verify', asyncHandler(verifyTokenHandler));
 router.get('/github', asyncHandler(githubAuthHandler));
