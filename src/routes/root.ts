@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-export const rootHandler = (req: Request, res: Response) => {
+export const rootHandler = (_req: Request, res: Response): void => {
   res.json({
     name: 'Disco MCP Server',
     version: process.env.npm_package_version || '1.0.0',
