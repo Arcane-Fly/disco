@@ -3,6 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   poweredByHeader: false,
+  // Disable automatic CSP nonce generation to prevent 'unsafe-inline' blocking
+  generateEtags: false,
   experimental: {
     esmExternals: true,
     serverComponentsExternalPackages: ['sharp'],
@@ -78,6 +80,11 @@ const nextConfig = {
   
   // Enhanced headers for WebContainer and Railway deployment
   async headers() {
+    // Disable CSP in development to prevent nonce conflicts with inline styles
+    if (process.env.NODE_ENV === 'development') {
+      return [];
+    }
+    
     return [
       {
         source: '/(.*)',
@@ -96,9 +103,9 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.skypack.dev https://*.webcontainer.io", // WebContainer compatibility
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Allow inline styles for components  
+              "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com", // Allow inline styles for Next.js components and Tailwind
               "font-src 'self' https://fonts.gstatic.com data:",
-              "img-src 'self' blob: data: https: https://avatars.githubusercontent.com", // Explicitly allow GitHub avatars
+              "img-src 'self' blob: data: https: https://avatars.githubusercontent.com https://cdn.jsdelivr.net", // Added jsdelivr for icons
               "connect-src 'self' wss: ws: https://webcontainer.io https://*.webcontainer.io https://*.stackblitz.com",
               "frame-ancestors 'self' https://chat.openai.com https://chatgpt.com https://claude.ai",
               "worker-src 'self' blob: https://*.webcontainer.io",
