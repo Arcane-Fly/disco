@@ -8,7 +8,7 @@ import { Router } from 'express';
 const router = Router();
 
 // Placeholder routes - to be fully implemented after migration is complete
-router.get('/status', (req, res) => {
+router.get('/status', (_req, res) => {
   res.json({
     status: 'success',
     message: 'Collaboration service is running',
