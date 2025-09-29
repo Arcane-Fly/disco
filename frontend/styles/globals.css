@@ -39,6 +39,27 @@ body {
   line-height: 1.6;
 }
 
+/* Hydration Safety */
+.hydration-loading {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Icon fallbacks for better loading experience */
+svg {
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Improve icon loading visibility */
+[data-lucide] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Container */
 .container {
   max-width: 1280px;
