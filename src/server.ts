@@ -573,7 +573,7 @@ app.get('/webcontainer-loader', async (req: CSPRequest, res) => {
  *               type: string
  *               description: HTML web interface
  */
-app.get('/legacy-root', (req: CSPRequest, res) => {
+app.get('/legacy-root', (_req: CSPRequest, res): void => {
   const serviceInfo = {
     service: 'disco',
     version: '1.0.0',
@@ -2897,7 +2897,7 @@ app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req,
  *       401:
  *         description: Invalid grant or client authentication failed
  */
-app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res) => {
+app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res): Promise<void> => {
   try {
     const { grant_type, code, client_id, code_verifier } = req.body;
 
@@ -3016,15 +3016,16 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
  *       400:
  *         description: Invalid request
  */
-app.post('/oauth/register', express.json(), async (req, res) => {
+app.post('/oauth/register', express.json(), async (req, res): Promise<void> => {
   try {
     const { client_name, redirect_uris, scope } = req.body;
 
     if (!client_name || !redirect_uris || !Array.isArray(redirect_uris)) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_request',
         error_description: 'Missing required fields: client_name, redirect_uris',
       });
+      return;
     }
 
     // Generate client credentials
@@ -3080,15 +3081,16 @@ app.post('/oauth/register', express.json(), async (req, res) => {
  *       200:
  *         description: Token introspection response
  */
-app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req, res) => {
+app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req, res): Promise<void> => {
   try {
     const { token } = req.body;
 
     if (!token) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_request',
         error_description: 'Missing token parameter',
       });
+      return;
     }
 
     try {
@@ -3146,15 +3148,16 @@ app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req
  *       200:
  *         description: Token revoked successfully
  */
-app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, res) => {
+app.post('/oauth/revoke', express.urlencoded({ extended: true }), async (req, res): Promise<void> => {
   try {
     const { token } = req.body;
 
     if (!token) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_request',
         error_description: 'Missing token parameter',
       });
+      return;
     }
 
     // In production, add token to revocation list/blacklist
@@ -3427,7 +3430,7 @@ app.get('/.well-known/mcp.json', (_req, res) => {
  */
 
 // Specific OPTIONS handler for /mcp endpoint
-app.options('/mcp', (req, res) => {
+app.options('/mcp', (_req, res): void => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key, Mcp-Session-Id, X-MCP-Version, X-Platform-ID, X-Client-Version, Accept, Accept-Encoding, Cache-Control');
@@ -4093,8 +4096,8 @@ app.get('/mcp-setup', (_req, res) => {
 
 // Base path handler for /api/v1
 // Provides a friendly message instead of 404 when accessing the API root.
-app.get('/api/v1', (req: Request, res: Response) => {
-  return res.status(200).json({
+app.get('/api/v1', (_req: Request, res: Response): void => {
+  res.status(200).json({
     status: 'success',
     message: 'MCP API v1 base path. Please use a specific endpoint.',
     endpoints: [

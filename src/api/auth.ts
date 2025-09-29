@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, AuthResponse, ErrorCode, AuthStatusResponse, JWTPayload } from '../types/index.js';
 import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
-import { asyncHandler } from '../features/shared/lib/route-helpers.js';
 
 const router = Router();
 
@@ -101,7 +100,7 @@ router.get('/', (req: Request, res: Response) => {
  * POST /api/v1/auth/refresh
  * Refresh JWT token
  */
-router.post('/refresh', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -119,48 +118,53 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response): Promis
 
   try {
     // Verify current token (even if expired)
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!, { ignoreExpiration: true }) as any;
-
-      // Check if token is too old to refresh (more than 7 days)
-      const tokenAge = Date.now() - decoded.iat * 1000;
-      if (tokenAge > 7 * 24 * 60 * 60 * 1000) {
-        return res.status(401).json({
-          status: 'error',
-          error: {
-            code: ErrorCode.AUTH_FAILED,
-            message: 'Token too old to refresh',
-          },
-        });
-      }
-
-      // Create new token
-      const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET!, {
-        expiresIn: '1h',
-        issuer: 'mcp-server',
-        audience: 'chatgpt',
-      });
-
-      const response: AuthResponse = {
-        token: newToken,
-        expires: Date.now() + 60 * 60 * 1000,
-        userId: decoded.userId,
-      };
-
-      console.log(`🔄 Token refreshed for user: ${decoded.userId}`);
-
-      res.json({
-        status: 'success',
-        data: response,
-      });
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!, { ignoreExpiration: true });
     } catch (jwtError) {
-      return res.status(401).json({
+      res.status(401).json({
         status: 'error',
         error: {
           code: ErrorCode.AUTH_FAILED,
           message: 'Invalid token',
         },
       });
+      return;
     }
+
+    // Check if token is too old to refresh (more than 7 days)
+    const tokenAge = Date.now() - decoded.iat * 1000;
+    if (tokenAge > 7 * 24 * 60 * 60 * 1000) {
+      res.status(401).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.AUTH_FAILED,
+          message: 'Token too old to refresh',
+        },
+      });
+      return;
+    }
+
+    // Create new token
+    const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET!, {
+      expiresIn: '1h',
+      issuer: 'mcp-server',
+      audience: 'chatgpt',
+    });
+
+    const response: AuthResponse = {
+      token: newToken,
+      expires: Date.now() + 60 * 60 * 1000,
+      userId: decoded.userId,
+    };
+
+    console.log(`🔄 Token refreshed for user: ${decoded.userId}`);
+
+    res.json({
+      status: 'success',
+      data: response,
+    });
+    return;
   } catch (error) {
     console.error('Token refresh error:', error);
     res.status(500).json({
@@ -170,6 +174,7 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response): Promis
         message: 'Token refresh failed',
       },
     });
+    return;
   }
 });
 
@@ -177,18 +182,19 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response): Promis
  * GET /api/v1/auth/verify
  * Verify current token
  */
-router.get('/verify', async (req: Request, res: Response) => {
+router.get('/verify', async (req: Request, res: Response): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
+      res.status(401).json({
         status: 'error',
         error: {
           code: ErrorCode.AUTH_FAILED,
           message: 'Missing authorization header',
         },
       });
+      return;
     }
 
     const token = authHeader.substring(7);
@@ -205,14 +211,16 @@ router.get('/verify', async (req: Request, res: Response) => {
           issuedAt: decoded.iat * 1000,
         },
       });
+      return;
     } catch (jwtError) {
-      return res.status(401).json({
+      res.status(401).json({
         status: 'error',
         error: {
           code: ErrorCode.AUTH_FAILED,
           message: 'Invalid or expired token',
         },
       });
+      return;
     }
   } catch (error) {
     console.error('Token verification error:', error);
@@ -223,6 +231,7 @@ router.get('/verify', async (req: Request, res: Response) => {
         message: 'Token verification failed',
       },
     });
+    return;
   }
 });
 

@@ -4,10 +4,10 @@ import { body, param, validationResult } from 'express-validator';
 /**
  * Middleware to handle validation result
  */
-export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
+export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({
+    res.status(400).json({
       status: 'error',
       error: {
         code: 'VALIDATION_ERROR',
@@ -15,6 +15,7 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
         details: errors.array(),
       },
     });
+    return;
   }
   next();
 };
