@@ -174,8 +174,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
       whileHover={!disabled && !loading ? { 
         scale: 1.02,
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-      } : undefined}
-      whileTap={!disabled && !loading ? { scale: 0.98 } : undefined}
+      } : {}}
+      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{

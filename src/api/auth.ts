@@ -239,7 +239,7 @@ router.get('/verify', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/auth/github
  * Initiate GitHub OAuth flow
  */
-router.get('/github', (req: Request, res: Response) => {
+router.get('/github', (req: Request, res: Response): void => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
   const callbackUrl =
@@ -247,7 +247,7 @@ router.get('/github', (req: Request, res: Response) => {
     `${req.protocol}://${req.get('host')}/api/v1/auth/github/callback`;
 
   if (!clientId || !clientSecret) {
-    return res.status(503).json({
+    res.status(503).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
@@ -269,6 +269,7 @@ router.get('/github', (req: Request, res: Response) => {
         },
       },
     });
+    return;
   }
 
   // Check for placeholder values
@@ -276,7 +277,7 @@ router.get('/github', (req: Request, res: Response) => {
     clientId.includes('your-github-client-id') ||
     clientSecret.includes('your-github-client-secret')
   ) {
-    return res.status(503).json({
+    res.status(503).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
@@ -294,6 +295,7 @@ router.get('/github', (req: Request, res: Response) => {
         },
       },
     });
+    return;
   }
 
   const state = Buffer.from(
@@ -514,18 +516,19 @@ router.get('/github/callback', async (req: Request, res: Response) => {
  * POST /api/v1/auth/login
  * Legacy endpoint for API key authentication
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { apiKey }: AuthRequest = req.body;
 
     if (!apiKey || typeof apiKey !== 'string') {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
           message: 'API key is required',
         },
       });
+      return;
     }
 
     // In a real implementation, you would validate the API key against a database
@@ -536,13 +539,14 @@ router.post('/login', async (req: Request, res: Response) => {
       // If no valid API keys are configured, generate a user ID from the API key
       console.warn('⚠️  No VALID_API_KEYS configured, allowing any API key');
     } else if (!validApiKeys.includes(apiKey)) {
-      return res.status(401).json({
+      res.status(401).json({
         status: 'error',
         error: {
           code: ErrorCode.AUTH_FAILED,
           message: 'Invalid API key',
         },
       });
+      return;
     }
 
     // Generate user ID (in production, this would come from your user database)
@@ -567,6 +571,7 @@ router.post('/login', async (req: Request, res: Response) => {
       status: 'success',
       data: response,
     });
+    return;
   } catch (error) {
     console.error('Authentication error:', error);
     res.status(500).json({
@@ -576,6 +581,7 @@ router.post('/login', async (req: Request, res: Response) => {
         message: 'Authentication failed',
       },
     });
+    return;
   }
 });
 

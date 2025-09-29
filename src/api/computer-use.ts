@@ -9,7 +9,7 @@ const router = Router();
  * POST /api/v1/computer-use/:containerId/browser/create
  * Create a new enhanced browser session with advanced capabilities
  */
-router.post('/:containerId/browser/create', async (req: Request, res: Response) => {
+router.post('/:containerId/browser/create', async (req: Request, res: Response): Promise<void> => {
   try {
     const { containerId } = req.params;
     const {
@@ -20,6 +20,17 @@ router.post('/:containerId/browser/create', async (req: Request, res: Response) 
       userAgent,
     } = req.body;
     const userId = req.user!.userId;
+
+    if (!containerId) {
+      res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'Container ID is required',
+        },
+      });
+      return;
+    }
 
     const session = await containerManager.getSession(containerId);
 

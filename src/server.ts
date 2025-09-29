@@ -2935,19 +2935,21 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
     // Verify PKCE challenge
     if (!verifyCodeChallenge(code_verifier, authData.codeChallenge, authData.codeChallengeMethod)) {
       console.warn(`❌ PKCE verification failed for code: ${code.substring(0, 8)}...`);
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_grant',
         error_description: 'PKCE verification failed',
       });
+      return;
     }
 
     // Validate client ID if provided
     if (client_id && authData.clientId && client_id !== authData.clientId) {
       console.warn(`❌ Client ID mismatch: expected ${authData.clientId}, got ${client_id}`);
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_client',
         error_description: 'Client ID does not match',
       });
+      return;
     }
 
     // Generate access token with validated data
