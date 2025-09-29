@@ -10,7 +10,7 @@ import type {
   TypedResponse,
   LoginRequestBody,
   RouteParams 
-} from '@/features/shared/types/express';
+} from '../../shared/types/express';
 import {
   asyncHandler,
   validateRequiredParam,
@@ -18,7 +18,7 @@ import {
   sendAuthenticationError,
   sendValidationError,
   sendInternalError,
-} from '@/features/shared/types/express';
+} from '../../shared/types/express';
 
 const router = Router();
 

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest, AuthResponse, ErrorCode, AuthStatusResponse, JWTPayload } from '../types/index.js';
 import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
+import { asyncHandler } from '../features/shared/lib/route-helpers.js';
 
 const router = Router();
 
@@ -100,24 +101,24 @@ router.get('/', (req: Request, res: Response) => {
  * POST /api/v1/auth/refresh
  * Refresh JWT token
  */
-router.post('/refresh', async (req: Request, res: Response) => {
+router.post('/refresh', asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({
+      status: 'error',
+      error: {
+        code: ErrorCode.AUTH_FAILED,
+        message: 'Missing authorization header',
+      },
+    });
+    return;
+  }
+
+  const token = authHeader.substring(7);
+
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        status: 'error',
-        error: {
-          code: ErrorCode.AUTH_FAILED,
-          message: 'Missing authorization header',
-        },
-      });
-    }
-
-    const token = authHeader.substring(7);
-
-    try {
-      // Verify current token (even if expired)
+    // Verify current token (even if expired)
       const decoded = jwt.verify(token, process.env.JWT_SECRET!, { ignoreExpiration: true }) as any;
 
       // Check if token is too old to refresh (more than 7 days)

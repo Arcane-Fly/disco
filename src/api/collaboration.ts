@@ -48,6 +48,16 @@ const router = Router();
 router.get('/:containerId/sessions', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
+    
+    if (!containerId) {
+      return res.status(400).json({
+        status: 'error',
+        error: {
+          code: ErrorCode.VALIDATION_ERROR,
+          message: 'Container ID is required',
+        },
+      });
+    }
 
     const sessions = collaborationManager.getActiveCollaborations(containerId);
 
