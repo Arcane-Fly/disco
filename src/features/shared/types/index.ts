@@ -9,6 +9,9 @@ export * from './branded';
 // API response and request types
 export * from './api';
 
+// Express route handler types
+export * from './express';
+
 // Common utility types
 export type Nullable<T> = T | null;
 export type Optional<T> = T | undefined;
