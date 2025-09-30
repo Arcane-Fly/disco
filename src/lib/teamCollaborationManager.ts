@@ -493,7 +493,11 @@ class TeamCollaborationManager {
         permissions.add('view_analytics');
         permissions.add('create_workspaces');
         permissions.add('manage_templates');
-      // fall through
+        // Admins also get developer permissions
+        permissions.add('create_containers'); // Developer permission
+        permissions.add('share_containers'); // Developer permission  
+        permissions.add('create_workspaces'); // Developer permission
+        break;
       case 'developer':
         permissions.add('create_containers');
         permissions.add('share_containers');
@@ -517,12 +521,22 @@ class TeamCollaborationManager {
         operations.add('manage_processes');
         operations.add('access_network');
         operations.add('install_packages');
-      // fall through
+        // Admins also get write permissions
+        operations.add('write_files'); // Write permission
+        operations.add('execute_commands'); // Write permission
+        operations.add('manage_git'); // Write permission
+        // Admins also get read permissions
+        operations.add('read_files'); // Read permission
+        operations.add('view_terminal'); // Read permission
+        break;
       case 'write':
         operations.add('write_files');
         operations.add('execute_commands');
         operations.add('manage_git');
-      // fall through
+        // Write access also includes read permissions
+        operations.add('read_files'); // Read permission
+        operations.add('view_terminal'); // Read permission
+        break;
       case 'read':
         operations.add('read_files');
         operations.add('view_terminal');

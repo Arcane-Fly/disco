@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { getStringOrDefault } from '../lib/guards.js';
 import { securityComplianceManager } from '../lib/securityComplianceManager.js';
 
 /**
@@ -154,7 +155,7 @@ function determineAction(req: Request): string {
  * Determine the resource being accessed
  */
 function determineResource(req: Request): string {
-  const path = req.originalUrl.split('?')[0]; // Remove query parameters
+  const path = getStringOrDefault(req.originalUrl.split('?')[0], '/'); // Remove query parameters
 
   // Extract main resource from path
   const pathParts = path.split('/').filter(part => part.length > 0);

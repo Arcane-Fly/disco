@@ -12,6 +12,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import next from 'next';
 
+// MCP Server Integration
+import { startMCPServer, mcpServer } from './mcp-server.js';
+
 // Import route handlers
 import { authRouter } from './api/auth.js';
 import { containersRouter } from './api/containers.js';
@@ -4982,6 +4985,14 @@ if (process.env.NODE_ENV !== 'test') {
     // Prepare Next.js and ensure data directory exists before starting
     await prepareNextApp();
     await ensureDataDirectory();
+
+    // Initialize MCP Server for protocol compliance
+    try {
+      await startMCPServer();
+      console.log('🔌 MCP (Model Context Protocol) Server initialized');
+    } catch (error) {
+      console.warn('⚠️  MCP Server failed to initialize:', error);
+    }
 
     console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
