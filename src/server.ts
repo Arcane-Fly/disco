@@ -15,6 +15,9 @@ import next from 'next';
 // MCP Server Integration
 import { startMCPServer, mcpServer } from './mcp-server.js';
 
+// A2A (Agent-to-Agent) Integration
+import { A2AServer } from './lib/a2a-server.js';
+
 // Import route handlers
 import { authRouter } from './api/auth.js';
 import { containersRouter } from './api/containers.js';
@@ -36,6 +39,7 @@ import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
 import { mcpRouter } from './api/mcp.js';
+import { mcpA2aRouter } from './api/mcp-a2a-integration.js';
 import { enhancedCSPMiddleware, CSPRequest } from './middleware/csp.js';
 
 // Import route handlers
@@ -4141,6 +4145,7 @@ registerAPIRoute('security', securityRouter);
 registerAPIRoute('enhancement', enhancementRouter);
 registerAPIRoute('strategic-ux', strategicUXRouter);
 registerAPIRoute('mcp', mcpRouter);
+registerAPIRoute('mcp-a2a', mcpA2aRouter);
 
 // Platform Connectors - Public endpoints for easy integration
 app.use('/', platformConnectorsRouter);
@@ -4992,6 +4997,26 @@ if (process.env.NODE_ENV !== 'test') {
       console.log('🔌 MCP (Model Context Protocol) Server initialized');
     } catch (error) {
       console.warn('⚠️  MCP Server failed to initialize:', error);
+    }
+
+    // Initialize A2A Server for agent-to-agent communication
+    try {
+      const a2aServer = new A2AServer({
+        name: 'disco-mcp',
+        version: '1.0.0',
+        port: port
+      });
+      
+      // Register example skills following the master cheat sheet
+      a2aServer.registerExampleSkills();
+      
+      // Mount A2A routes
+      app.use('/a2a', a2aServer.getRouter());
+      
+      console.log('🤝 A2A (Agent-to-Agent) Server initialized');
+      console.log(`🔗 A2A endpoint: http://localhost:${port}/a2a`);
+    } catch (error) {
+      console.warn('⚠️  A2A Server failed to initialize:', error);
     }
 
     console.log(`✅ MCP Server running on 0.0.0.0:${port}`);
