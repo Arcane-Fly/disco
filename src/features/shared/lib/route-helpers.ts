@@ -43,11 +43,11 @@ export const parseIntParam = (value: string | undefined, paramName: string, defa
 };
 
 // Async handler wrapper to catch errors and ensure proper returns
-export const asyncHandler = <TData = unknown, TBody = unknown, TQuery = Record<string, string>, TParams = Record<string, string>>(
+export const asyncHandler = <TData = any, TBody = any, TQuery = any, TParams = any>(
   handler: AsyncRouteHandler<TData, TBody, TQuery, TParams>
 ) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    Promise.resolve(handler(req as TypedRequest<TBody, TQuery, TParams>, res as TypedResponse<TData>, next))
+    Promise.resolve(handler(req as any, res as any, next))
       .catch(next);
   };
 };
