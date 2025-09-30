@@ -19,7 +19,7 @@ describe('Button Component', () => {
   });
 
   test('applies variant styles correctly', () => {
-    render(<Button variant="primary">Primary Button</Button>);
+    render(<Button variant="default">Default Button</Button>);
     const button = screen.getByRole('button');
     
     expect(button).toHaveClass('bg-primary-600');

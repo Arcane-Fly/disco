@@ -29,6 +29,7 @@
     "removeComments": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "types": ["node", "jest", "@testing-library/jest-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
@@ -36,6 +37,6 @@
       "@/features/*": ["./src/features/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test", "src/**/*.full.tsx", "frontend"]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist", "src/**/*.full.tsx", "frontend"]
 }
