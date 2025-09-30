@@ -1,6 +1,7 @@
 /**
  * Yarn Constraints Configuration
  * Following Railway + Yarn 4.9.2+ Master Cheat Sheet guidelines
+ * Enforces consistency for Node 20+, dependency versions, licenses, and workspace:* protocol
  */
 
 module.exports = {
@@ -9,12 +10,12 @@ module.exports = {
     for (const workspace of Yarn.workspaces()) {
       const pkg = workspace.manifest;
       
-      // Standardize Node.js version requirement
+      // Standardize Node.js version requirement (Node 20+)
       if (pkg.engines && pkg.engines.node) {
         workspace.set('engines.node', '>=20.0.0');
       }
       
-      // Ensure consistent package manager
+      // Ensure consistent package manager (Yarn 4.9.2)
       if (!pkg.packageManager || !pkg.packageManager.startsWith('yarn@4.9.2')) {
         workspace.set('packageManager', 'yarn@4.9.2');
       }
