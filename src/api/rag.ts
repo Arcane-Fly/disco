@@ -32,7 +32,7 @@ router.post('/:containerId/search', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -104,7 +104,7 @@ router.post('/:containerId/index', async (req: Request, res: Response) => {
     const { paths = ['.'], excludePatterns = ['node_modules', '.git', 'dist'] } = req.body;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -184,7 +184,7 @@ router.post('/:containerId/analyze', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({

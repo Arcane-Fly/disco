@@ -61,7 +61,7 @@ router.get('/:containerId/sessions', authMiddleware, async (req: Request, res: R
       return;
     }
 
-    const sessions = collaborationManager.getActiveCollaborations(containerId);
+    const sessions = collaborationManager.getActiveCollaborations(containerId!);
 
     res.json({
       sessions: sessions.map(session => ({

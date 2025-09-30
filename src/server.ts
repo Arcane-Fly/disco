@@ -589,8 +589,9 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
   };
 
   // Return JSON for API clients or explicit JSON requests
-  if (req.headers.accept?.includes('application/json') || req.query.format === 'json') {
-    return res.json(serviceInfo);
+  if (_req.headers.accept?.includes('application/json') || _req.query.format === 'json') {
+    res.json(serviceInfo);
+    return;
   }
 
   // Return web interface for browser requests
@@ -600,7 +601,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
       : `http://localhost:${port}`;
 
   // Get nonce from CSP middleware
-  const nonce = req.nonce || '';
+  const nonce = _req.nonce || '';
 
   const html = `
 <!DOCTYPE html>
@@ -2903,18 +2904,20 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
 
     // Validate grant type
     if (grant_type !== 'authorization_code') {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'unsupported_grant_type',
         error_description: 'Only authorization_code grant type is supported',
       });
+      return;
     }
 
     // Validate required parameters
     if (!code || !code_verifier) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_request',
         error_description: 'Missing required parameters: code, code_verifier',
       });
+      return;
     }
 
     console.log(`🔐 OAuth token exchange request: code=${code.substring(0, 8)}...`);
@@ -2926,10 +2929,11 @@ app.post('/oauth/token', express.urlencoded({ extended: true }), async (req, res
     const authData = getAndRemoveAuthCodeData(code);
     if (!authData) {
       console.warn(`❌ Invalid or expired authorization code: ${code.substring(0, 8)}...`);
-      return res.status(400).json({
+      res.status(400).json({
         error: 'invalid_grant',
         error_description: 'Authorization code is invalid or expired',
       });
+      return;
     }
 
     // Verify PKCE challenge
