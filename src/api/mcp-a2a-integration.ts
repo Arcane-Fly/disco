@@ -58,6 +58,23 @@ router.post('/demo', async (req: Request, res: Response) => {
   try {
     const { agentEndpoint, skill, data } = req.body;
 
+    // Allow-list of trusted A2A agent endpoints
+    const allowedAgentEndpoints = [
+      'http://localhost:3000/a2a',
+      // add other trusted endpoints here
+    ];
+
+    // Validate agentEndpoint
+    let validAgentEndpoint = 'http://localhost:3000/a2a';
+    if (agentEndpoint && allowedAgentEndpoints.includes(agentEndpoint)) {
+      validAgentEndpoint = agentEndpoint;
+    } else if (agentEndpoint) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid agentEndpoint. Only allowed endpoints: " + allowedAgentEndpoints.join(', ')
+      });
+    }
+
     // Get MCP server status
     const mcpStatus = {
       isRunning: !!mcpServer,
@@ -67,7 +84,7 @@ router.post('/demo', async (req: Request, res: Response) => {
     };
 
     // Create A2A client and send task
-    const a2aClient = new A2AClient(agentEndpoint || 'http://localhost:3000/a2a');
+    const a2aClient = new A2AClient(validAgentEndpoint);
     const a2aResult = await a2aClient.sendTask(skill || 'greet', data || { name: 'MCP Agent' });
 
     // Integration metadata
