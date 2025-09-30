@@ -910,7 +910,10 @@ router.post('/:containerId/webcontainer-integration', async (req: Request, res: 
       return;
     }
 
-    console.log(`⚡ WebContainer integration command: "${command}" in ${workdir}`);
+    // Sanitize user-provided input to prevent log injection
+    const sanitizedCommand = String(command).replace(/[\r\n]/g, "");
+    const sanitizedWorkdir = String(workdir).replace(/[\r\n]/g, "");
+    console.log(`⚡ WebContainer integration command: "${sanitizedCommand}" in ${sanitizedWorkdir}`);
 
     // Simulate WebContainer command execution
     const executionResult = {
