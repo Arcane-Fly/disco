@@ -26,7 +26,7 @@ jobs:
         run: corepack enable && corepack prepare yarn@4.9.2 --activate
           
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
         
       - name: Install link checker
         run: yarn dlx linkinator --version

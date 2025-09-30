@@ -6,7 +6,7 @@ paths:
   - "frontend"
   - "scripts"
   - "middleware.ts"
-  - "next.config.cjs"
+  - "next.config.js"
 
 # Paths to exclude from the analysis
 paths-ignore:
