@@ -45,15 +45,34 @@ export const WebContainerCompatibilityCheck: React.FC<{
         });
       }
 
-      // Check SharedArrayBuffer support
+      // Check SharedArrayBuffer support (2025 enhanced)
       if (typeof SharedArrayBuffer === 'undefined') {
         issues.push({
           type: 'error',
           feature: 'SharedArrayBuffer',
           message: 'SharedArrayBuffer not available',
-          recommendation: 'Ensure COEP header is set to "credentialless" and COOP header is set to "same-origin"',
+          recommendation: 'Ensure COEP header is set to "require-corp" and COOP header is set to "same-origin" for 2025 Railway deployment',
           fixable: true
         });
+      } else {
+        // 2025: Check cross-origin isolation status
+        if (typeof crossOriginIsolated !== 'undefined') {
+          if (crossOriginIsolated) {
+            issues.push({
+              type: 'info',
+              feature: 'Cross-Origin Isolation',
+              message: 'Cross-origin isolation is active (optimal for WebContainer 2025)',
+              recommendation: 'All WebContainer features are available'
+            });
+          } else {
+            issues.push({
+              type: 'warning',
+              feature: 'Cross-Origin Isolation',
+              message: 'Cross-origin isolation not detected',
+              recommendation: 'Some advanced WebContainer features may be limited'
+            });
+          }
+        }
       }
 
       // Check HTTPS requirement
