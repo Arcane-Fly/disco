@@ -9,8 +9,21 @@ export * from './branded';
 // API response and request types
 export * from './api';
 
-// Express route handler types
-export * from './express';
+// Express route handler types - avoid conflicts by importing selectively
+export type {
+  TypedRequest,
+  TypedResponse, 
+  RouteHandler,
+  AsyncRouteHandler,
+  ErrorHandler,
+  Middleware,
+  RouteParams,
+  LoginRequestBody,
+  CreateContainerBody,
+  FileOperationBody,
+  PaginationQuery,
+  FilterQuery
+} from './express';
 
 // Common utility types
 export type Nullable<T> = T | null;

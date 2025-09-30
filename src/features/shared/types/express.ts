@@ -4,15 +4,15 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import type { ApiResponse, ApiError, AuthenticatedUser } from './api';
-import type { ValidationResult } from './index';
+import type { ParamsDictionary } from 'express-serve-static-core';
+import type { ApiResponse, ApiError, AuthenticatedUser, ValidationResult } from './index';
 
 // Enhanced Request interface with type safety
 export interface TypedRequest<
-  TBody = unknown,
-  TQuery = Record<string, string>,
-  TParams = Record<string, string>
-> extends Request {
+  TBody = any,
+  TQuery = any,
+  TParams = any
+> extends Omit<Request, 'body' | 'query' | 'params' | 'user'> {
   body: TBody;
   query: TQuery;
   params: TParams;
@@ -32,10 +32,10 @@ export interface TypedResponse<TData = unknown> extends Response {
 
 // Route handler type with proper return
 export type RouteHandler<
-  TData = unknown,
-  TBody = unknown,
-  TQuery = Record<string, string>,
-  TParams = Record<string, string>
+  TData = any,
+  TBody = any,
+  TQuery = any,
+  TParams = any
 > = (
   req: TypedRequest<TBody, TQuery, TParams>,
   res: TypedResponse<TData>,
@@ -44,10 +44,10 @@ export type RouteHandler<
 
 // Async route handler wrapper
 export type AsyncRouteHandler<
-  TData = unknown,
-  TBody = unknown,
-  TQuery = Record<string, string>,
-  TParams = Record<string, string>
+  TData = any,
+  TBody = any,
+  TQuery = any,
+  TParams = any
 > = (
   req: TypedRequest<TBody, TQuery, TParams>,
   res: TypedResponse<TData>,
@@ -64,9 +64,9 @@ export type ErrorHandler = (
 
 // Middleware type
 export type Middleware<
-  TBody = unknown,
-  TQuery = Record<string, string>,
-  TParams = Record<string, string>
+  TBody = any,
+  TQuery = any,
+  TParams = any
 > = (
   req: TypedRequest<TBody, TQuery, TParams>,
   res: Response,
@@ -125,25 +125,30 @@ export interface FilterQuery {
 }
 
 // Utility functions for route handlers
-export const createSuccessResponse = <T>(data: T, message?: string): ApiResponse<T> => ({
+// Note: Simple versions of response creators to avoid conflicts
+export const createSuccessResponseExpress = <T>(data: T, message?: string): ApiResponse<T> => ({
   status: 'success',
   data,
   metadata: {
-    timestamp: Date.now(),
+    timestamp: Date.now() as any,
     requestId: crypto.randomUUID(),
     version: '1.0.0',
-  },
+  } as any,
 });
 
-export const createErrorResponse = (error: ApiError): ApiResponse<never> => ({
+export const createErrorResponseExpress = (error: ApiError): ApiResponse<never> => ({
   status: 'error',
   error,
   metadata: {
-    timestamp: Date.now(),
+    timestamp: Date.now() as any,
     requestId: crypto.randomUUID(),
     version: '1.0.0',
-  },
+  } as any,
 });
+
+// Re-export with normal names but prevent conflicts
+export { createSuccessResponseExpress as createSuccessResponse };
+export { createErrorResponseExpress as createErrorResponse };
 
 // Parameter validation helpers
 export const validateRequiredParam = (
@@ -191,15 +196,15 @@ export const parseBooleanParam = (
 
 // Async handler wrapper to catch errors
 export const asyncHandler = <
-  TData = unknown,
-  TBody = unknown,
-  TQuery = Record<string, string>,
-  TParams = Record<string, string>
+  TData = any,
+  TBody = any,
+  TQuery = any,
+  TParams = any
 >(
   handler: AsyncRouteHandler<TData, TBody, TQuery, TParams>
-): RouteHandler<TData, TBody, TQuery, TParams> => {
-  return (req, res, next) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
+) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    Promise.resolve(handler(req as any, res as any, next)).catch(next);
   };
 };
 
@@ -207,7 +212,7 @@ export const asyncHandler = <
 export const validateRequest = <TBody = unknown>(
   validationRules: Record<string, unknown>,
   handler: AsyncRouteHandler<unknown, TBody>
-): RouteHandler<unknown, TBody> => {
+) => {
   return asyncHandler(async (req, res, next) => {
     // Validation logic would go here
     // For now, just pass through to the handler
@@ -220,40 +225,52 @@ export const sendValidationError = (
   res: Response,
   errors: ValidationResult['errors']
 ): void => {
-  res.status(400).json(createErrorResponse({
-    type: 'VALIDATION_ERROR',
-    field: errors[0]?.field || 'unknown',
-    message: errors[0]?.message || 'Validation failed',
-    code: 'INVALID_FORMAT',
-    details: { errors },
-  }));
+  res.status(400).json({
+    status: 'error' as const,
+    error: {
+      type: 'VALIDATION_ERROR',
+      field: errors[0]?.field || 'unknown',
+      message: errors[0]?.message || 'Validation failed',
+      code: 'INVALID_FORMAT',
+      details: { errors },
+    } as ApiError
+  } as ApiResponse<never>);
 };
 
 export const sendAuthenticationError = (res: Response, message = 'Authentication required'): void => {
-  res.status(401).json(createErrorResponse({
-    type: 'AUTHENTICATION_ERROR',
-    message,
-    code: 'MISSING_CREDENTIALS',
-  }));
+  res.status(401).json({
+    status: 'error' as const,
+    error: {
+      type: 'AUTHENTICATION_ERROR',
+      message,
+      code: 'MISSING_CREDENTIALS',
+    } as ApiError
+  } as ApiResponse<never>);
 };
 
 export const sendAuthorizationError = (res: Response, resource: string, action: string): void => {
-  res.status(403).json(createErrorResponse({
-    type: 'AUTHORIZATION_ERROR',
-    resource,
-    action,
-    message: `Insufficient permissions to ${action} ${resource}`,
-    code: 'INSUFFICIENT_PERMISSIONS',
-  }));
+  res.status(403).json({
+    status: 'error' as const,
+    error: {
+      type: 'AUTHORIZATION_ERROR',
+      resource,
+      action,
+      message: `Insufficient permissions to ${action} ${resource}`,
+      code: 'INSUFFICIENT_PERMISSIONS',
+    } as ApiError
+  } as ApiResponse<never>);
 };
 
 export const sendNotFoundError = (res: Response, resource: string, identifier: string): void => {
-  res.status(404).json(createErrorResponse({
-    type: 'NOT_FOUND_ERROR',
-    resource,
-    identifier,
-    message: `${resource} with ID ${identifier} not found`,
-  }));
+  res.status(404).json({
+    status: 'error' as const,
+    error: {
+      type: 'NOT_FOUND_ERROR',
+      resource,
+      identifier,
+      message: `${resource} with ID ${identifier} not found`,
+    } as ApiError
+  } as ApiResponse<never>);
 };
 
 export const sendInternalError = (res: Response, error: Error): void => {
@@ -262,11 +279,14 @@ export const sendInternalError = (res: Response, error: Error): void => {
   // Log the full error for debugging
   console.error(`Internal error [${correlationId}]:`, error);
   
-  res.status(500).json(createErrorResponse({
-    type: 'INTERNAL_ERROR',
-    code: 'INTERNAL_ERROR',
-    message: 'An internal server error occurred',
-    correlationId,
-    details: process.env.NODE_ENV === 'development' ? { error: error.message } : undefined,
-  }));
+  res.status(500).json({
+    status: 'error' as const,
+    error: {
+      type: 'INTERNAL_ERROR',
+      code: 'INTERNAL_ERROR',
+      message: 'An internal server error occurred',
+      correlationId,
+      details: process.env.NODE_ENV === 'development' ? { error: error.message } : undefined,
+    } as ApiError
+  } as ApiResponse<never>);
 };

@@ -5,9 +5,9 @@ import { IncomingMessage } from 'http'
  * Get the nonce value for the current request
  * This can be used in Next.js pages and components to add nonce to inline scripts/styles
  */
-export function getNonce(): string | undefined {
+export async function getNonce(): Promise<string | undefined> {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     // Try both x-nonce (from Next.js middleware) and X-Nonce (from Express middleware)
     return headersList.get('x-nonce') || headersList.get('X-Nonce') || undefined
   } catch (error) {
@@ -27,8 +27,8 @@ export function getNonceFromExpressRequest(req: IncomingMessage & { nonce?: stri
  * Create a nonce attribute object for React components
  * Usage: <script {...getNonceProps()} dangerouslySetInnerHTML={{__html: 'console.log("test")'}} />
  */
-export function getNonceProps(): { nonce?: string } {
-  const nonce = getNonce()
+export async function getNonceProps(): Promise<{ nonce?: string }> {
+  const nonce = await getNonce()
   return nonce ? { nonce } : {}
 }
 

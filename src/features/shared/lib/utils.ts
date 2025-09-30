@@ -205,9 +205,9 @@ export function getRelativeTime(date: Date | string | number): string {
 }
 
 /**
- * Validate email format
+ * Validate email format (basic version)
  */
-export function isValidEmail(email: string): boolean {
+export function validateEmailFormat(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }

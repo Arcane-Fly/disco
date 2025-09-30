@@ -140,10 +140,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const template = getStringOrDefault(args?.template as string, 'node');
         const preWarm = args?.preWarm === true;
 
-        const session = await containerManager.createSession(userId, {
-          preWarm,
-          template,
-        });
+        const session = await containerManager.createSession(userId);
 
         return {
           content: [

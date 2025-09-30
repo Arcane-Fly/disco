@@ -181,7 +181,8 @@ export class A2AServer {
    */
   registerExampleSkills(): void {
     // Greet skill - simple example from the master cheat sheet
-    this.registerSkill('greet', async ({ name }: { name: string }) => {
+    this.registerSkill('greet', async (data: Record<string, unknown>) => {
+      const { name } = data as { name: string };
       return `Hello, ${name}! This is the A2A agent responding.`;
     });
 
