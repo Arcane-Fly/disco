@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { getStringOrDefault } from './guards.js';
 import {
   TerminalSession,
   TerminalHistoryEntry,
@@ -318,7 +319,7 @@ class TerminalSessionManager {
     // Count command frequency
     const commandCounts = new Map<string, number>();
     session.history.forEach(entry => {
-      const baseCommand = entry.command.split(' ')[0]; // Get the base command (e.g., 'git' from 'git status')
+      const baseCommand = getStringOrDefault(entry.command.split(' ')[0], 'unknown'); // Get the base command (e.g., 'git' from 'git status')
       commandCounts.set(baseCommand, (commandCounts.get(baseCommand) || 0) + 1);
     });
 
