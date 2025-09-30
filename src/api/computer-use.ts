@@ -32,26 +32,30 @@ router.post('/:containerId/browser/create', async (req: Request, res: Response):
       return;
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
-      return res.status(404).json({
+      res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
           message: 'Container not found',
         },
       });
+
+      return;
     }
 
     if (session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied to this container',
         },
       });
+
+      return;
     }
 
     const config: Partial<BrowserSessionConfig> = {
@@ -106,19 +110,21 @@ router.post('/:containerId/browser/:sessionId/page', async (req: Request, res: R
     const { url } = req.body;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session || session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied',
         },
       });
+
+      return;
     }
 
-    const pageId = await enhancedBrowserManager.createPage(sessionId, url);
+    const pageId = await enhancedBrowserManager.createPage(sessionId!, url!);
 
     res.json({
       status: 'success',
@@ -159,26 +165,30 @@ router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
     } = req.body;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
-      return res.status(404).json({
+      res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
           message: 'Container not found',
         },
       });
+
+      return;
     }
 
     if (session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied to this container',
         },
       });
+
+      return;
     }
 
     let screenshot: string;
@@ -195,7 +205,7 @@ router.post('/:containerId/screenshot', async (req: Request, res: Response) => {
       });
     } else {
       // Fallback to legacy screenshot method
-      screenshot = await takeScreenshot(session.container, { width, height, format }, containerId);
+      screenshot = await takeScreenshot(session.container, { width, height, format }, containerId!);
     }
 
     res.json({
@@ -234,38 +244,44 @@ router.post('/:containerId/click', async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     if (typeof x !== 'number' || typeof y !== 'number') {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
           message: 'Valid x and y coordinates are required',
         },
       });
+
+      return;
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
-      return res.status(404).json({
+      res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
           message: 'Container not found',
         },
       });
+
+      return;
     }
 
     if (session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied to this container',
         },
       });
+
+      return;
     }
 
-    await simulateClick(session.container, { x, y, button, doubleClick }, containerId);
+    await simulateClick(session.container, { x, y, button, doubleClick }, containerId!);
 
     console.log(
       `🖱️  Simulated ${doubleClick ? 'double ' : ''}${button} click at (${x}, ${y}) in container ${containerId}`
@@ -304,38 +320,44 @@ router.post('/:containerId/type', async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     if (!text || typeof text !== 'string') {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
           message: 'Text to type is required',
         },
       });
+
+      return;
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
-      return res.status(404).json({
+      res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
           message: 'Container not found',
         },
       });
+
+      return;
     }
 
     if (session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied to this container',
         },
       });
+
+      return;
     }
 
-    await simulateTyping(session.container, { text, delay }, containerId);
+    await simulateTyping(session.container, { text, delay }, containerId!);
 
     console.log(`⌨️  Simulated typing "${text}" in container ${containerId}`);
 
@@ -371,25 +393,29 @@ router.post('/:containerId/visual-regression', async (req: Request, res: Respons
     const userId = req.user!.userId;
 
     if (!sessionId || !pageId || !testName) {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
           message: 'sessionId, pageId, and testName are required',
         },
       });
+
+      return;
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session || session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied',
         },
       });
+
+      return;
     }
 
     const result = await enhancedBrowserManager.performVisualRegression(
@@ -447,7 +473,7 @@ router.post('/:containerId/ui-automation', async (req: Request, res: Response) =
         action => action && typeof action.type === 'string' && typeof action.payload === 'object'
       )
     ) {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
@@ -455,21 +481,25 @@ router.post('/:containerId/ui-automation', async (req: Request, res: Response) =
             'sessionId, pageId, and a non-empty actions array with valid action objects are required',
         },
       });
+
+      return;
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session || session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied',
         },
       });
+
+      return;
     }
 
-    const results = await enhancedBrowserManager.performUIAutomation(sessionId, pageId, actions);
+    const results = await enhancedBrowserManager.performUIAutomation(sessionId!, pageId!, actions!);
 
     const successCount = results.filter(r => r.success).length;
     console.log(`🤖 UI automation completed: ${successCount}/${results.length} actions successful`);
@@ -508,16 +538,18 @@ router.get('/:containerId/browser/sessions', async (req: Request, res: Response)
     const { containerId } = req.params;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session || session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied',
         },
       });
+
+      return;
     }
 
     const allSessions = await enhancedBrowserManager.getAllSessions();
@@ -555,38 +587,44 @@ router.post('/:containerId/key', async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     if (!key || typeof key !== 'string') {
-      return res.status(400).json({
+      res.status(400).json({
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
           message: 'Key to press is required',
         },
       });
+
+      return;
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
-      return res.status(404).json({
+      res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
           message: 'Container not found',
         },
       });
+
+      return;
     }
 
     if (session.userId !== userId) {
-      return res.status(403).json({
+      res.status(403).json({
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
           message: 'Access denied to this container',
         },
       });
+
+      return;
     }
 
-    await simulateKeyPress(session.container, { key, modifiers }, containerId);
+    await simulateKeyPress(session.container, { key, modifiers }, containerId!);
 
     console.log(
       `⌨️  Simulated key press "${key}" with modifiers [${modifiers.join(', ')}] in container ${containerId}`

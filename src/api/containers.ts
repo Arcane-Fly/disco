@@ -100,7 +100,7 @@ router.get('/:containerId', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -155,7 +155,7 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -178,7 +178,7 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
       });
     }
 
-    await containerManager.terminateSession(containerId);
+    await containerManager.terminateSession(containerId!);
 
     console.log(`🗑️  Container ${containerId} terminated by user ${userId}`);
 
@@ -209,7 +209,7 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
     const { containerId } = req.params;
     const userId = req.user!.userId;
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -233,7 +233,7 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
     }
 
     // Terminate existing session
-    await containerManager.terminateSession(containerId);
+    await containerManager.terminateSession(containerId!);
 
     // Create new session
     const newSession = await containerManager.createSession(userId);

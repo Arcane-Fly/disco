@@ -118,7 +118,7 @@ router.post('/:containerId', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -191,7 +191,7 @@ router.put('/:containerId', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
@@ -277,7 +277,7 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
       });
     }
 
-    const session = await containerManager.getSession(containerId);
+    const session = await containerManager.getSession(containerId!);
 
     if (!session) {
       return res.status(404).json({
