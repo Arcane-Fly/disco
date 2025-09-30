@@ -2,6 +2,9 @@
  * Jest setup file to mock Next.js and other problematic dependencies
  */
 
+// Import jest-dom matchers for better testing
+import '@testing-library/jest-dom';
+
 // Mock Next.js
 jest.mock('next', () => {
   return jest.fn(() => ({

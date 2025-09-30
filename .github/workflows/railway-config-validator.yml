@@ -34,8 +34,11 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Enable Corepack
-        run: corepack enable && corepack prepare yarn@4.9.2 --activate
+      - name: Enable Corepack and setup Yarn 4.9.2
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.2 --activate
+          yarn --version
           
       - name: Install dependencies
         run: yarn install --immutable
