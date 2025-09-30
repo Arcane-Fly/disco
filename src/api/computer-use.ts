@@ -79,8 +79,10 @@ router.post('/:containerId/browser/create', async (req: Request, res: Response):
 
     const browserSessionId = await enhancedBrowserManager.createSession(containerId, config);
 
+    // Sanitize containerId before logging to prevent log injection
+    const safeContainerId = String(containerId).replace(/[\n\r]/g, "");
     console.log(
-      `🌐 Created enhanced browser session ${browserSessionId} for container ${containerId} (2025)`
+      `🌐 Created enhanced browser session ${browserSessionId} for container ${safeContainerId} (2025)`
     );
 
     res.json({
