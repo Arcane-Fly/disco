@@ -3940,6 +3940,7 @@ app.post('/messages', express.json(), (req, res) => {
 
 // Health check endpoint (no auth required)
 app.use('/health', healthRouter);
+app.use('/api/health', healthRouter);
 
 // MCP client configuration guide
 /**

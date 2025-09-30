@@ -21,13 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          
+      - name: Enable Corepack
+        run: corepack enable && corepack prepare yarn@4.9.2 --activate
           
       - name: Install dependencies
-        run: npm install
+        run: yarn install --frozen-lockfile
         
       - name: Install link checker
-        run: npm install -g linkinator
+        run: yarn dlx linkinator --version
         
       - name: Create docs directory if not exists
         run: mkdir -p docs
@@ -41,7 +43,7 @@ jobs:
           
           # Check all markdown files
           echo "## Checking all documentation links..." >> link-health-report.md
-          linkinator . --recurse --markdown --timeout 10000 \
+          yarn dlx linkinator . --recurse --markdown --timeout 10000 \
             --skip "node_modules/**" \
             --skip ".git/**" \
             --skip "dist/**" \
