@@ -11,7 +11,9 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
    ```bash
    git clone https://github.com/Arcane-Fly/disco.git
    cd disco
-   npm install
+   corepack enable
+   corepack prepare yarn@4.9.2 --activate
+   yarn install
    ```
 
 2. **Set up environment:**
@@ -24,8 +26,8 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
 3. **Build and run:**
 
    ```bash
-   npm run build
-   npm start
+   yarn build
+   yarn start
    ```
 
 4. **Test the server:**
