@@ -78,43 +78,68 @@ const nextConfig = {
   // Output configuration for proper ES module handling
   output: 'standalone',
   
-  // Enhanced headers for WebContainer and Railway deployment
+  // Enhanced headers for WebContainer and Railway deployment (2025 best practices)
   async headers() {
     // Disable CSP in development to prevent nonce conflicts with inline styles
     if (process.env.NODE_ENV === 'development') {
-      return [];
+      return [
+        {
+          source: '/(.*)',
+          headers: [
+            // Development-only WebContainer headers
+            {
+              key: 'Cross-Origin-Embedder-Policy',
+              value: 'credentialless',
+            },
+            {
+              key: 'Cross-Origin-Opener-Policy', 
+              value: 'same-origin',
+            },
+          ],
+        },
+      ];
     }
     
     return [
       {
         source: '/(.*)',
         headers: [
-          // Critical WebContainer headers for SharedArrayBuffer support
+          // Critical WebContainer headers for SharedArrayBuffer support (2025 Railway optimized)
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'credentialless',
+            value: 'require-corp',
           },
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
           },
+          // Enhanced security for computer-use activities
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.skypack.dev https://*.webcontainer.io", // WebContainer compatibility
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.skypack.dev https://*.webcontainer.io https://stackblitz.com", // WebContainer compatibility
               "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com", // Allow inline styles for Next.js components and Tailwind
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' blob: data: https: https://avatars.githubusercontent.com https://cdn.jsdelivr.net", // Added jsdelivr for icons
-              "connect-src 'self' wss: ws: https://webcontainer.io https://*.webcontainer.io https://*.stackblitz.com",
+              "connect-src 'self' wss: ws: https://webcontainer.io https://*.webcontainer.io https://*.stackblitz.com https://api.stackblitz.com",
               "frame-ancestors 'self' https://chat.openai.com https://chatgpt.com https://claude.ai",
-              "worker-src 'self' blob: https://*.webcontainer.io",
-              "child-src 'self' blob: https://*.webcontainer.io",
+              "worker-src 'self' blob: https://*.webcontainer.io data:",
+              "child-src 'self' blob: https://*.webcontainer.io data:",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
               'upgrade-insecure-requests',
             ].join('; '),
+          },
+          // Railway deployment optimization headers
+          {
+            key: 'X-Railway-Deployment',
+            value: 'webcontainer-enabled',
           },
           {
             key: 'X-Frame-Options',
@@ -127,6 +152,43 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
+          },
+          // Performance optimization headers
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+        ],
+      },
+      // Specific headers for WebContainer pages
+      {
+        source: '/webcontainer-loader',
+        headers: [
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      // Specific headers for workflow builder (computer-use activities)
+      {
+        source: '/workflow-builder',
+        headers: [
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
           },
         ],
       },

@@ -17,6 +17,10 @@ export interface BrowserSessionConfig {
   headless: boolean;
   recordVideo?: boolean;
   enableNetworkLogging?: boolean;
+  // 2025 enhanced features
+  enableAI?: boolean;
+  enableAccessibility?: boolean;
+  enablePerformanceMonitoring?: boolean;
 }
 
 export interface ScreenshotComparison {

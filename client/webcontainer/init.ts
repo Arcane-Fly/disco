@@ -1,8 +1,9 @@
 import { WebContainer } from '@webcontainer/api';
 
 /**
- * WebContainer Client Initialization Module
+ * WebContainer Client Initialization Module (2025 Enhanced)
  * Provides browser-side WebContainer initialization with proper COEP/COOP configuration
+ * Optimized for Railway deployment and MCP server integration
  */
 
 export interface WebContainerConfig {
@@ -10,6 +11,9 @@ export interface WebContainerConfig {
   coep?: 'require-corp' | 'credentialless';
   timeout?: number;
   retries?: number;
+  enableCompression?: boolean;
+  enableNetworking?: boolean;
+  enableShell?: boolean;
 }
 
 export interface BootstrapResult {
@@ -18,23 +22,31 @@ export interface BootstrapResult {
   containerId?: string;
   error?: string;
   capabilities?: string[];
+  networkingSupported?: boolean;
+  shellSupported?: boolean;
 }
 
 /**
- * Initialize WebContainer instance with proper configuration for MCP integration
+ * Initialize WebContainer instance with proper configuration for MCP integration (2025 Enhanced)
+ * Now includes advanced networking and shell capabilities
  */
 export const initializeWebContainer = async (config: WebContainerConfig = {}): Promise<WebContainer | null> => {
   try {
     const {
       serverUrl = 'https://disco-mcp.up.railway.app',
-      coep = 'credentialless',
-      timeout = 30000,
-      retries = 3
+      coep = 'require-corp', // Updated for 2025 Railway deployment standards
+      timeout = 45000, // Increased timeout for Railway deployment
+      retries = 3,
+      enableCompression = true,
+      enableNetworking = true,
+      enableShell = true
     } = config;
 
-    console.log('🚀 Initializing WebContainer with MCP integration...');
+    console.log('🚀 Initializing WebContainer with MCP integration (2025)...');
     console.log(`📡 Server URL: ${serverUrl}`);
     console.log(`🔒 COEP Policy: ${coep}`);
+    console.log(`🌐 Networking: ${enableNetworking ? 'enabled' : 'disabled'}`);
+    console.log(`💻 Shell: ${enableShell ? 'enabled' : 'disabled'}`);
 
     // Check if we're in a browser environment
     if (typeof window === 'undefined') {
@@ -45,7 +57,12 @@ export const initializeWebContainer = async (config: WebContainerConfig = {}): P
     // Check for SharedArrayBuffer support (required for WebContainer)
     if (typeof SharedArrayBuffer === 'undefined') {
       console.error('❌ SharedArrayBuffer not available - check COEP/COOP headers');
-      throw new Error('SharedArrayBuffer required for WebContainer - ensure COEP headers are set');
+      throw new Error('SharedArrayBuffer required for WebContainer - ensure COEP headers are set to require-corp');
+    }
+
+    // Check cross-origin isolation status (2025 enhancement)
+    if (typeof crossOriginIsolated !== 'undefined' && !crossOriginIsolated) {
+      console.warn('⚠️  Cross-origin isolation not active - some features may be limited');
     }
 
     // Retry logic for WebContainer initialization
@@ -57,7 +74,9 @@ export const initializeWebContainer = async (config: WebContainerConfig = {}): P
         
         const instance = await Promise.race([
           WebContainer.boot({
-            coep: coep
+            coep: coep,
+            // 2025 enhanced options
+            workdirName: 'disco-workspace',
           }),
           new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('WebContainer boot timeout')), timeout)
@@ -70,6 +89,32 @@ export const initializeWebContainer = async (config: WebContainerConfig = {}): P
         const testResult = await instance.fs.readdir('/');
         console.log('🗂️  WebContainer filesystem accessible:', testResult.length, 'items');
         
+        // Test networking capabilities (2025 enhancement)
+        if (enableNetworking) {
+          try {
+            const process = await instance.spawn('curl', ['--version'], { stdio: 'pipe' });
+            const exitCode = await process.exit;
+            if (exitCode === 0) {
+              console.log('🌐 Network tools available');
+            }
+          } catch (error) {
+            console.log('ℹ️  Network tools not available (expected in some environments)');
+          }
+        }
+
+        // Test shell capabilities (2025 enhancement)
+        if (enableShell) {
+          try {
+            const shellProcess = await instance.spawn('sh', ['-c', 'echo "Shell test"'], { stdio: 'pipe' });
+            const exitCode = await shellProcess.exit;
+            if (exitCode === 0) {
+              console.log('💻 Shell environment ready');
+            }
+          } catch (error) {
+            console.log('ℹ️  Shell environment not fully available');
+          }
+        }
+        
         return instance;
         
       } catch (error) {
@@ -77,7 +122,7 @@ export const initializeWebContainer = async (config: WebContainerConfig = {}): P
         console.warn(`⚠️  WebContainer initialization attempt ${attempt} failed:`, lastError.message);
         
         if (attempt < retries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          const delay = Math.min(2000 * Math.pow(2, attempt - 1), 10000); // Exponential backoff
           console.log(`⏳ Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
