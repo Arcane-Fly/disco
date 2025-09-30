@@ -31,7 +31,7 @@ export default function Layout({ children }: LayoutProps) {
               <Link href="/app-dashboard">Dashboard</Link>
               <Link href="/workflow-builder">Workflow Builder</Link>
               <Link href="/analytics">Analytics</Link>
-              <a href="/webcontainer-loader">WebContainer</a>
+              <Link href="/webcontainer-loader">WebContainer</Link>
               <Link href="/legacy-root">Classic UI</Link>
             </div>
           </div>

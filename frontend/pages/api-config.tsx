@@ -211,6 +211,130 @@ export default function ApiConfig() {
             </div>
           </div>
 
+          {/* Transport Configuration */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex items-center mb-4">
+              <Key className="w-6 h-6 text-indigo-600 mr-2" />
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Transport Configuration
+              </h2>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* MCP HTTP Stream */}
+              <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">MCP HTTP Stream</h3>
+                  <span className="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-xs rounded-full">Recommended</span>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                  Modern streaming protocol for ChatGPT and compatible clients.
+                </p>
+                <div className="bg-green-50 dark:bg-green-900/20 rounded p-3 mb-3">
+                  <code className="text-xs font-mono text-green-800 dark:text-green-200">
+                    {mcpUrl}
+                  </code>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <strong>Best for:</strong> ChatGPT, Claude Desktop, modern MCP clients
+                </p>
+              </div>
+
+              {/* Legacy SSE */}
+              <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Legacy SSE Transport</h3>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                  Server-Sent Events for older clients that need streaming.
+                </p>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded p-3 mb-3">
+                  <code className="text-xs font-mono text-yellow-800 dark:text-yellow-200">
+                    {mcpUrl.replace('/mcp', '/sse')}
+                  </code>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <strong>Best for:</strong> Legacy integrations, older MCP clients
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step-by-Step Setup Examples */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
+            <div className="flex items-center mb-4">
+              <ExternalLink className="w-6 h-6 text-blue-600 mr-2" />
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Setup Examples
+              </h2>
+            </div>
+
+            <div className="space-y-6">
+              {/* ChatGPT Setup */}
+              <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-white text-sm font-bold">GPT</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">ChatGPT Configuration</h3>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Steps:</h4>
+                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-2 list-decimal list-inside">
+                    <li>Open ChatGPT and go to Settings → Beta Features</li>
+                    <li>Enable &quot;Model Context Protocol&quot; if available</li>
+                    <li>Add a new MCP server connection</li>
+                    <li>Paste the MCP URL: <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-xs">{mcpUrl}</code></li>
+                    <li>Give it a name like &quot;Disco MCP Server&quot;</li>
+                    <li>Test the connection</li>
+                  </ol>
+                </div>
+
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  <strong>Note:</strong> MCP integration in ChatGPT may require ChatGPT Plus subscription and may be in beta.
+                </div>
+              </div>
+
+              {/* Claude Desktop Setup */}
+              <div className="border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-white text-sm font-bold">C</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Claude Desktop Configuration</h3>
+                </div>
+                
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-orange-900 dark:text-orange-100 mb-2">Configuration File:</h4>
+                  <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
+                    Add this to your Claude Desktop configuration file:
+                  </p>
+                  <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs overflow-x-auto">
+{`{
+  "mcpServers": {
+    "disco-mcp": {
+      "command": "npx",
+      "args": ["@disco/mcp-client"],
+      "env": {
+        "DISCO_MCP_URL": "${mcpUrl}",
+        "DISCO_TOKEN": "${currentToken?.substring(0, 20)}..."
+      }
+    }
+  }
+}`}
+                  </pre>
+                </div>
+
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  <strong>Location:</strong> <code>~/.config/claude/config.json</code> (macOS/Linux) or <code>%APPDATA%/claude/config.json</code> (Windows)
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Documentation Links */}
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
             <div className="flex items-center mb-4">
@@ -220,7 +344,7 @@ export default function ApiConfig() {
               </h2>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <a
                 href="/docs"
                 className="block p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
@@ -228,6 +352,21 @@ export default function ApiConfig() {
                 <h3 className="font-medium text-slate-900 dark:text-white mb-1">API Documentation</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   Complete API reference and examples
+                </p>
+              </a>
+              
+              <a
+                href="https://platform.openai.com/docs/guides/mcp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-medium text-slate-900 dark:text-white">OpenAI MCP Guide</h3>
+                  <ExternalLink className="w-4 h-4 text-slate-400" />
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Official OpenAI guide for MCP server integration
                 </p>
               </a>
               
