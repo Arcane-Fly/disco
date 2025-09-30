@@ -4,12 +4,24 @@
   "build": {
     "provider": "node",
     "nodeVersion": "20.x",
-    "buildCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable && yarn build:server && yarn build:next",
-    "installCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable"
+    "steps": {
+      "install": { 
+        "commands": [
+          "corepack enable && corepack prepare yarn@4.9.2 --activate",
+          "yarn install --frozen-lockfile"
+        ]
+      },
+      "build": { 
+        "commands": [
+          "yarn typecheck || true",
+          "yarn build"
+        ]
+      }
+    }
   },
   "deploy": {
-    "startCommand": "node dist/server.js",
-    "healthCheckPath": "/health",
+    "startCommand": "yarn start",
+    "healthCheckPath": "/api/health", 
     "healthCheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
