@@ -959,10 +959,10 @@ router.post('/:containerId/webcontainer-integration', async (req: Request, res: 
 });
 
 /**
- * GET /api/v1/computer-use/:containerId/capabilities/2025
- * 2025 Feature: Get enhanced capabilities and feature matrix
+ * GET /api/v1/computer-use/:containerId/capabilities/enhanced
+ * Get enhanced capabilities and feature matrix for advanced automation
  */
-router.get('/:containerId/capabilities/2025', async (req: Request, res: Response): Promise<void> => {
+router.get('/:containerId/capabilities/enhanced', async (req: Request, res: Response): Promise<void> => {
   try {
     const { containerId } = req.params;
     const userId = req.user!.userId;
