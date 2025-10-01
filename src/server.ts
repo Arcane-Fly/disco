@@ -487,7 +487,7 @@ app.get('/mcp-manifest.json', async (_req, res) => {
  *             schema:
  *               type: string
  */
-app.get('/webcontainer-loader', async (req: CSPRequest, res) => {
+app.get('/webcontainer-loader-legacy', async (req: CSPRequest, res) => {
   try {
     const loaderPath = path.join(process.cwd(), 'public', 'webcontainer-loader.html');
     let loaderContent = await fs.readFile(loaderPath, 'utf-8');
@@ -5068,3 +5068,24 @@ export async function initializeServer() {
   await ensureDataDirectory();
   return app;
 }
+
+// Route Next.js static assets and known page paths through Next
+app.get('/_next/*', (req, res) => nextHandler(req, res));
+app.get(['/workflow-builder', '/api-config', '/analytics', '/webcontainer-loader'], (req, res) =>
+  nextHandler(req, res)
+);
+
+// Catch-all fallback for non-API routes to Next handler
+app.all('*', (req, res, next) => {
+  const p = req.path || '';
+  if (
+    p.startsWith('/api') ||
+    p.startsWith('/docs') ||
+    p === '/openapi.json' ||
+    p === '/mcp-manifest.json' ||
+    p.startsWith('/public')
+  ) {
+    return next();
+  }
+  return nextHandler(req, res);
+});
