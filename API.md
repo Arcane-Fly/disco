@@ -80,6 +80,80 @@ GET /capabilities
 }
 ```
 
+### Get Enhanced Capabilities
+
+Get detailed capabilities and feature matrix for advanced automation features.
+
+```http
+GET /api/v1/computer-use/:containerId/capabilities/enhanced
+Authorization: Bearer {token}
+```
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "version": "2025.1",
+    "lastUpdated": "2025-10-01T13:00:00.000Z",
+    "containerId": "container-abc123",
+    "platform": {
+      "railway": {
+        "supported": true,
+        "optimized": true,
+        "deployment": "railpack",
+        "coepHeaders": "require-corp"
+      },
+      "webcontainer": {
+        "supported": true,
+        "version": "1.1.9",
+        "features": ["filesystem", "networking", "shell", "npm", "node"],
+        "crossOriginIsolated": true
+      }
+    },
+    "automation": {
+      "browser": {
+        "engines": ["chromium", "firefox", "webkit"],
+        "headless": true,
+        "recordVideo": true,
+        "networkLogging": true,
+        "aiAssisted": true,
+        "accessibilityTesting": true
+      },
+      "computer": {
+        "screenshots": true,
+        "clicking": true,
+        "typing": true,
+        "keyboardShortcuts": true,
+        "visualRegression": true,
+        "performanceMonitoring": true
+      }
+    },
+    "integrations": {
+      "mcp": {
+        "version": "1.18.2",
+        "protocols": ["stdio", "http", "sse"],
+        "toolSupport": true,
+        "resourceAccess": true
+      },
+      "ai": {
+        "assistedActions": true,
+        "contextAware": true,
+        "naturalLanguageCommands": true,
+        "workflowGeneration": true
+      }
+    },
+    "limits": {
+      "maxSessions": 10,
+      "maxViewports": 5,
+      "commandTimeout": 300000,
+      "sessionDuration": 3600000
+    }
+  }
+}
+```
+
 ## Container Management
 
 ### Create Container
