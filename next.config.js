@@ -1,15 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   poweredByHeader: false,
   // Disable automatic CSP nonce generation to prevent 'unsafe-inline' blocking
   generateEtags: false,
   experimental: {
     esmExternals: true,
-    serverComponentsExternalPackages: ['sharp'],
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
+  serverExternalPackages: ['sharp'],
   // Image optimization for Railway deployment
   images: {
     domains: ['avatars.githubusercontent.com'],
@@ -117,24 +116,6 @@ const nextConfig = {
           {
             key: 'Cross-Origin-Resource-Policy',
             value: 'cross-origin',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.skypack.dev https://*.webcontainer.io https://stackblitz.com", // WebContainer compatibility
-              "style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com", // Allow inline styles for Next.js components and Tailwind
-              "font-src 'self' https://fonts.gstatic.com data:",
-              "img-src 'self' blob: data: https: https://avatars.githubusercontent.com https://cdn.jsdelivr.net", // Added jsdelivr for icons
-              "connect-src 'self' wss: ws: https://webcontainer.io https://*.webcontainer.io https://*.stackblitz.com https://api.stackblitz.com",
-              "frame-ancestors 'self' https://chat.openai.com https://chatgpt.com https://claude.ai",
-              "worker-src 'self' blob: https://*.webcontainer.io data:",
-              "child-src 'self' blob: https://*.webcontainer.io data:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              'upgrade-insecure-requests',
-            ].join('; '),
           },
           // Railway deployment optimization headers
           {
