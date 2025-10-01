@@ -964,8 +964,8 @@ svg {
 
 /* Footer */
 .footer {
-  background: var(--dark-light);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-subtle);
   padding: var(--space-xl) 0 var(--space-md);
 }
 
@@ -977,37 +977,38 @@ svg {
 }
 
 .footer-section h4 {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   margin-bottom: var(--space-sm);
+  color: var(--text-primary);
 }
 
 .footer-section p {
-  color: var(--gray);
-  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .footer-section a {
   display: block;
-  color: var(--gray-light);
+  color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-bottom: var(--space-xs);
   transition: color 0.2s;
 }
 
 .footer-section a:hover {
-  color: var(--primary-light);
+  color: var(--brand-cyan);
 }
 
 .footer-bottom {
   text-align: center;
   padding-top: var(--space-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .footer-bottom p {
-  color: var(--gray);
-  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 /* App Layout */
@@ -1039,13 +1040,14 @@ svg {
 }
 
 .dashboard-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
   margin-bottom: var(--space-xs);
+  color: var(--text-primary);
 }
 
 .dashboard-subtitle {
-  color: var(--gray-light);
+  color: var(--text-secondary);
 }
 
 .dashboard-status {
@@ -1060,29 +1062,29 @@ svg {
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-xs) var(--space-sm);
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
 }
 
 .connection-status.connected {
-  background: rgba(16, 185, 129, 0.1);
+  background: color-mix(in oklab, var(--success) 10%, transparent);
   color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid color-mix(in oklab, var(--success) 20%, transparent);
 }
 
 .connection-status.disconnected {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: color-mix(in oklab, var(--error) 10%, transparent);
+  color: var(--error);
+  border: 1px solid color-mix(in oklab, var(--error) 20%, transparent);
 }
 
 .last-update {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  color: var(--gray);
-  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .dashboard-grid {
@@ -1092,28 +1094,29 @@ svg {
 }
 
 .metric-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: color-mix(in oklab, var(--bg-secondary) 92%, var(--bg-primary) 8%);
+  border: 1px solid var(--border-moderate);
+  border-radius: var(--radius-xl);
   padding: var(--space-lg);
   backdrop-filter: blur(10px);
   position: relative;
   transition: all 0.3s;
+  box-shadow: var(--shadow-2);
 }
 
 .metric-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.1);
+  border-color: color-mix(in oklab, var(--brand-cyan) 30%, transparent);
+  box-shadow: var(--shadow-3), var(--glow-mixed);
 }
 
 .metric-card.live {
-  border-color: rgba(16, 185, 129, 0.2);
+  border-color: color-mix(in oklab, var(--success) 20%, transparent);
 }
 
 .metric-card.live:hover {
-  border-color: rgba(16, 185, 129, 0.4);
-  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
+  border-color: color-mix(in oklab, var(--success) 40%, transparent);
+  box-shadow: var(--shadow-3), 0 0 20px color-mix(in oklab, var(--success) 20%, transparent);
 }
 
 .metric-header {
@@ -1124,14 +1127,14 @@ svg {
 }
 
 .metric-title {
-  font-weight: 600;
-  color: var(--gray-light);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
 }
 
 .metric-icon {
   width: 24px;
   height: 24px;
-  color: var(--primary-light);
+  color: var(--brand-cyan);
 }
 
 .metric-card.live .metric-icon {
@@ -1139,15 +1142,15 @@ svg {
 }
 
 .metric-value {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--white);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-extrabold);
+  color: var(--text-primary);
   margin-bottom: var(--space-xs);
 }
 
 .metric-description {
-  font-size: 0.875rem;
-  color: var(--gray);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .metric-live-indicator {
@@ -1187,21 +1190,22 @@ svg {
   gap: var(--space-lg);
   margin-bottom: var(--space-xl);
   padding: var(--space-lg);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: color-mix(in oklab, var(--bg-secondary) 92%, var(--bg-primary) 8%);
+  border: 1px solid var(--border-moderate);
+  border-radius: var(--radius-xl);
   backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-2);
 }
 
 .profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in oklab, var(--brand-cyan) 10%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(99, 102, 241, 0.2);
+  border: 2px solid color-mix(in oklab, var(--brand-cyan) 20%, transparent);
   overflow: hidden;
 }
 
@@ -1212,20 +1216,21 @@ svg {
 }
 
 .profile-info h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   margin-bottom: var(--space-xs);
+  color: var(--text-primary);
 }
 
 .profile-username {
-  color: var(--primary-light);
-  font-weight: 500;
+  color: var(--brand-cyan);
+  font-weight: var(--font-medium);
   margin-bottom: 4px;
 }
 
 .profile-email {
-  color: var(--gray-light);
-  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
 }
 
 .profile-content {
@@ -1246,32 +1251,33 @@ svg {
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--gray-light);
+  border: 1px solid var(--border-moderate);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
 }
 
 .profile-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: var(--white);
+  background: var(--bg-interactive);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .profile-tab.active {
-  background: rgba(99, 102, 241, 0.1);
-  border-color: rgba(99, 102, 241, 0.3);
-  color: var(--primary-light);
+  background: color-mix(in oklab, var(--brand-cyan) 10%, transparent);
+  border-color: color-mix(in oklab, var(--brand-cyan) 30%, transparent);
+  color: var(--brand-cyan);
 }
 
 .profile-tab-content {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  background: color-mix(in oklab, var(--bg-secondary) 92%, var(--bg-primary) 8%);
+  border: 1px solid var(--border-moderate);
+  border-radius: var(--radius-xl);
   backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-2);
 }
 
 .tab-panel {
@@ -1279,10 +1285,10 @@ svg {
 }
 
 .tab-title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
   margin-bottom: var(--space-lg);
-  color: var(--white);
+  color: var(--text-primary);
 }
 
 .form-grid {
@@ -1302,30 +1308,31 @@ svg {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  font-weight: 500;
-  color: var(--gray-light);
-  font-size: 0.875rem;
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
 }
 
 .form-input {
   padding: var(--space-sm) var(--space-md);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--white);
-  font-size: 0.875rem;
+  background: color-mix(in oklab, var(--bg-primary) 95%, var(--bg-secondary) 5%);
+  border: 1px solid var(--border-moderate);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
   transition: all 0.2s;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--brand-cyan);
+  background: color-mix(in oklab, var(--bg-primary) 92%, var(--bg-secondary) 8%);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-cyan) 10%, transparent);
 }
 
 .form-input:read-only {
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--gray-light);
+  background: color-mix(in oklab, var(--bg-primary) 98%, var(--bg-secondary) 2%);
+  color: var(--text-muted);
 }
 
 .form-actions {
