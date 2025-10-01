@@ -11,6 +11,7 @@
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
     "strict": true,
     "noImplicitAny": false,
     "declaration": false,
@@ -28,6 +29,15 @@
     "frontend",
     "dist",
     "test",
+    "src/**/*.tsx",
+    "src/components/**",
+    "src/shared/components/**",
+    "src/shared/**",
+    "src/features/**/components/**",
+    "src/features/workflow/**",
+    "src/features/shared/lib/**",
+    "src/hooks/**",
+    "src/lib/store.ts",
     "src/**/*.test.ts",
     "src/**/*.spec.ts"
   ]

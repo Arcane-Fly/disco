@@ -1,5 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { ErrorCode } from '../types/index.js';
+import {
+  ALLOWED_CLAUDE_MODELS,
+  DEPRECATED_CLAUDE_MODELS,
+  DEFAULT_CLAUDE_MODEL,
+  isAllowedClaudeModel,
+} from '../config/anthropic.js';
 
 const router = Router();
 
@@ -16,8 +22,8 @@ const PROVIDERS = {
     name: 'Anthropic',
     status: 'active',
     endpoint: 'https://api.anthropic.com/v1',
-    models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
-    capabilities: ['text-generation', 'function-calling'],
+    models: [...ALLOWED_CLAUDE_MODELS],
+    capabilities: ['text-generation', 'tool-use', 'streaming', 'vision'],
   },
   Google: {
     name: 'Google',
@@ -64,6 +70,55 @@ router.get('/', async (_req: Request, res: Response) => {
         code: ErrorCode.INTERNAL_ERROR,
         message: 'Failed to list providers',
       },
+    });
+  }
+});
+
+/**
+ * GET /api/v1/providers/policy
+ * Returns provider policy information, including allowed and deprecated models
+ */
+router.get('/policy', async (_req: Request, res: Response) => {
+  try {
+    res.json({
+      status: 'success',
+      data: {
+        anthropic: {
+          default: DEFAULT_CLAUDE_MODEL,
+          allowed: ALLOWED_CLAUDE_MODELS,
+          deprecated: DEPRECATED_CLAUDE_MODELS,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Provider policy error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: { code: ErrorCode.INTERNAL_ERROR, message: 'Failed to fetch policy' },
+    });
+  }
+});
+
+/**
+ * POST /api/v1/providers/anthropic/validate
+ * Validate a requested Anthropic model against policy
+ */
+router.post('/anthropic/validate', async (req: Request, res: Response) => {
+  try {
+    const { model } = req.body || {};
+    if (!model || typeof model !== 'string') {
+      return res.status(400).json({
+        status: 'error',
+        error: { code: ErrorCode.INVALID_REQUEST, message: 'model is required' },
+      });
+    }
+    const allowed = isAllowedClaudeModel(model);
+    res.json({ status: 'success', data: { model, allowed, default: DEFAULT_CLAUDE_MODEL } });
+  } catch (error) {
+    console.error('Model validate error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: { code: ErrorCode.INTERNAL_ERROR, message: 'Failed to validate model' },
     });
   }
 });
