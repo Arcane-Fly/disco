@@ -41,7 +41,7 @@ import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
 import { mcpRouter } from './api/mcp.js';
 import { mcpA2aRouter } from './api/mcp-a2a-integration.js';
-import { enhancedCSPMiddleware, CSPRequest } from './middleware/csp.js';
+import { enhancedCSPMiddleware, nextjsCSPMiddleware, CSPRequest } from './middleware/csp.js';
 
 // Import route handlers
 import { metricsHandler } from './routes/metrics.js';
@@ -5069,13 +5069,15 @@ export async function initializeServer() {
   return app;
 }
 
-// Route Next.js static assets and known page paths through Next
-app.get('/_next/*', (req, res) => nextHandler(req, res));
-app.get(['/workflow-builder', '/api-config', '/analytics', '/webcontainer-loader'], (req, res) =>
-  nextHandler(req, res)
+// Route Next.js static assets and known page paths through Next with CSP tuned for Next
+app.get('/_next/*', nextjsCSPMiddleware, (req, res) => nextHandler(req, res));
+app.get(
+  ['/workflow-builder', '/api-config', '/analytics', '/webcontainer-loader'],
+  nextjsCSPMiddleware,
+  (req, res) => nextHandler(req, res)
 );
 
-// Catch-all fallback for non-API routes to Next handler
+// Catch-all fallback for non-API routes to Next handler with Next-specific CSP
 app.all('*', (req, res, next) => {
   const p = req.path || '';
   if (
@@ -5087,5 +5089,5 @@ app.all('*', (req, res, next) => {
   ) {
     return next();
   }
-  return nextHandler(req, res);
+  return nextjsCSPMiddleware(req as CSPRequest, res, () => nextHandler(req, res));
 });

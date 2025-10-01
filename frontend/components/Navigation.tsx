@@ -90,17 +90,17 @@ export default function Navigation() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="user-menu-dropdown">
-                    <Link href="/profile" className="menu-item">
+                  <div className="user-dropdown">
+                    <Link href="/profile" className="dropdown-item">
                       <Icon name="User" size={16} />
                       <span>Profile</span>
                     </Link>
-                    <Link href="/api-config" className="menu-item">
+                    <Link href="/api-config" className="dropdown-item">
                       <Icon name="Settings" size={16} />
                       <span>Settings</span>
                     </Link>
-                    <hr className="menu-divider" />
-                    <button onClick={logout} className="menu-item">
+                    <hr className="dropdown-divider" />
+                    <button onClick={logout} className="dropdown-item danger">
                       <Icon name="LogOut" size={16} />
                       <span>Sign Out</span>
                     </button>
@@ -108,7 +108,7 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              <button onClick={login} className="sign-in-btn">
+              <button onClick={login} className="btn-signin">
                 <Icon name="Github" size={16} />
                 <span>Sign In</span>
               </button>
@@ -118,6 +118,8 @@ export default function Navigation() {
             <button
               className="mobile-menu-toggle"
               onClick={handleMobileMenuToggle}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               <Icon name={mobileMenuOpen ? "X" : "Menu"} size={20} />
             </button>
@@ -126,12 +128,12 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="nav-links mobile">
+          <div className="nav-mobile">
             {visibleLinks.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`nav-link ${router.pathname === link.href ? 'active' : ''}`}
+                className={`nav-link-mobile ${router.pathname === link.href ? 'active' : ''}`}
                 onClick={handleNavClick}
               >
                 <Icon name={link.icon as keyof typeof import('lucide-react')} size={16} />
@@ -139,7 +141,7 @@ export default function Navigation() {
               </Link>
             ))}
             {!user && (
-              <button onClick={() => { login(); handleNavClick(); }} className="nav-link">
+              <button onClick={() => { login(); handleNavClick(); }} className="btn-signin-mobile">
                 <Icon name="Github" size={16} />
                 <span>Sign In</span>
               </button>
