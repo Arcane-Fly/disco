@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/pinecone/upsert.request.json",
+  "title": "pinecone.upsert.request",
+  "description": "Request schema for upserting vectors to Pinecone",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["namespace", "vectors"],
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The namespace to upsert vectors into"
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Array of vectors to upsert",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "values"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique identifier for the vector"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 8,
+            "description": "Vector embeddings"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Optional metadata associated with the vector"
+          }
+        }
+      }
+    },
+    "batchSize": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 100,
+      "description": "Number of vectors to process in each batch"
+    }
+  }
+}

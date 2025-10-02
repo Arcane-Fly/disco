@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/pinecone/query.response.json",
+  "title": "pinecone.query.response",
+  "description": "Response schema for Pinecone query operation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matches"],
+  "properties": {
+    "matches": {
+      "type": "array",
+      "description": "Array of matching vectors",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "score"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Vector identifier"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Similarity score"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Vector values (if includeValues was true)"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Vector metadata (if includeMetadata was true)"
+          }
+        }
+      }
+    },
+    "namespace": {
+      "type": "string",
+      "description": "The namespace queried"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/supabase/sql.request.json",
+  "title": "supabase.sql.request",
+  "description": "Request schema for executing SQL queries on Supabase",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query"],
+  "properties": {
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "description": "SQL query to execute"
+    },
+    "params": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      },
+      "description": "Parameterized query values"
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 300000,
+      "default": 30000,
+      "description": "Query timeout in milliseconds"
+    },
+    "readonly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to execute query in read-only mode"
+    }
+  }
+}

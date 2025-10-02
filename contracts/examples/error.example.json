@@ -1,0 +1,63 @@
+{
+  "examples": [
+    {
+      "name": "Invalid Input Error",
+      "error": {
+        "code": "INVALID_INPUT",
+        "message": "Validation failed: 'namespace' is required",
+        "retriable": false,
+        "details": {
+          "field": "namespace",
+          "constraint": "required"
+        }
+      }
+    },
+    {
+      "name": "Authentication Required",
+      "error": {
+        "code": "AUTH_REQUIRED",
+        "message": "Missing or invalid API key",
+        "retriable": false,
+        "details": {
+          "hint": "Include 'Authorization: Bearer YOUR_TOKEN' header"
+        }
+      }
+    },
+    {
+      "name": "Rate Limit Exceeded",
+      "error": {
+        "code": "RATE_LIMIT",
+        "message": "Rate limit exceeded: 100 requests per minute",
+        "retriable": true,
+        "details": {
+          "limit": 100,
+          "window": "1m",
+          "retryAfter": 45
+        }
+      }
+    },
+    {
+      "name": "Upstream Service Error",
+      "error": {
+        "code": "UPSTREAM_ERROR",
+        "message": "Pinecone API returned error: index not found",
+        "retriable": false,
+        "details": {
+          "service": "pinecone",
+          "statusCode": 404
+        }
+      }
+    },
+    {
+      "name": "Service Unavailable",
+      "error": {
+        "code": "UNAVAILABLE",
+        "message": "Service temporarily unavailable",
+        "retriable": true,
+        "details": {
+          "retryAfter": 60
+        }
+      }
+    }
+  ]
+}
