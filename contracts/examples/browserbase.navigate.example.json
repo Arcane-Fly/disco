@@ -1,0 +1,17 @@
+{
+  "request": {
+    "url": "https://example.com",
+    "waitUntil": "networkidle2",
+    "timeout": 30000,
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "response": {
+    "url": "https://example.com/",
+    "title": "Example Domain",
+    "statusCode": 200,
+    "loadTime": 1234.5
+  }
+}

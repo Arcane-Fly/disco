@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/github/searchIssues.request.json",
+  "title": "github.searchIssues.request",
+  "description": "Request schema for searching GitHub issues",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["query"],
+  "properties": {
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GitHub search query string"
+    },
+    "sort": {
+      "type": "string",
+      "enum": ["comments", "reactions", "reactions-+1", "created", "updated"],
+      "description": "Sort field for results"
+    },
+    "order": {
+      "type": "string",
+      "enum": ["asc", "desc"],
+      "default": "desc",
+      "description": "Sort order"
+    },
+    "perPage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 30,
+      "description": "Number of results per page"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Page number for pagination"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/pinecone/upsert.response.json",
+  "title": "pinecone.upsert.response",
+  "description": "Response schema for Pinecone upsert operation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["upsertedCount"],
+  "properties": {
+    "upsertedCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of vectors successfully upserted"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Non-fatal warnings during upsert operation"
+    }
+  }
+}
