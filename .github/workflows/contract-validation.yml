@@ -1,5 +1,9 @@
 name: MCP Contract Validation
 
+permissions:
+  contents: read
+  issues: write
+
 on:
   push:
     paths:
