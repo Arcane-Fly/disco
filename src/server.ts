@@ -41,6 +41,7 @@ import { platformConnectorsRouter } from './api/platform-connectors.js';
 import { sessionRouter } from './api/session.js';
 import { mcpRouter } from './api/mcp.js';
 import { mcpA2aRouter } from './api/mcp-a2a-integration.js';
+import { contractDemoRouter } from './api/contract-demo.js';
 import { enhancedCSPMiddleware, nextjsCSPMiddleware, CSPRequest } from './middleware/csp.js';
 
 // Import route handlers
@@ -4148,6 +4149,7 @@ registerAPIRoute('strategic-ux', strategicUXRouter);
 registerAPIRoute('mcp', mcpRouter);
 registerAPIRoute('mcp-a2a', mcpA2aRouter);
 registerAPIRoute('anthropic', anthropicRouter);
+registerAPIRoute('contract-demo', contractDemoRouter);
 
 // Platform Connectors - Public endpoints for easy integration
 app.use('/', platformConnectorsRouter);

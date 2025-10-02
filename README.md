@@ -105,8 +105,41 @@ The server provides a comprehensive REST API for:
 - **Terminal Operations**: Execute commands with streaming support
 - **Git Operations**: Clone, commit, push, pull repositories
 - **Health Checks**: Monitoring and diagnostics
+- **Contract Demo**: JSON Schema validated MCP operations
 
 See [API.md](./API.md) for complete API documentation.
+
+### 📜 MCP Contracts
+
+The server includes JSON Schema contracts for all MCP operations, providing:
+
+- ✅ **Type-safe validation** for requests and responses
+- ✅ **Standardized error codes** across all operations
+- ✅ **Self-documenting APIs** with examples
+- ✅ **Contract testing** to ensure compatibility
+
+Supported MCP services:
+- **Pinecone** (vector database): `upsert`, `query`
+- **Supabase** (database): `sql`
+- **Browserbase** (browser automation): `navigate`
+- **GitHub** (API operations): `searchIssues`
+
+See [contracts/README.md](./contracts/README.md) for detailed contract documentation.
+
+Demo endpoints with validation:
+```bash
+# Validate and execute Pinecone upsert
+curl -X POST https://disco-mcp.up.railway.app/api/v1/contract-demo/pinecone/upsert \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"namespace":"default","vectors":[{"id":"vec1","values":[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]}]}'
+
+# Get contract schema
+curl https://disco-mcp.up.railway.app/api/v1/contract-demo/pinecone/upsert/request
+
+# List all available contracts
+curl https://disco-mcp.up.railway.app/api/v1/contract-demo/contracts
+```
 
 ## 🛡️ Security Features
 
