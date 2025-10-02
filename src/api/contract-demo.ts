@@ -258,19 +258,31 @@ router.get('/:service/:operation/:type', contractSchemaRateLimiter, (req: Reques
 
     const fs = require('fs');
     const path = require('path');
-    const schemaPath = path.join(
-      process.cwd(),
-      'contracts',
+    const contractsRoot = path.resolve(process.cwd(), 'contracts');
+    const schemaPathUnresolved = path.join(
+      contractsRoot,
       service,
       `${operation}.${type}.json`
     );
-
+    let schemaPath;
+    try {
+      schemaPath = fs.realpathSync(schemaPathUnresolved);
+    } catch (e) {
+      return res.status(404).json(
+        createErrorEnvelope(ErrorCode.NOT_FOUND, 'Schema not found')
+      );
+    }
+    if (!schemaPath.startsWith(contractsRoot + path.sep)) {
+      // Prevent access outside contracts directory
+      return res.status(403).json(
+        createErrorEnvelope(ErrorCode.INVALID_INPUT, 'Invalid schema path')
+      );
+    }
     if (!fs.existsSync(schemaPath)) {
       return res.status(404).json(
         createErrorEnvelope(ErrorCode.NOT_FOUND, 'Schema not found')
       );
     }
-
     const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
     res.json(schema);
   } catch (error) {
