@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import {
   ContractValidator,
   ErrorCode,
@@ -14,6 +15,17 @@ import {
 const router = Router();
 const validator = new ContractValidator();
 
+// Rate limiter for schema file access endpoint
+const contractSchemaRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: {
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Too many requests, please try again later.'
+    }
+  }
+});
 /**
  * Demo: Pinecone Upsert with Contract Validation
  * POST /api/contract-demo/pinecone/upsert
@@ -231,7 +243,7 @@ router.post('/github/searchIssues', async (req: Request, res: Response) => {
  * Get contract schema
  * GET /api/contract-demo/:service/:operation/:type
  */
-router.get('/:service/:operation/:type', (req: Request, res: Response) => {
+router.get('/:service/:operation/:type', contractSchemaRateLimiter, (req: Request, res: Response) => {
   try {
     const { service, operation, type } = req.params;
 
