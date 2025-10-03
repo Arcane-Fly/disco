@@ -4893,8 +4893,9 @@ app.use('/api', (_req, res) => {
   });
 });
 
-// Next.js catch-all handler
-app.all('*', (req, res) => nextHandler(req, res));
+// Next.js catch-all handler - uses middleware pattern for Express 5.x compatibility
+// Previously app.all('*') which is incompatible with path-to-regexp 8.x
+app.use((req, res) => nextHandler(req, res));
 
 // Error handling middleware
 app.use(errorHandler);
@@ -5080,7 +5081,8 @@ app.get(
 );
 
 // Catch-all fallback for non-API routes to Next handler with Next-specific CSP
-app.all('*', (req, res, next) => {
+// Uses middleware pattern for Express 5.x + path-to-regexp 8.x compatibility
+app.use((req, res, next) => {
   const p = req.path || '';
   if (
     p.startsWith('/api') ||
