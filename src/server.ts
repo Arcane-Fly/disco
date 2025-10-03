@@ -267,8 +267,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Explicit OPTIONS handler for preflight requests
-app.options('*', cors(corsOptions));
+// CORS middleware handles OPTIONS requests automatically
+// Removed explicit app.options('*') as path-to-regexp 8.x doesn't support wildcard routes
 
 // Serve static files with proper headers for WebContainer
 app.use(
@@ -620,23 +620,23 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Disco MCP Server</title>
     <style${nonce ? ` nonce="${nonce}"` : ''}>
-        body { 
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 1000px; 
-            margin: 0 auto; 
+            max-width: 1000px;
+            margin: 0 auto;
             padding: 20px;
             background: #f8fafc;
             color: #334155;
         }
-        .header { 
-            text-align: center; 
+        .header {
+            text-align: center;
             margin-bottom: 40px;
             padding: 30px;
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        .status { 
+        .status {
             display: inline-block;
             padding: 4px 12px;
             background: #10b981;
@@ -828,13 +828,13 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             font-family: monospace;
             font-size: 0.875rem;
         }
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
         }
-        .card { 
+        .card {
             background: white;
             padding: 24px;
             border-radius: 12px;
@@ -842,7 +842,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             transition: transform 0.2s;
         }
         .card:hover { transform: translateY(-2px); }
-        .card h3 { 
+        .card h3 {
             margin: 0 0 12px 0;
             color: #1e293b;
             display: flex;
@@ -850,7 +850,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             gap: 8px;
         }
         .card p { margin: 0 0 16px 0; color: #64748b; }
-        .card a { 
+        .card a {
             display: inline-block;
             padding: 8px 16px;
             background: #3b82f6;
@@ -892,8 +892,8 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             right: 8px;
         }
         .copy-btn:hover { background: #475569; }
-        .copy-btn.copied { 
-            background: #10b981; 
+        .copy-btn.copied {
+            background: #10b981;
             color: white;
             transform: scale(1.05);
             transition: all 0.2s ease;
@@ -957,7 +957,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             font-size: 0.875rem;
         }
         .hidden { display: none; }
-        
+
         /* Enhanced UX improvements */
         .connection-status {
             display: inline-flex;
@@ -984,7 +984,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             border: 1px solid #ef4444;
             color: #991b1b;
         }
-        
+
         .setup-wizard {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -1022,7 +1022,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             border: 1px solid rgba(59, 130, 246, 0.5);
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
         }
-        
+
         .status-indicator {
             display: inline-flex;
             align-items: center;
@@ -1044,7 +1044,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             background: #fef3c7;
             color: #92400e;
         }
-        
+
         .health-dashboard {
             background: white;
             padding: 20px;
@@ -1075,7 +1075,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             text-transform: uppercase;
             margin-top: 4px;
         }
-        
+
         .progress-indicator {
             width: 100%;
             height: 4px;
@@ -1090,7 +1090,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             transition: width 0.3s ease;
             border-radius: 2px;
         }
-        
+
         .notification {
             position: fixed;
             top: 20px;
@@ -1120,7 +1120,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
             border-left: 4px solid #3b82f6;
             color: #1e40af;
         }
-        
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -1128,7 +1128,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
         .pulse {
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -1236,7 +1236,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
     <div class="platform-urls">
         <h3>🌐 Platform Integration URLs</h3>
         <p>Copy these URLs directly into your preferred platform:</p>
-        
+
         <div>
             <strong>ChatGPT.com Main Interface Connector URL:</strong>
             <span class="public-endpoint">🌍 Public</span>
@@ -1356,7 +1356,7 @@ app.get('/legacy-root', (_req: CSPRequest, res): void => {
     <div class="mcp-section">
         <h3>🔗 MCP Client Configuration</h3>
         <p id="config-description">Login with GitHub to get your personalized configuration with authentication tokens:</p>
-        
+
         <div id="authenticated-configs" class="hidden">
             <h4>For ChatGPT.com Main Interface (Connectors):</h4>
             <div style="background: #eff6ff; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
@@ -1429,11 +1429,11 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
 
         <div id="unauthenticated-configs">
             <h4>Platform URLs (Login Required for Authentication Tokens):</h4>
-            
+
             <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
                 <strong>✅ MCP HTTP Stream (Recommended):</strong> ${domain}/mcp
             </div>
-            
+
             <div style="background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
                 <strong>🔄 MCP Legacy SSE:</strong> ${domain}/sse + ${domain}/messages
             </div>
@@ -1467,7 +1467,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         let currentUser = null;
         let healthCheckInterval = null;
         let selectedPlatform = null;
-        
+
         // Health monitoring
         async function checkServerHealth() {
             try {
@@ -1481,69 +1481,69 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 console.error('Health check failed:', error);
             }
         }
-        
+
         function updateHealthDashboard(health) {
             const uptimeElement = document.getElementById('uptime-value');
             const memoryElement = document.getElementById('memory-value');
             const containersElement = document.getElementById('containers-value');
             const requestsElement = document.getElementById('requests-value');
             const progressBar = document.getElementById('health-progress');
-            
+
             if (uptimeElement) {
                 const hours = Math.floor(health.uptime / 3600);
                 const minutes = Math.floor((health.uptime % 3600) / 60);
                 uptimeElement.textContent = hours > 0 ? \`\${hours}h \${minutes}m\` : \`\${minutes}m\`;
             }
-            
+
             if (memoryElement && health.memory) {
                 memoryElement.textContent = \`\${health.memory.used}MB\`;
             }
-            
+
             if (containersElement && health.containers) {
                 containersElement.textContent = \`\${health.containers.active}/\${health.containers.max}\`;
             }
-            
+
             if (requestsElement) {
                 requestsElement.textContent = health.requests || '--';
             }
-            
+
             // Calculate health percentage
             let healthPercent = 100;
             if (health.status === 'warning') healthPercent = 75;
             if (health.status === 'error') healthPercent = 25;
-            
+
             if (progressBar) {
                 progressBar.style.width = healthPercent + '%';
             }
         }
-        
+
         function updateServerStatus(status, message) {
             const statusElement = document.getElementById('server-status');
             if (!statusElement) return;
-            
+
             statusElement.className = 'connection-status ' + status;
-            
+
             const icons = {
                 'checking': '⚡',
                 'connected': '✅',
                 'error': '❌'
             };
-            
+
             // Safely set text content to prevent XSS
             statusElement.textContent = icons[status] + ' ' + message;
         }
-        
+
         function updateWizardProgress() {
             // Step 1: Authentication
             const step1 = document.getElementById('step-1');
             const authStatus = document.getElementById('auth-status');
-            
+
             if (currentToken) {
                 step1.classList.add('completed');
                 step1.classList.remove('active');
                 authStatus.className = 'status-indicator online';
                 authStatus.textContent = 'Authenticated ✓';
-                
+
                 // Activate step 2
                 const step2 = document.getElementById('step-2');
                 step2.classList.add('active');
@@ -1554,7 +1554,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 authStatus.className = 'status-indicator checking';
                 authStatus.textContent = 'Click login button';
             }
-            
+
             // Step 3: Configuration
             if (currentToken) {
                 const step3 = document.getElementById('step-3');
@@ -1563,52 +1563,52 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 document.getElementById('config-status').textContent = 'URLs ready ✓';
             }
         }
-        
+
         function selectPlatform(platform) {
             selectedPlatform = platform;
             const step2 = document.getElementById('step-2');
             const step4 = document.getElementById('step-4');
             const platformStatus = document.getElementById('platform-status');
             const testStatus = document.getElementById('test-status');
-            
+
             step2.classList.add('completed');
             step2.classList.remove('active');
             platformStatus.className = 'status-indicator online';
             platformStatus.textContent = platform + ' selected ✓';
-            
+
             // Activate step 4
             step4.classList.add('active');
             testStatus.className = 'status-indicator checking';
             testStatus.textContent = 'Ready to test';
-            
+
             showNotification('success', \`\${platform} platform selected! Copy the configuration URL below.\`);
         }
-        
+
         function showNotification(type, message) {
             const notification = document.createElement('div');
             notification.className = \`notification \${type}\`;
-            
+
             // Create elements safely to prevent XSS
             const container = document.createElement('div');
             container.style.display = 'flex';
             container.style.alignItems = 'center';
             container.style.gap = '8px';
-            
+
             const iconSpan = document.createElement('span');
             iconSpan.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-            
+
             const messageSpan = document.createElement('span');
             messageSpan.textContent = message; // Safe text content instead of innerHTML
-            
+
             container.appendChild(iconSpan);
             container.appendChild(messageSpan);
             notification.appendChild(container);
-            
+
             document.body.appendChild(notification);
-            
+
             // Show notification
             setTimeout(() => notification.classList.add('show'), 100);
-            
+
             // Hide notification after 5 seconds
             setTimeout(() => {
                 notification.classList.remove('show');
@@ -1623,7 +1623,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 const params = new URLSearchParams(hash.substring(1));
                 currentToken = params.get('token');
                 currentUser = params.get('user');
-                
+
                 if (currentToken) {
                     localStorage.setItem('disco_token', currentToken);
                     localStorage.setItem('disco_user', currentUser || '');
@@ -1652,7 +1652,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 authSection.classList.add('authenticated');
                 loginSection.classList.add('hidden');
                 authenticatedSection.classList.remove('hidden');
-                
+
                 // Show user info safely to prevent XSS
                 userInfo.innerHTML = '';
                 const strongElement = document.createElement('strong');
@@ -1696,7 +1696,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 const baseUrl = '${domain}/api/v1';
                 const urlWithToken = baseUrl + '?token=' + currentToken;
                 fullUrlElement.textContent = urlWithToken;
-                
+
                 // Update the copy button data attribute
                 const fullUrlCopyBtn = fullUrlElement.parentElement.querySelector('.copy-btn');
                 if (fullUrlCopyBtn) {
@@ -1720,10 +1720,10 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             const element = document.getElementById(elementId);
             const text = element.textContent;
             const btn = element.parentElement.querySelector('.copy-btn');
-            
+
             navigator.clipboard.writeText(text).then(() => {
                 showCopyFeedback(btn);
-                
+
                 // Update wizard progress if copying configuration
                 if (elementId.includes('config') || elementId.includes('connector')) {
                     const step4 = document.getElementById('step-4');
@@ -1748,7 +1748,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
         function copyTextWithFeedback(button, text) {
             navigator.clipboard.writeText(text).then(() => {
                 showCopyFeedback(button);
-                
+
                 // Enhanced feedback for platform URLs
                 if (text.includes('openapi.json')) {
                     selectPlatform('ChatGPT');
@@ -1773,8 +1773,8 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             const originalText = button.textContent;
             button.textContent = '✅ Copied!';
             button.classList.add('copied');
-            setTimeout(() => { 
-                button.textContent = originalText; 
+            setTimeout(() => {
+                button.textContent = originalText;
                 button.classList.remove('copied');
             }, 2000);
         }
@@ -1804,7 +1804,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
             checkAuth();
             setupEventListeners();
             checkServerHealth(); // Initial health check
-            
+
             // Start periodic health checks
             healthCheckInterval = setInterval(checkServerHealth, 30000); // Every 30 seconds
         });
@@ -1815,7 +1815,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 button.addEventListener('click', function() {
                     const copyText = this.getAttribute('data-copy-text');
                     const copyElement = this.getAttribute('data-copy-element');
-                    
+
                     if (copyText) {
                         copyTextWithFeedback(this, copyText);
                     } else if (copyElement) {
@@ -1830,7 +1830,7 @@ export DISCO_OPENAPI_URL="${domain}/openapi.json"
                 logoutBtn.addEventListener('click', logout);
             }
         }
-        
+
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
             if (healthCheckInterval) {
@@ -1929,10 +1929,10 @@ app.get('/auth/callback', (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OAuth Error - Disco MCP Server</title>
     <style>
-        body { 
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px; 
-            margin: 0 auto; 
+            max-width: 600px;
+            margin: 0 auto;
             padding: 20px;
             background: #f8fafc;
             color: #334155;
@@ -1989,10 +1989,10 @@ app.get('/auth/callback', (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OAuth Callback - Disco MCP Server</title>
     <style>
-        body { 
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px; 
-            margin: 0 auto; 
+            max-width: 600px;
+            margin: 0 auto;
             padding: 20px;
             background: #f8fafc;
             color: #334155;
@@ -2024,14 +2024,14 @@ app.get('/auth/callback', (req, res) => {
     <div class="container">
         <h1>🔐 OAuth Callback</h1>
         <h2 class="info">ℹ️ Direct Access Detected</h2>
-        <p>This page is designed to handle OAuth authentication callbacks from GitHub. 
+        <p>This page is designed to handle OAuth authentication callbacks from GitHub.
         It looks like you've accessed this page directly.</p>
-        
+
         <p>To authenticate with GitHub:</p>
         <a href="/api/v1/auth/github?redirect_to=${encodeURIComponent('/')}" class="login-btn">
             Login with GitHub
         </a>
-        
+
         <p>Or return to the main page:</p>
         <a href="/" class="home-btn">Return to Home</a>
     </div>
@@ -2052,10 +2052,10 @@ app.get('/auth/callback', (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OAuth Success - Disco MCP Server</title>
     <style>
-        body { 
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px; 
-            margin: 0 auto; 
+            max-width: 600px;
+            margin: 0 auto;
             padding: 20px;
             background: #f8fafc;
             color: #334155;
@@ -2092,7 +2092,7 @@ app.get('/auth/callback', (req, res) => {
         <p>Redirecting you to the main page...</p>
         <p><small>Authorization code received and validated.</small></p>
     </div>
-    
+
     <script>
         // Enhanced redirect with browser extension interference mitigation
         (function() {
@@ -2101,8 +2101,8 @@ app.get('/auth/callback', (req, res) => {
             window.postMessage = function(message, targetOrigin, transfer) {
                 try {
                     // Filter out extension-related messages during OAuth flow
-                    if (typeof message === 'object' && message && 
-                        (message.source === 'content-script' || 
+                    if (typeof message === 'object' && message &&
+                        (message.source === 'content-script' ||
                          message.type === 'FROM_CONTENT_SCRIPT' ||
                          (typeof targetOrigin === 'string' && targetOrigin.includes('chrome-extension://')))) {
                         console.log('Blocked extension message during OAuth:', message);
@@ -2130,9 +2130,9 @@ app.get('/auth/callback', (req, res) => {
                                 console.log('Blocked extension message event:', event.origin);
                                 return;
                             }
-                            
+
                             // Block async response channel errors
-                            if (event.data && typeof event.data === 'object' && 
+                            if (event.data && typeof event.data === 'object' &&
                                 event.data.type && event.data.type.includes('async')) {
                                 console.log('Blocked async extension message:', event.data);
                                 return;
@@ -2152,7 +2152,7 @@ app.get('/auth/callback', (req, res) => {
                 // Add a small delay to prevent extension interference
                 setTimeout(function() {
                     const redirectUrl = '/?auth_code=${encodeURIComponent(code as string)}&auth_success=true';
-                    
+
                     // Try multiple redirect methods for maximum compatibility
                     if (window.location.replace) {
                         window.location.replace(redirectUrl);
@@ -2528,7 +2528,7 @@ app.get('/oauth/authorize', async (req, res) => {
         const token = authHeader.substring(7);
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
         userId = decoded.sub;
-      } catch (jwtError) {
+      } catch {
         // Token invalid, will redirect to login
       }
     } else if (tempAuthCookie) {
@@ -2537,7 +2537,7 @@ app.get('/oauth/authorize', async (req, res) => {
         userId = decoded.sub;
         // Clear the temporary cookie after use
         res.clearCookie('temp-auth-token');
-      } catch (jwtError) {
+      } catch {
         // Invalid temp token
       }
     }
@@ -2578,10 +2578,10 @@ app.get('/oauth/authorize', async (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authorize ChatGPT Access - Disco MCP Server</title>
     <style>
-        body { 
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px; 
-            margin: 0 auto; 
+            max-width: 600px;
+            margin: 0 auto;
             padding: 20px;
             background: #f8fafc;
             color: #334155;
@@ -2743,7 +2743,7 @@ app.get('/oauth/authorize', async (req, res) => {
         </div>
 
         <div class="security-note">
-            <strong>🔒 Security Notice:</strong> This authorization uses OAuth 2.0 with PKCE for secure authentication. 
+            <strong>🔒 Security Notice:</strong> This authorization uses OAuth 2.0 with PKCE for secure authentication.
             Your credentials are never shared with ChatGPT.
         </div>
     </div>
@@ -3123,7 +3123,7 @@ app.post('/oauth/introspect', express.urlencoded({ extended: true }), async (req
         iss: decoded.iss,
         token_type: 'Bearer',
       });
-    } catch (jwtError) {
+    } catch {
       res.json({
         active: false,
       });
@@ -4175,7 +4175,7 @@ app.get('/ui', (_req, res) => {
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -4184,18 +4184,18 @@ app.get('/ui', (_req, res) => {
             color: #F8FAFC;
             min-height: 100vh;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 3rem;
         }
-        
+
         .title {
             font-size: 3rem;
             font-weight: bold;
@@ -4205,13 +4205,13 @@ app.get('/ui', (_req, res) => {
             background-clip: text;
             margin-bottom: 1rem;
         }
-        
+
         .subtitle {
             font-size: 1.25rem;
             color: #94A3B8;
             margin-bottom: 1rem;
         }
-        
+
         .status-indicator {
             display: flex;
             align-items: center;
@@ -4219,7 +4219,7 @@ app.get('/ui', (_req, res) => {
             gap: 0.5rem;
             margin-top: 1rem;
         }
-        
+
         .live-dot {
             width: 12px;
             height: 12px;
@@ -4227,19 +4227,19 @@ app.get('/ui', (_req, res) => {
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        
+
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem;
             margin-bottom: 3rem;
         }
-        
+
         .metric-card {
             background: rgba(26, 31, 46, 0.8);
             border: 1px solid #334155;
@@ -4248,33 +4248,33 @@ app.get('/ui', (_req, res) => {
             backdrop-filter: blur(16px);
             transition: all 0.3s ease;
         }
-        
+
         .metric-card:hover {
             transform: translateY(-4px);
             border-color: #3B82F6;
         }
-        
+
         .metric-title {
             font-size: 0.875rem;
             color: #94A3B8;
             margin-bottom: 0.5rem;
         }
-        
+
         .metric-value {
             font-size: 2rem;
             font-weight: bold;
             color: #F8FAFC;
         }
-        
+
         .metric-icon {
             font-size: 1.5rem;
             float: right;
         }
-        
+
         .platforms-section {
             margin-bottom: 3rem;
         }
-        
+
         .section-title {
             font-size: 1.5rem;
             font-weight: bold;
@@ -4282,13 +4282,13 @@ app.get('/ui', (_req, res) => {
             margin-bottom: 2rem;
             color: #F8FAFC;
         }
-        
+
         .platforms-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1rem;
         }
-        
+
         .platform-card {
             background: rgba(26, 31, 46, 0.6);
             border: 1px solid #334155;
@@ -4296,47 +4296,47 @@ app.get('/ui', (_req, res) => {
             padding: 1rem;
             transition: all 0.3s ease;
         }
-        
+
         .platform-card:hover {
             transform: translateY(-2px);
             border-color: #10B981;
         }
-        
+
         .platform-header {
             display: flex;
             justify-content: between;
             align-items: center;
             margin-bottom: 0.75rem;
         }
-        
+
         .platform-name {
             font-weight: 600;
         }
-        
+
         .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             margin-left: auto;
         }
-        
+
         .status-connected { background: #10B981; }
         .status-connecting { background: #F59E0B; }
         .status-error { background: #EF4444; }
-        
+
         .platform-stats {
             font-size: 0.875rem;
             color: #94A3B8;
             line-height: 1.4;
         }
-        
+
         .features-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
             margin-bottom: 3rem;
         }
-        
+
         .feature-card {
             background: rgba(26, 31, 46, 0.8);
             border: 1px solid #334155;
@@ -4345,34 +4345,34 @@ app.get('/ui', (_req, res) => {
             text-align: center;
             transition: all 0.3s ease;
         }
-        
+
         .feature-card:hover {
             transform: scale(1.02);
             border-color: #3B82F6;
         }
-        
+
         .feature-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
         }
-        
+
         .feature-title {
             font-size: 1.25rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
-        
+
         .feature-description {
             color: #94A3B8;
         }
-        
+
         .footer {
             text-align: center;
             padding-top: 2rem;
             border-top: 1px solid #334155;
             color: #94A3B8;
         }
-        
+
         .refresh-btn {
             background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
             color: white;
@@ -4385,12 +4385,12 @@ app.get('/ui', (_req, res) => {
             margin: 1rem auto;
             display: block;
         }
-        
+
         .refresh-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
         }
-        
+
         .loading {
             display: flex;
             align-items: center;
@@ -4398,7 +4398,7 @@ app.get('/ui', (_req, res) => {
             min-height: 100vh;
             flex-direction: column;
         }
-        
+
         .spinner {
             width: 40px;
             height: 40px;
@@ -4408,7 +4408,7 @@ app.get('/ui', (_req, res) => {
             animation: spin 1s linear infinite;
             margin-bottom: 1rem;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -4420,7 +4420,7 @@ app.get('/ui', (_req, res) => {
         <div class="spinner"></div>
         <p>Loading Ultimate MCP Dashboard...</p>
     </div>
-    
+
     <div id="dashboard" class="container" style="display: none;">
         <div class="header">
             <h1 class="title">Disco MCP Ultimate</h1>
@@ -4430,18 +4430,18 @@ app.get('/ui', (_req, res) => {
                 <span>Live Dashboard</span>
             </div>
         </div>
-        
+
         <div class="metrics-grid" id="metrics">
             <!-- Metrics will be populated by JavaScript -->
         </div>
-        
+
         <div class="platforms-section">
             <h2 class="section-title">Platform Integration Status</h2>
             <div class="platforms-grid" id="platforms">
                 <!-- Platforms will be populated by JavaScript -->
             </div>
         </div>
-        
+
         <div class="features-section">
             <div class="feature-card">
                 <div class="feature-icon">🚀</div>
@@ -4450,7 +4450,7 @@ app.get('/ui', (_req, res) => {
                     Ultra-fast response times and optimized resource usage
                 </p>
             </div>
-            
+
             <div class="feature-card">
                 <div class="feature-icon">🌐</div>
                 <h3 class="feature-title">Universal Integration</h3>
@@ -4458,7 +4458,7 @@ app.get('/ui', (_req, res) => {
                     Seamless compatibility with 15+ major AI platforms
                 </p>
             </div>
-            
+
             <div class="feature-card">
                 <div class="feature-icon">🛡️</div>
                 <h3 class="feature-title">Enterprise Security</h3>
@@ -4467,100 +4467,100 @@ app.get('/ui', (_req, res) => {
                 </p>
             </div>
         </div>
-        
+
         <button class="refresh-btn" onclick="refreshData()">Refresh Data</button>
-        
+
         <div class="footer">
             <p>© 2024 Disco MCP Ultimate - Next Generation AI Platform Integration</p>
             <p>Supporting 15+ Platforms • 99.97% Uptime • Real-time Collaboration</p>
         </div>
     </div>
-    
+
     <script>
         let dashboardData = null;
-        
+
         async function loadDashboardData() {
             try {
                 const [platformsRes, performanceRes] = await Promise.all([
                     fetch('/api/v1/dashboard/platforms'),
                     fetch('/api/v1/dashboard/performance')
                 ]);
-                
+
                 const platformsData = await platformsRes.json();
                 const performanceData = await performanceRes.json();
-                
+
                 dashboardData = {
                     platforms: platformsData.platforms || [],
                     performance: performanceData.metrics || {}
                 };
-                
+
                 renderDashboard();
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
                 renderDashboard(); // Render with empty data
             }
         }
-        
+
         function renderDashboard() {
             const loading = document.getElementById('loading');
             const dashboard = document.getElementById('dashboard');
-            
+
             loading.style.display = 'none';
             dashboard.style.display = 'block';
-            
+
             renderMetrics();
             renderPlatforms();
         }
-        
+
         function renderMetrics() {
             const metricsContainer = document.getElementById('metrics');
             const connected = dashboardData.platforms.filter(p => p.status === 'connected').length;
             const avgResponseTime = dashboardData.platforms.reduce((sum, p) => sum + p.responseTime, 0) / dashboardData.platforms.length || 0;
             const totalUsers = dashboardData.platforms.reduce((sum, p) => sum + p.activeUsers, 0);
-            
+
             // Clear previous metrics safely
             while (metricsContainer.firstChild) {
                 metricsContainer.removeChild(metricsContainer.firstChild);
             }
-            
+
             // Helper to create a metric card
             function createMetricCard(icon, title, value) {
                 const card = document.createElement('div');
                 card.className = 'metric-card';
-                
+
                 const iconDiv = document.createElement('div');
                 iconDiv.className = 'metric-icon';
                 iconDiv.textContent = icon;
                 card.appendChild(iconDiv);
-                
+
                 const titleDiv = document.createElement('div');
                 titleDiv.className = 'metric-title';
                 titleDiv.textContent = title;
                 card.appendChild(titleDiv);
-                
+
                 const valueDiv = document.createElement('div');
                 valueDiv.className = 'metric-value';
                 valueDiv.textContent = value;
                 card.appendChild(valueDiv);
-                
+
                 return card;
             }
-            
+
             metricsContainer.appendChild(createMetricCard('🔗', 'Connected Platforms', String(connected)));
             metricsContainer.appendChild(createMetricCard('⚡', 'Avg Response Time', Math.round(avgResponseTime) + 'ms'));
             metricsContainer.appendChild(createMetricCard('✅', 'System Uptime', '99.97%'));
             metricsContainer.appendChild(createMetricCard('📊', 'Requests/Second', '2,847'));
             metricsContainer.appendChild(createMetricCard('👥', 'Active Users', totalUsers.toLocaleString()));
         }
-        
+
         function renderPlatforms() {
             const platformsContainer = document.getElementById('platforms');
-            
+
             // Clear previous content safely
             while (platformsContainer.firstChild) {
                 platformsContainer.removeChild(platformsContainer.firstChild);
             }
-            
+
             if (!dashboardData.platforms.length) {
                 const noDataMsg = document.createElement('p');
                 noDataMsg.style.textAlign = 'center';
@@ -4569,72 +4569,72 @@ app.get('/ui', (_req, res) => {
                 platformsContainer.appendChild(noDataMsg);
                 return;
             }
-            
+
             // Helper to create a platform card
             function createPlatformCard(platform) {
                 const card = document.createElement('div');
                 card.className = 'platform-card';
-                
+
                 const header = document.createElement('div');
                 header.className = 'platform-header';
-                
+
                 const name = document.createElement('div');
                 name.className = 'platform-name';
                 name.textContent = platform.name;
                 header.appendChild(name);
-                
+
                 const statusDot = document.createElement('div');
                 statusDot.className = 'status-dot status-' + platform.status;
                 header.appendChild(statusDot);
-                
+
                 card.appendChild(header);
-                
+
                 const stats = document.createElement('div');
                 stats.className = 'platform-stats';
-                
+
                 const statusSpan = document.createElement('strong');
                 statusSpan.textContent = platform.status;
                 stats.appendChild(document.createTextNode('Status: '));
                 stats.appendChild(statusSpan);
                 stats.appendChild(document.createElement('br'));
-                
+
                 const responseSpan = document.createElement('strong');
                 responseSpan.textContent = platform.responseTime + 'ms';
                 stats.appendChild(document.createTextNode('Response: '));
                 stats.appendChild(responseSpan);
                 stats.appendChild(document.createElement('br'));
-                
+
                 const usersSpan = document.createElement('strong');
                 usersSpan.textContent = platform.activeUsers.toLocaleString();
                 stats.appendChild(document.createTextNode('Users: '));
                 stats.appendChild(usersSpan);
                 stats.appendChild(document.createElement('br'));
-                
+
                 stats.appendChild(document.createTextNode('Features: ' + platform.features.join(', ')));
-                
+
                 card.appendChild(stats);
                 return card;
             }
-            
+
             dashboardData.platforms.forEach(platform => {
                 platformsContainer.appendChild(createPlatformCard(platform));
             });
         }
-        
+
         function refreshData() {
             const button = event.target;
             button.textContent = 'Refreshing...';
             button.disabled = true;
-            
+
             loadDashboardData().then(() => {
                 button.textContent = 'Refresh Data';
                 button.disabled = false;
             });
         }
-        
+
         // Auto-refresh every 30 seconds
         setInterval(loadDashboardData, 30000);
-        
+
         // Initial load
         loadDashboardData();
     </script>
@@ -5010,13 +5010,13 @@ if (process.env.NODE_ENV !== 'test') {
         version: '1.0.0',
         port: port
       });
-      
+
       // Register example skills following the master cheat sheet
       a2aServer.registerExampleSkills();
-      
+
       // Mount A2A routes
       app.use('/a2a', a2aServer.getRouter());
-      
+
       console.log('🤝 A2A (Agent-to-Agent) Server initialized');
       console.log(`🔗 A2A endpoint: http://localhost:${port}/a2a`);
     } catch (error) {
