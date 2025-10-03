@@ -13,7 +13,7 @@ import path from 'path';
 import next from 'next';
 
 // MCP Server Integration
-import { startMCPServer, mcpServer } from './mcp-server.js';
+import { startMCPServer } from './mcp-server.js';
 
 // A2A (Agent-to-Agent) Integration
 import { A2AServer } from './lib/a2a-server.js';
