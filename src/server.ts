@@ -5073,7 +5073,8 @@ export async function initializeServer() {
 }
 
 // Route Next.js static assets and known page paths through Next with CSP tuned for Next
-app.get('/_next/*', nextjsCSPMiddleware, (req, res) => nextHandler(req, res));
+// Use path parameter instead of wildcard for Express 5.x compatibility
+app.get('/_next/:path(*)', nextjsCSPMiddleware, (req, res) => nextHandler(req, res));
 app.get(
   ['/workflow-builder', '/api-config', '/analytics', '/webcontainer-loader'],
   nextjsCSPMiddleware,
