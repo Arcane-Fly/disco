@@ -4764,9 +4764,8 @@ export async function initializeServer() {
     await ensureDataDirectory();
     return app;
 }
-// Route Next.js static assets and known page paths through Next with CSP tuned for Next
-// Use path parameter instead of wildcard for Express 5.x compatibility
-app.get('/_next/:path(*)', nextjsCSPMiddleware, (req, res) => nextHandler(req, res));
+// Route Next.js known page paths through Next with CSP tuned for Next
+// Note: /_next/* routes are handled by the catch-all middleware below
 app.get(['/workflow-builder', '/api-config', '/analytics', '/webcontainer-loader'], nextjsCSPMiddleware, (req, res) => nextHandler(req, res));
 // Catch-all fallback for non-API routes to Next handler with Next-specific CSP
 // Uses middleware pattern for Express 5.x + path-to-regexp 8.x compatibility
