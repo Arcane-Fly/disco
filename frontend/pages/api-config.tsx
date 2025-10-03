@@ -1,19 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { Key, Copy, CheckCircle, AlertTriangle, Code, ExternalLink } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import {
+  AlertTriangle,
+  Copy,
+  ExternalLink,
+  Key,
+  Terminal,
+  Code,
+  Loader2
+} from 'lucide-react';
+
+const TOKEN_MASK_LENGTH = 24;
+
+type CopyTarget = 'mcp' | 'token' | null;
+
+const maskToken = (value: string) => {
+  if (!value) return 'Not available';
+  if (value.length <= TOKEN_MASK_LENGTH) return value;
+  return `${value.substring(0, TOKEN_MASK_LENGTH)}…`;
+};
 
 export default function ApiConfig() {
   const { user, token } = useAuth();
   const [mcpUrl, setMcpUrl] = useState('');
-  const [copied, setCopied] = useState(false);
   const [currentToken, setCurrentToken] = useState('');
+  const [copied, setCopied] = useState<CopyTarget>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    // Get token from auth context or cookies
-    const getToken = () => {
+    const resolveToken = () => {
       if (token) return token;
-      
+
       if (typeof document !== 'undefined') {
         const cookies = document.cookie.split(';');
         for (const cookie of cookies) {
@@ -23,366 +43,346 @@ export default function ApiConfig() {
           }
         }
       }
+
       return '';
     };
 
-    const authToken = getToken();
-    setCurrentToken(authToken);
-    
-    if (authToken) {
-      // Generate the MCP URL with token parameter similar to Tavily
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://disco-mcp.up.railway.app'
-        : window.location.origin;
-      setMcpUrl(`${baseUrl}/mcp?token=${authToken}`);
-    }
+    const initialise = async () => {
+      setIsGenerating(true);
+      const resolvedToken = resolveToken();
+      setCurrentToken(resolvedToken);
+
+      if (resolvedToken) {
+        const baseUrl = typeof window === 'undefined'
+          ? 'https://disco-mcp.up.railway.app'
+          : process.env.NODE_ENV === 'production'
+            ? 'https://disco-mcp.up.railway.app'
+            : window.location.origin;
+
+        setMcpUrl(`${baseUrl}/mcp?token=${resolvedToken}`);
+      } else {
+        setMcpUrl('');
+      }
+
+      setIsGenerating(false);
+    };
+
+    void initialise();
   }, [token]);
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (value: string, target: CopyTarget) => {
+    if (!value) return;
+
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback for older browsers
+      await navigator.clipboard.writeText(value);
+      setCopied(target);
+      setTimeout(() => setCopied((prev) => (prev === target ? null : prev)), 1600);
+    } catch (error) {
+      console.warn('Clipboard copy failed, falling back to legacy behaviour', error);
       const textarea = document.createElement('textarea');
-      textarea.value = text;
+      textarea.value = value;
+      textarea.setAttribute('readonly', 'true');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand('copy');
       document.body.removeChild(textarea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(target);
+      setTimeout(() => setCopied((prev) => (prev === target ? null : prev)), 1600);
     }
   };
 
   if (!user) {
     return (
       <Layout>
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="text-center">
-              <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                Authentication Required
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 mb-4">
-                Please sign in to access your API configuration
+        <section className="page-section">
+          <div className="container">
+            <Card variant="elevated" className="max-w-lg mx-auto text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="status-pill status-pill--warning">
+                  <AlertTriangle className="w-4 h-4" />
+                  Authentication required
+                </div>
+              </div>
+              <h2 className="text-2xl font-semibold text-text-primary">Sign in to manage your API configuration</h2>
+              <p className="text-text-secondary">
+                Connect your account to generate a secure MCP server URL and bearer token. These credentials are required for integrating Disco MCP with your preferred client.
               </p>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+              <Button
+                variant="primary"
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+                className="justify-center"
               >
-                Go to Home
-              </button>
-            </div>
+                Return to landing page
+              </Button>
+            </Card>
           </div>
-        </div>
+        </section>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              API Configuration
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400">
-              Generate and manage your MCP server connection URLs and API keys
+      <section className="page-section">
+        <div className="container space-y-8">
+          <header className="page-header">
+            <h1 className="page-header__title">API Configuration</h1>
+            <p className="page-header__description">
+              Generate and manage secure connection details for Disco MCP. Use these tokens to connect ChatGPT, Claude, or any MCP-compatible client.
             </p>
-          </div>
+          </header>
 
-          {/* MCP URL Section */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <Key className="w-6 h-6 text-blue-600 mr-2" />
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                MCP Server URL
-              </h2>
-            </div>
-            
-            <div className="mb-4">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                Use this URL in your MCP client (Claude, ChatGPT, etc.) to connect to your Disco MCP server.
-                Similar to Tavily&apos;s MCP URL format.
-              </p>
-              
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={mcpUrl}
-                    readOnly
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700 text-sm font-mono text-slate-900 dark:text-white"
-                  />
+          <Card variant="elevated" className="space-y-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-[color-mix(in_oklab,var(--brand-cyan)_18%,transparent)] text-brand-cyan p-2">
+                  <Key className="w-5 h-5" />
                 </div>
-                <button
-                  onClick={() => copyToClipboard(mcpUrl)}
-                  className={`px-4 py-2 rounded-md transition-colors flex items-center space-x-1 ${
-                    copied
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {copied ? (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
-              <div className="flex items-start">
-                <Code className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
                 <div>
-                  <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                    Usage Instructions
-                  </h3>
-                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                    <li>• Copy the URL above</li>
-                    <li>• Paste it into your MCP client configuration</li>
-                    <li>• The URL includes your authentication token for secure access</li>
-                    <li>• No additional authentication setup required</li>
-                  </ul>
+                  <h2 className="text-xl font-semibold text-text-primary">MCP Server URL</h2>
+                  <p className="text-sm text-text-secondary">Use this URL in MCP clients such as Claude Desktop or ChatGPT.</p>
                 </div>
               </div>
+              {copied === 'mcp' && (
+                <span className="status-pill status-pill--success">Copied</span>
+              )}
             </div>
-          </div>
 
-          {/* Bearer Token Section */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <Key className="w-6 h-6 text-green-600 mr-2" />
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                Bearer Token (Alternative)
-              </h2>
-            </div>
-            
-            <div className="mb-4">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                For clients that prefer Bearer token authentication, use this token in the Authorization header.
-              </p>
-              
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 relative">
-                  <input
-                    type="password"
-                    value={currentToken}
-                    readOnly
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700 text-sm font-mono text-slate-900 dark:text-white"
-                  />
-                </div>
-                <button
-                  onClick={() => copyToClipboard(currentToken)}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors flex items-center space-x-1"
-                >
-                  <Copy className="w-4 h-4" />
-                  <span>Copy</span>
-                </button>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <div className="flex-1">
+                <input
+                  readOnly
+                  value={mcpUrl || 'Generating secure URL…'}
+                  className="form-input font-mono text-sm"
+                  aria-label="MCP server URL"
+                />
               </div>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => copyToClipboard(mcpUrl, 'mcp')}
+                disabled={!mcpUrl || isGenerating}
+                className="whitespace-nowrap"
+                leftIcon={isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+              >
+                {isGenerating ? 'Preparing…' : copied === 'mcp' ? 'Copied!' : 'Copy URL'}
+              </Button>
             </div>
 
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4">
-              <div className="flex items-start">
-                <Code className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="callout callout--info space-y-2">
+              <div className="flex items-center gap-2 font-medium">
+                <Code className="w-4 h-4" />
+                Usage instructions
+              </div>
+              <ul className="space-y-1 text-sm">
+                <li>• Copy the MCP server URL above.</li>
+                <li>• Paste it into your MCP client configuration.</li>
+                <li>• The URL already includes your authentication token.</li>
+                <li>• No additional authentication steps are required.</li>
+              </ul>
+            </div>
+          </Card>
+
+          <Card variant="elevated" className="space-y-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-[color-mix(in_oklab,var(--success)_18%,transparent)] text-success p-2">
+                  <Key className="w-5 h-5" />
+                </div>
                 <div>
-                  <h3 className="font-medium text-green-900 dark:text-green-100 mb-1">
-                    Bearer Token Usage
-                  </h3>
-                  <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-                    Include this header in your HTTP requests:
-                  </p>
-                  <code className="text-xs bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 px-2 py-1 rounded">
-                    Authorization: Bearer {currentToken?.substring(0, 20)}...
-                  </code>
+                  <h2 className="text-xl font-semibold text-text-primary">Bearer Token (Alternative)</h2>
+                  <p className="text-sm text-text-secondary">Use this token in an <code className="px-2 py-1 rounded bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] border border-border-subtle">Authorization</code> header.</p>
                 </div>
               </div>
+              {copied === 'token' && (
+                <span className="status-pill status-pill--success">Copied</span>
+              )}
             </div>
-          </div>
 
-          {/* Transport Configuration */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <Key className="w-6 h-6 text-indigo-600 mr-2" />
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                Transport Configuration
-              </h2>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* MCP HTTP Stream */}
-              <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white">MCP HTTP Stream</h3>
-                  <span className="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-xs rounded-full">Recommended</span>
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                  Modern streaming protocol for ChatGPT and compatible clients.
-                </p>
-                <div className="bg-green-50 dark:bg-green-900/20 rounded p-3 mb-3">
-                  <code className="text-xs font-mono text-green-800 dark:text-green-200">
-                    {mcpUrl}
-                  </code>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  <strong>Best for:</strong> ChatGPT, Claude Desktop, modern MCP clients
-                </p>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <div className="flex-1">
+                <input
+                  type="password"
+                  readOnly
+                  value={currentToken}
+                  className="form-input font-mono text-sm"
+                  aria-label="Bearer token"
+                />
               </div>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => copyToClipboard(currentToken, 'token')}
+                disabled={!currentToken || isGenerating}
+                leftIcon={<Copy className="w-4 h-4" />}
+                className="whitespace-nowrap"
+              >
+                {copied === 'token' ? 'Token copied' : 'Copy token'}
+              </Button>
+            </div>
 
-              {/* Legacy SSE */}
-              <div className="border border-slate-200 dark:border-slate-600 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white">Legacy SSE Transport</h3>
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                  Server-Sent Events for older clients that need streaming.
-                </p>
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded p-3 mb-3">
-                  <code className="text-xs font-mono text-yellow-800 dark:text-yellow-200">
-                    {mcpUrl.replace('/mcp', '/sse')}
-                  </code>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  <strong>Best for:</strong> Legacy integrations, older MCP clients
-                </p>
+            <div className="callout callout--success text-sm">
+              Include this header in HTTP requests:
+              <div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--success)_28%,transparent)] bg-[color-mix(in_oklab,var(--success)_8%,transparent)] px-3 py-2 font-mono text-xs text-success">
+                Authorization: Bearer {maskToken(currentToken)}
               </div>
             </div>
-          </div>
+          </Card>
 
-          {/* Step-by-Step Setup Examples */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 mb-6">
-            <div className="flex items-center mb-4">
-              <ExternalLink className="w-6 h-6 text-blue-600 mr-2" />
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                Setup Examples
-              </h2>
+          <Card variant="elevated" className="space-y-6">
+            <div className="flex items-center gap-2">
+              <div className="rounded-lg bg-[color-mix(in_oklab,var(--brand-purple)_18%,transparent)] text-brand-purple p-2">
+                <Terminal className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">Transport configuration</h2>
+                <p className="text-sm text-text-secondary">Choose the streaming transport that matches your MCP client.</p>
+              </div>
             </div>
 
-            <div className="space-y-6">
-              {/* ChatGPT Setup */}
-              <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-white text-sm font-bold">GPT</span>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card variant="interactive" className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="status-pill status-pill--success">Recommended</span>
+                  <span className="text-sm text-text-secondary">Modern streaming for ChatGPT & Claude</span>
+                </div>
+                <div className="font-semibold text-text-primary">MCP HTTP Stream</div>
+                <div className="rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] p-3 font-mono text-xs text-text-secondary break-all">
+                  {mcpUrl || 'Preparing secure endpoint…'}
+                </div>
+                <p className="text-xs text-text-muted">
+                  Ideal for the latest MCP integrations with full duplex streaming.
+                </p>
+              </Card>
+
+              <Card variant="interactive" className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="status-pill status-pill--warning">Legacy</span>
+                  <span className="text-sm text-text-secondary">For older SSE-based clients</span>
+                </div>
+                <div className="font-semibold text-text-primary">Legacy SSE Transport</div>
+                <div className="rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] p-3 font-mono text-xs text-text-secondary break-all">
+                  {mcpUrl ? mcpUrl.replace('/mcp', '/sse') : 'Preparing SSE endpoint…'}
+                </div>
+                <p className="text-xs text-text-muted">
+                  Fallback for legacy tooling that expects Server-Sent Events.
+                </p>
+              </Card>
+            </div>
+          </Card>
+
+          <Card variant="elevated" className="space-y-6">
+            <div className="flex items-center gap-2">
+              <div className="rounded-lg bg-[color-mix(in_oklab,var(--brand-cyan)_18%,transparent)] text-brand-cyan p-2">
+                <Code className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">Setup examples</h2>
+                <p className="text-sm text-text-secondary">Follow the guides below to connect Disco MCP to your preferred client.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card variant="default" className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--brand-cyan)_18%,transparent)] text-brand-cyan font-semibold">
+                    GPT
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">ChatGPT Configuration</h3>
-                </div>
-                
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Steps:</h4>
-                  <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-2 list-decimal list-inside">
-                    <li>Open ChatGPT and go to Settings → Beta Features</li>
-                    <li>Enable &quot;Model Context Protocol&quot; if available</li>
-                    <li>Add a new MCP server connection</li>
-                    <li>Paste the MCP URL: <code className="bg-blue-100 dark:bg-blue-800 px-2 py-1 rounded text-xs">{mcpUrl}</code></li>
-                    <li>Give it a name like &quot;Disco MCP Server&quot;</li>
-                    <li>Test the connection</li>
-                  </ol>
-                </div>
-
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  <strong>Note:</strong> MCP integration in ChatGPT may require ChatGPT Plus subscription and may be in beta.
-                </div>
-              </div>
-
-              {/* Claude Desktop Setup */}
-              <div className="border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-white text-sm font-bold">C</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-text-primary">ChatGPT configuration</h3>
+                    <p className="text-sm text-text-secondary">Add the MCP server in ChatGPT labs or beta settings.</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Claude Desktop Configuration</h3>
                 </div>
-                
-                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-orange-900 dark:text-orange-100 mb-2">Configuration File:</h4>
-                  <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
-                    Add this to your Claude Desktop configuration file:
-                  </p>
-                  <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs overflow-x-auto">
+                <ol className="list-decimal list-inside space-y-2 text-sm text-text-secondary">
+                  <li>Open ChatGPT → Settings → Labs (or Beta).</li>
+                  <li>Enable Model Context Protocol.</li>
+                  <li>Add a new MCP server and paste the URL above.</li>
+                  <li>Name it <span className="font-medium text-text-primary">Disco MCP Server</span> and test the connection.</li>
+                </ol>
+                <div className="callout text-xs">
+                  ChatGPT MCP support is currently available for Plus users in preview.
+                </div>
+              </Card>
+
+              <Card variant="default" className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--brand-purple)_18%,transparent)] text-brand-purple font-semibold">
+                    C
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-text-primary">Claude desktop configuration</h3>
+                    <p className="text-sm text-text-secondary">Add Disco MCP to the Claude Desktop configuration file.</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] p-4 text-xs text-text-secondary font-mono overflow-x-auto">
 {`{
   "mcpServers": {
     "disco-mcp": {
       "command": "npx",
       "args": ["@disco/mcp-client"],
       "env": {
-        "DISCO_MCP_URL": "${mcpUrl}",
-        "DISCO_TOKEN": "${currentToken?.substring(0, 20)}..."
+        "DISCO_MCP_URL": "${mcpUrl || '<pending>'}",
+        "DISCO_TOKEN": "${maskToken(currentToken)}"
       }
     }
   }
 }`}
-                  </pre>
                 </div>
+                <p className="text-xs text-text-muted">
+                  macOS / Linux: <code>~/.config/claude/config.json</code> · Windows: <code>%APPDATA%/claude/config.json</code>
+                </p>
+              </Card>
+            </div>
+          </Card>
 
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  <strong>Location:</strong> <code>~/.config/claude/config.json</code> (macOS/Linux) or <code>%APPDATA%/claude/config.json</code> (Windows)
-                </div>
+          <Card variant="elevated" className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="rounded-lg bg-[color-mix(in_oklab,var(--brand-purple)_18%,transparent)] text-brand-purple p-2">
+                <ExternalLink className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">Documentation & resources</h2>
+                <p className="text-sm text-text-secondary">Deep dive into Disco MCP and Model Context Protocol best practices.</p>
               </div>
             </div>
-          </div>
 
-          {/* Documentation Links */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-            <div className="flex items-center mb-4">
-              <ExternalLink className="w-6 h-6 text-purple-600 mr-2" />
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                Documentation & Resources
-              </h2>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <a
                 href="/docs"
-                className="block p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                className="card card--interactive block h-full space-y-2"
               >
-                <h3 className="font-medium text-slate-900 dark:text-white mb-1">API Documentation</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Complete API reference and examples
-                </p>
+                <h3 className="text-base font-semibold text-text-primary">API documentation</h3>
+                <p className="text-sm text-text-secondary">Complete reference, authentication flow, and endpoint samples.</p>
               </a>
-              
+
               <a
                 href="https://platform.openai.com/docs/guides/mcp"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                className="card card--interactive block h-full space-y-2"
               >
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-medium text-slate-900 dark:text-white">OpenAI MCP Guide</h3>
-                  <ExternalLink className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center justify-between text-text-secondary">
+                  <h3 className="text-base font-semibold text-text-primary">OpenAI MCP guide</h3>
+                  <ExternalLink className="w-4 h-4" />
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Official OpenAI guide for MCP server integration
-                </p>
+                <p className="text-sm text-text-secondary">Official guidance from OpenAI for MCP server integration.</p>
               </a>
-              
+
               <a
                 href="/claude-connector"
-                className="block p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                className="card card--interactive block h-full space-y-2"
               >
-                <h3 className="font-medium text-slate-900 dark:text-white mb-1">Claude.ai Setup</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Configuration for Claude.ai integration
-                </p>
+                <h3 className="text-base font-semibold text-text-primary">Claude.ai setup</h3>
+                <p className="text-sm text-text-secondary">Step-by-step instructions for Anthropic&apos;s desktop client.</p>
               </a>
             </div>
-          </div>
+          </Card>
         </div>
-      </div>
+      </section>
     </Layout>
   );
 }

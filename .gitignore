@@ -85,3 +85,12 @@ data/
 railway-validation-report.md
 link-health-report.md
 link-results.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing
+*.test.js.snap
