@@ -102,7 +102,7 @@ class RedisSessionManager {
       const key = this.keyPrefix + sessionId;
       const sessionData = await this.client!.get(key);
 
-      if (!sessionData) {
+      if (!sessionData || typeof sessionData !== 'string') {
         return null;
       }
 
@@ -171,7 +171,7 @@ class RedisSessionManager {
 
       for (const key of keys) {
         const sessionData = await this.client!.get(key);
-        if (sessionData) {
+        if (sessionData && typeof sessionData === 'string') {
           const parsed = JSON.parse(sessionData);
           if (parsed.userId === userId) {
             userSessions.push(parsed.id);
@@ -222,7 +222,7 @@ class RedisSessionManager {
 
       for (const key of keys) {
         const sessionData = await this.client!.get(key);
-        if (sessionData) {
+        if (sessionData && typeof sessionData === 'string') {
           const parsed = JSON.parse(sessionData);
           const lastActive = new Date(parsed.lastActive);
           const inactiveMs = now.getTime() - lastActive.getTime();
@@ -299,7 +299,8 @@ class RedisSessionManager {
     if (!this.connected || !this.client) return null;
 
     try {
-      return await this.client.get(key);
+      const result = await this.client.get(key);
+      return typeof result === 'string' ? result : null;
     } catch (error) {
       console.error('Error getting Redis key:', error);
       return null;

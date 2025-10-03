@@ -451,6 +451,9 @@ export class ContainerProxy extends EventEmitter {
               yield chunks.shift()!;
             }
           },
+          next(...args: [] | [unknown]) {
+            return this[Symbol.asyncIterator]().next(...args);
+          },
         };
 
         session.lastActivity = new Date();
@@ -606,7 +609,7 @@ export class ContainerProxy extends EventEmitter {
 
       for (const key of keys) {
         const data = await this.redis.get(key);
-        if (data) {
+        if (data && typeof data === 'string') {
           const session = JSON.parse(data);
           session.files = new Map(session.files);
           session.processes = new Map(session.processes);

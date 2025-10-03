@@ -38,7 +38,6 @@ export class CodeQualityEnhancer {
   constructor(projectPath: string = process.cwd()) {
     this.projectPath = projectPath;
     this.eslint = new ESLint({
-      useEslintrc: true,
       fix: true,
     });
   }

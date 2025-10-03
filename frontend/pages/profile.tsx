@@ -135,7 +135,7 @@ export default function Profile() {
         title: 'Copied to Clipboard',
         message: 'API key has been copied to your clipboard.'
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Copy Failed',
