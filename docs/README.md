@@ -40,9 +40,12 @@ Welcome to the comprehensive documentation for the Disco MCP Server! This guide 
 ### Advanced Topics
 - **[OAuth Troubleshooting](oauth-troubleshooting.md)** - Advanced authentication debugging
 - **[MCP Compliance](compliance/MCP_COMPLIANCE_SUMMARY.md)** - Protocol compliance details
-- **[Build Tooling Analysis](BUILD_TOOLING_ANALYSIS.md)** - Nx vs Bazel/Pants decision matrix
-- **[Build Tooling Quick Reference](BUILD_TOOLING_QUICK_REFERENCE.md)** - Fast decision guide
-- **[Nx Implementation Guide](NX_IMPLEMENTATION_GUIDE.md)** - Step-by-step Nx setup
+
+### Build Tooling & Monorepo Strategy
+- **[Build Tooling Recommendation Summary](BUILD_TOOLING_RECOMMENDATION_SUMMARY.md)** - ⭐ Start here for executive summary
+- **[Build Tooling Analysis](BUILD_TOOLING_ANALYSIS.md)** - Comprehensive Nx vs Bazel/Pants analysis
+- **[Build Tooling Quick Reference](BUILD_TOOLING_QUICK_REFERENCE.md)** - Fast decision guide and cheat sheet
+- **[Nx Implementation Guide](NX_IMPLEMENTATION_GUIDE.md)** - Step-by-step Nx setup instructions
 
 ## 🛠️ Developer Resources
 
