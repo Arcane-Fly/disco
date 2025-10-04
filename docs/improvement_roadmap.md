@@ -1301,6 +1301,125 @@ interface BudgetAllocation {
 
 ---
 
+## 🏗️ Build Tooling & Monorepo Strategy
+### *Optimizing Development Workflow and CI/CD Performance*
+
+### Current State Analysis
+The Disco platform currently uses:
+- **TypeScript Compiler** for server builds
+- **Next.js** bundler for frontend
+- **Yarn 4.9.2** (Berry) for package management
+- **Sequential builds** without caching
+- **No monorepo orchestration** tool
+
+### Strategic Recommendation: Adopt Nx
+
+Based on comprehensive analysis (see [BUILD_TOOLING_ANALYSIS.md](BUILD_TOOLING_ANALYSIS.md)), **Nx** is the optimal choice for Disco:
+
+```typescript
+interface BuildToolingStrategy {
+  primary: 'Nx 21+';
+  rationale: {
+    jsFirstOptimization: '99% TypeScript/JavaScript codebase';
+    developerExperience: 'Terminal UI, graph visualization, better UX';
+    frameworkSupport: 'Native Next.js, React, Express integration';
+    incrementalAdoption: 'Low friction migration path';
+    modernFeatures: 'Continuous tasks, custom version actions';
+    caching: 'Excellent local + cloud caching';
+  };
+  
+  alternatives: {
+    bazel: 'Reconsider if Python/Go/Rust becomes >20% codebase';
+    turborepo: 'Lighter alternative but fewer features';
+    uv: 'For Python-specific needs if they grow';
+  };
+}
+```
+
+### Implementation Roadmap
+
+**Phase 1: Foundation (Week 1)**
+- Install Nx core and plugins (@nx/next, @nx/node, @nx/jest)
+- Initialize Nx workspace
+- Configure project.json for server and frontend
+- Update package.json scripts
+
+**Phase 2: Task Orchestration (Week 2)**
+- Enable parallel builds
+- Configure task dependencies
+- Set up caching (local)
+- Visualize project graph
+
+**Phase 3: CI/CD Integration (Week 2-3)**
+- Update GitHub Actions to use Nx
+- Enable affected commands for faster CI
+- Configure build artifacts caching
+- Monitor performance improvements
+
+**Phase 4: Optimization (Week 3-4)**
+- Set up Nx Cloud for distributed caching
+- Fine-tune cache inputs
+- Add custom executors if needed
+- Team training and documentation
+
+### Expected Performance Improvements
+
+```typescript
+interface PerformanceGains {
+  buildTimes: {
+    before: {
+      fullBuild: '180s',
+      serverOnly: '30s',
+      frontendOnly: '90s',
+    },
+    afterNx: {
+      coldCache: '180s (similar)',
+      warmCache: '2s (99% faster)', 
+      affectedOnly: '30-60s (50-70% faster)',
+    },
+  };
+  
+  ciCd: {
+    prBuilds: '70-90% faster with distributed cache',
+    mainBranch: 'Cache population for team benefit',
+  };
+  
+  developerTime: {
+    savedPerDay: '30-60 minutes per developer',
+    teamOf5: '2.5-5 hours/day saved',
+    roi: 'Break-even in 2-4 weeks',
+  };
+}
+```
+
+### Key Features Enabled
+
+1. **Incremental Builds**: Only rebuild what changed
+2. **Task Caching**: Instant rebuilds for unchanged code
+3. **Parallel Execution**: Build multiple projects simultaneously
+4. **Affected Commands**: Only test/build affected projects
+5. **Project Graph**: Visual dependency understanding
+6. **Code Generators**: Scaffold new features quickly
+7. **Project Boundaries**: Enforce architectural constraints
+
+### Decision Matrix: When to Reconsider
+
+Re-evaluate Bazel/Pants if:
+- Python/ML workloads become >20% of codebase
+- Adding Go/Rust microservices extensively
+- Need hermetic builds for compliance
+- Monorepo grows to >500 packages
+- Complex cross-language dependency chains
+
+### References
+
+For detailed analysis and implementation guides:
+- **[BUILD_TOOLING_ANALYSIS.md](BUILD_TOOLING_ANALYSIS.md)** - Complete Nx vs Bazel/Pants analysis
+- **[BUILD_TOOLING_QUICK_REFERENCE.md](BUILD_TOOLING_QUICK_REFERENCE.md)** - Quick decision guide
+- **[NX_IMPLEMENTATION_GUIDE.md](NX_IMPLEMENTATION_GUIDE.md)** - Step-by-step Nx setup
+
+---
+
 ## 🎯 Call to Action
 
 This roadmap represents a revolutionary transformation of the Disco MCP platform, leveraging cutting-edge research and proven technologies to achieve the requested **100x enhancement**. The systematic approach ensures:
