@@ -93,3 +93,6 @@ __pycache__/
 
 # Testing
 *.test.js.snap
+
+# Visual test screenshots (large binary files)
+screenshots/
