@@ -48,11 +48,11 @@ jobs:
           curl -fsSL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
           
-      - name: Validate TypeScript compilation
-        run: yarn build
+      - name: Validate TypeScript compilation with Nx
+        run: npx nx run-many --target=build --all --parallel=2
         
-      - name: Run ESLint
-        run: yarn lint
+      - name: Run ESLint with Nx
+        run: npx nx run-many --target=lint --all
         
       - name: Validate Railway configuration
         run: |
