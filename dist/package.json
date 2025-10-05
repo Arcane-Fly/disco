@@ -158,5 +158,7 @@
     "node": ">=22.0.0",
     "npm": ">=10.0.0"
   },
-  "packageManager": "yarn@4.9.2"
+  "packageManager": "yarn@4.9.2",
+  "types": "./src/server.d.ts",
+  "module": "./src/server.js"
 }

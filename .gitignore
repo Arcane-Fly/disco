@@ -70,6 +70,10 @@ temp/
 # WebContainer cache
 .webcontainer/
 
+# Nx
+.nx/cache
+.nx/workspace-data
+
 # Test files
 test-results/
 coverage/
