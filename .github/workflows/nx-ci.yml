@@ -1,0 +1,54 @@
+name: Nx CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for Nx affected commands
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+      
+      - name: Enable Corepack
+        run: corepack enable
+      
+      - name: Install dependencies
+        run: yarn install --immutable
+      
+      - name: Derive appropriate SHAs for base and head
+        uses: nrwl/nx-set-shas@v4
+      
+      - name: Build affected projects
+        run: npx nx affected --target=build --parallel=3
+      
+      - name: Test affected projects
+        run: npx nx affected --target=test --parallel=3
+      
+      - name: Lint affected projects
+        run: npx nx affected --target=lint --parallel=3
+      
+      - name: Type check affected projects
+        run: npx nx affected --target=typecheck --parallel=3
+      
+      - name: Print Nx cache stats
+        run: |
+          echo "## Nx Cache Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          npx nx graph --file=nx-graph.json
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
