@@ -17,7 +17,7 @@ This document shows how the Disco MCP server implements the requirements from th
   "metadata": { "name": "disco" },
   "build": {
     "provider": "node",
-    "nodeVersion": "20.x",
+    "nodeVersion": "22.x",
     "steps": {
       "install": { 
         "commands": [
@@ -61,7 +61,7 @@ server.listen(port, '0.0.0.0', async () => {
 
 #### Constraints
 
-- ✅ `yarn.config.cjs`: Enforces Node 20+, consistent versions, MIT license
+- ✅ `yarn.config.cjs`: Enforces Node 22+, consistent versions, MIT license
 - ✅ Constraints validate MCP SDK version consistency
 
 ### 🔌 MCP (Model Context Protocol)

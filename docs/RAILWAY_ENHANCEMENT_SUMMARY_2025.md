@@ -142,7 +142,7 @@
   },
   "build": {
     "provider": "node",
-    "nodeVersion": "20.x",
+    "nodeVersion": "22.x",
     "steps": {
       "install": { 
         "commands": [
@@ -240,7 +240,7 @@ Time:        7.728s
 ### Compliance Checks
 - ✅ MCP Protocol Version: 2025-06-18
 - ✅ Railway Configuration: Compliant
-- ✅ Node.js Version: 20.x (✅)
+- ✅ Node.js Version: 22.x (✅)
 - ✅ Yarn Version: 4.9.2 (✅)
 - ✅ Package Manager: Enforced via Corepack
 - ✅ Health Checks: Configured
@@ -310,7 +310,7 @@ Time:        7.728s
 - [x] Environment variables documented
 - [x] Build process validated
 - [x] Start command tested
-- [x] Node.js 20.x specified
+- [x] Node.js 22.x specified
 - [x] Production-ready configuration
 
 ### Deployment Command Validation

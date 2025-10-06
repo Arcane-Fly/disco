@@ -23,7 +23,7 @@ This document confirms the comprehensive smoke test results for the disco MCP bu
   "metadata": { "name": "disco" },
   "build": {
     "provider": "node",
-    "nodeVersion": "20.x",
+    "nodeVersion": "22.x",
     "buildCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable && yarn build:server && yarn build:next",
     "installCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable"
   }
@@ -94,7 +94,7 @@ server.listen(port, '0.0.0.0', async () => {
 ### 5. Railway Best Practices ✅
 
 - **VERIFIED**: All configuration keys match Railway standards
-- **VERIFIED**: Node version specified: `"nodeVersion": "20.x"`
+- **VERIFIED**: Node version specified: `"nodeVersion": "22.x"`
 - **VERIFIED**: Start command: `"startCommand": "node dist/server.js"`
 - **VERIFIED**: Health check timeout: 300s
 - **VERIFIED**: Restart policy: ON_FAILURE with 3 retries
@@ -107,7 +107,7 @@ server.listen(port, '0.0.0.0', async () => {
 ✅ Found and loaded railpack.json
 ✅ PORT configuration looks good
 ✅ Start command configured
-✅ Node.js version constraint: >=20.0.0
+✅ Node.js version constraint: >=22.0.0
 ```
 
 ### Environment Validation ✅

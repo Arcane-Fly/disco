@@ -50,7 +50,7 @@ $ yarn --version
   },
   "build": {
     "provider": "node",
-    "nodeVersion": "20.x",
+    "nodeVersion": "22.x",
     "steps": {
       "install": { 
         "commands": [
