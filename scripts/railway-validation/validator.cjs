@@ -192,6 +192,15 @@ class RailwayConfigValidator {
         console.log('✅ Build configuration looks good (traditional format)');
       }
     }
+    
+    // Check railpack.json v1 format (build.steps.build)
+    if (!hasBuildSteps && this.config.build?.steps?.build) {
+      const buildCommands = this.config.build.steps.build.commands || [];
+      if (buildCommands.some(cmd => cmd.includes('build'))) {
+        hasBuildSteps = true;
+        console.log('✅ Build configuration looks good (railpack.json v1 format)');
+      }
+    }
 
     // If no build steps found, add warnings/fixes
     if (!hasBuildSteps) {
@@ -234,6 +243,7 @@ class RailwayConfigValidator {
 
     // Check for proper Node.js runtime
     const hasNodeRuntime = this.config.provider === 'node' || 
+                          this.config.build?.provider === 'node' ||  // railpack.json v1 format
                           deploy.base?.image?.includes('node') ||
                           this.config.packages?.node ||  // railpack.json format
                           deploy.startCommand?.includes('node');
