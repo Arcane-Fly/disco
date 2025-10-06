@@ -55,7 +55,7 @@ The existing `railpack.json` configuration is correct:
   "metadata": { "name": "disco" },
   "build": {
     "provider": "node",
-    "nodeVersion": "20.x",
+    "nodeVersion": "22.x",
     "buildCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable && yarn build:server && yarn build:next",
     "installCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && yarn install --immutable"
   },
