@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
         
+      - name: Build project
+        run: yarn build:server
+        
       - name: Validate JSON Schema syntax
         run: |
           echo "Validating JSON Schema files..."
@@ -54,7 +57,7 @@ jobs:
         run: |
           echo "Validating example fixtures..."
           node -e "
-          const { ContractValidator } = require('./dist/lib/contractValidator.js');
+          const { ContractValidator } = require('./dist/src/lib/contractValidator.js');
           const fs = require('fs');
           const path = require('path');
           
