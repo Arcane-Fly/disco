@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 console.log('🔍 Verifying build artifacts...');
 
 const requiredFiles = [
-  'dist/server.js',
-  'dist/types/index.js',
+  'dist/src/server.js',
+  'dist/src/worker.js',
   'frontend/.next/BUILD_ID'
 ];
 
@@ -23,9 +23,9 @@ requiredFiles.forEach(file => {
 });
 
 // Check if dist directory has server.js
-if (fs.existsSync('dist/server.js')) {
-  const stats = fs.statSync('dist/server.js');
-  console.log(`📦 dist/server.js size: ${Math.round(stats.size / 1024)}KB`);
+if (fs.existsSync('dist/src/server.js')) {
+  const stats = fs.statSync('dist/src/server.js');
+  console.log(`📦 dist/src/server.js size: ${Math.round(stats.size / 1024)}KB`);
 }
 
 // Check Next.js build

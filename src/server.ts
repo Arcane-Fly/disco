@@ -4053,7 +4053,7 @@ app.get('/mcp-setup', (_req, res) => {
           servers: {
             disco: {
               command: 'node',
-              args: ['/path/to/disco/dist/server.js'],
+              args: ['/path/to/disco/dist/src/server.js'],
               env: {
                 PORT: '3000',
                 NODE_ENV: 'development',

@@ -23,7 +23,7 @@
           "sourceMap": true
         }
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "production"
     },
     "serve": {
       "executor": "@nx/js:node",
