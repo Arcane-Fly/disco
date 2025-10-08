@@ -23,11 +23,10 @@ const isServerEnvironment = typeof window === 'undefined';
 /**
  * Export all user data (GDPR Article 20 - Right to data portability)
  */
-router.get('/export/:userId',
+router.get(
+  '/export/:userId',
   authMiddleware,
-  [
-    param('userId').isString().trim().notEmpty()
-  ],
+  [param('userId').isString().trim().notEmpty()],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -40,7 +39,7 @@ router.get('/export/:userId',
     // Verify user is requesting their own data or is an admin
     if (requestingUser !== userId && !(req as any).user?.admin) {
       console.warn(`Unauthorized data export attempt by ${requestingUser} for user ${userId}`);
-      return res.status(403).json({ error: 'Unauthorized to export this user\'s data' });
+      return res.status(403).json({ error: "Unauthorized to export this user's data" });
     }
 
     try {
@@ -54,13 +53,13 @@ router.get('/export/:userId',
         metadata: {
           exportFormat: 'JSON',
           gdprCompliance: 'Article 20 - Right to data portability',
-          dataRetentionPolicy: '30 days for active sessions, 7 days for logs'
-        }
+          dataRetentionPolicy: '30 days for active sessions, 7 days for logs',
+        },
       };
 
       // 1. Container Sessions
       userData.dataCategories.containerSessions = [];
-      
+
       // Get sessions from container manager
       const sessions = containerManager.getUserContainers(userId);
       for (const session of sessions) {
@@ -68,15 +67,14 @@ router.get('/export/:userId',
           id: session.id,
           createdAt: session.createdAt,
           lastActive: session.lastActive,
-          status: session.status
+          status: session.status,
         });
       }
 
       // Get sessions from Docker proxy (server environment)
       if (isServerEnvironment) {
-        const proxySessions = containerProxy.listSessions()
-          .filter(s => s.userId === userId);
-        
+        const proxySessions = containerProxy.listSessions().filter(s => s.userId === userId);
+
         for (const session of proxySessions) {
           userData.dataCategories.containerSessions.push({
             id: session.id,
@@ -85,7 +83,7 @@ router.get('/export/:userId',
             status: session.status,
             template: session.template,
             environment: session.environment,
-            files: Array.from(session.files.keys())
+            files: Array.from(session.files.keys()),
           });
         }
       }
@@ -93,7 +91,7 @@ router.get('/export/:userId',
       // 2. Redis Session Data
       if (redisSessionManager.isAvailable()) {
         // Get all sessions for the user from Redis
-        const userSessions = [];
+        const userSessions: any[] = [];
         userData.dataCategories.sessionStorage = userSessions;
       }
 
@@ -112,17 +110,17 @@ router.get('/export/:userId',
 
       // Create downloadable archive
       const archive = archiver('zip', {
-        zlib: { level: 9 }
+        zlib: { level: 9 },
       });
 
       res.attachment(`gdpr-export-${userId}-${Date.now()}.zip`);
       res.setHeader('Content-Type', 'application/zip');
-      
+
       archive.pipe(res);
 
       // Add main data file
       archive.append(JSON.stringify(userData, null, 2), {
-        name: 'user-data.json'
+        name: 'user-data.json',
       });
 
       // Add README with data description
@@ -184,12 +182,13 @@ Export generated: ${new Date().toISOString()}
 /**
  * Delete all user data (GDPR Article 17 - Right to erasure)
  */
-router.delete('/delete/:userId',
+router.delete(
+  '/delete/:userId',
   authMiddleware,
   [
     param('userId').isString().trim().notEmpty(),
     body('confirmation').equals('DELETE_ALL_MY_DATA'),
-    body('reason').optional().isString()
+    body('reason').optional().isString(),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -204,18 +203,20 @@ router.delete('/delete/:userId',
     // Verify user is deleting their own data or is an admin
     if (requestingUser !== userId && !(req as any).user?.admin) {
       console.warn(`Unauthorized data deletion attempt by ${requestingUser} for user ${userId}`);
-      return res.status(403).json({ error: 'Unauthorized to delete this user\'s data' });
+      return res.status(403).json({ error: "Unauthorized to delete this user's data" });
     }
 
     try {
-      console.log(`Starting GDPR data deletion for user: ${userId}, reason: ${reason || 'Not specified'}`);
+      console.log(
+        `Starting GDPR data deletion for user: ${userId}, reason: ${reason || 'Not specified'}`
+      );
 
       const deletionReport = {
         userId,
         deletionDate: new Date().toISOString(),
         reason: reason || 'User requested',
         deletedCategories: [] as string[],
-        errors: [] as string[]
+        errors: [] as string[],
       };
 
       // 1. Terminate all container sessions
@@ -233,9 +234,8 @@ router.delete('/delete/:userId',
       // 2. Delete Docker proxy sessions (server environment)
       if (isServerEnvironment) {
         try {
-          const proxySessions = containerProxy.listSessions()
-            .filter(s => s.userId === userId);
-          
+          const proxySessions = containerProxy.listSessions().filter(s => s.userId === userId);
+
           for (const session of proxySessions) {
             await containerProxy.terminateSession(session.id);
           }
@@ -297,7 +297,7 @@ router.delete('/delete/:userId',
       res.json({
         success: deletionReport.errors.length === 0,
         report: deletionReport,
-        certificate
+        certificate,
       });
 
       console.log(`GDPR data deletion completed for user: ${userId}`);
@@ -316,30 +316,31 @@ router.get('/retention-policy', (req: Request, res: Response) => {
     policy: {
       containerSessions: {
         active: '30 days',
-        inactive: '7 days'
+        inactive: '7 days',
       },
       auditLogs: '7 days',
       apiUsageStats: '90 days',
       userPreferences: 'Until deletion requested',
       backups: '30 days',
-      deletionLogs: '7 years (legal requirement)'
+      deletionLogs: '7 years (legal requirement)',
     },
     lastUpdated: '2025-01-01',
     gdprCompliance: true,
     dataController: 'Disco MCP Server',
-    dataProtectionOfficer: 'dpo@disco-mcp.com'
+    dataProtectionOfficer: 'dpo@disco-mcp.com',
   });
 });
 
 /**
  * Request data processing restriction (GDPR Article 18)
  */
-router.post('/restrict/:userId',
+router.post(
+  '/restrict/:userId',
   authMiddleware,
   [
     param('userId').isString().trim().notEmpty(),
     body('categories').isArray(),
-    body('reason').isString()
+    body('reason').isString(),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -363,7 +364,7 @@ router.post('/restrict/:userId',
         success: true,
         restrictedCategories: categories,
         reason,
-        restrictionDate: new Date().toISOString()
+        restrictionDate: new Date().toISOString(),
       });
 
       console.log(`Processing restricted for user ${userId}: ${categories.join(', ')}`);
@@ -376,51 +377,52 @@ router.post('/restrict/:userId',
 
 // Helper functions
 
-async function getAuditLogs(userId: string, days: number): Promise<any[]> {
+async function getAuditLogs(_userId: string, _days: number): Promise<any[]> {
   // Implementation would fetch from actual audit log storage
   return [];
 }
 
-async function deleteAuditLogs(userId: string): Promise<void> {
+async function deleteAuditLogs(_userId: string): Promise<void> {
   // Implementation would delete from actual audit log storage
 }
 
-async function getApiUsageStats(userId: string): Promise<any> {
+async function getApiUsageStats(_userId: string): Promise<any> {
   // Implementation would fetch from metrics storage
   return {
     totalRequests: 0,
     lastAccess: null,
-    endpoints: []
+    endpoints: [],
   };
 }
 
-async function deleteApiUsageStats(userId: string): Promise<void> {
+async function deleteApiUsageStats(_userId: string): Promise<void> {
   // Implementation would delete from metrics storage
 }
 
-async function getFileMetadata(userId: string): Promise<any[]> {
+async function getFileMetadata(_userId: string): Promise<any[]> {
   // Implementation would fetch file metadata
   return [];
 }
 
-async function getUserPreferences(userId: string): Promise<any> {
+async function getUserPreferences(_userId: string): Promise<any> {
   // Implementation would fetch user preferences
   return {};
 }
 
-async function deleteUserPreferences(userId: string): Promise<void> {
+async function deleteUserPreferences(_userId: string): Promise<void> {
   // Implementation would delete user preferences
 }
 
-async function restrictProcessing(userId: string, categories: string[], reason: string): Promise<void> {
+async function restrictProcessing(
+  _userId: string,
+  _categories: string[],
+  _reason: string
+): Promise<void> {
   // Implementation would restrict processing for specified categories
 }
 
 function generateDeletionCertificate(report: any): string {
-  const hash = crypto
-    .createHash('sha256')
-    .update(JSON.stringify(report))
-    .digest('hex');
+  const hash = crypto.createHash('sha256').update(JSON.stringify(report)).digest('hex');
 
   return `
 GDPR DATA DELETION CERTIFICATE
@@ -440,7 +442,7 @@ async function logDeletion(report: any): Promise<void> {
   // Log deletion for compliance (must be kept for 7 years)
   const logPath = path.join(process.cwd(), 'gdpr-logs', 'deletions.log');
   await fs.mkdir(path.dirname(logPath), { recursive: true });
-  
+
   const logEntry = `${new Date().toISOString()} - ${JSON.stringify(report)}\n`;
   await fs.appendFile(logPath, logEntry);
 }

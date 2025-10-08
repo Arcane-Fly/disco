@@ -19,17 +19,16 @@ router.post('/', async (req: Request, res: Response) => {
     const response: ContainerCreateResponse = {
       containerId: session.id,
       status: session.status,
-      url: session.url
+      url: session.url,
     };
 
     res.status(201).json({
       status: 'success',
-      data: response
+      data: response,
     });
-
   } catch (error) {
     console.error('Container creation error:', error);
-    
+
     let statusCode = 500;
     let errorCode = ErrorCode.INTERNAL_ERROR;
     let message = 'Failed to create container';
@@ -49,8 +48,8 @@ router.post('/', async (req: Request, res: Response) => {
       status: 'error',
       error: {
         code: errorCode,
-        message: message
-      }
+        message: message,
+      },
     });
   }
 });
@@ -70,25 +69,24 @@ router.get('/', async (req: Request, res: Response) => {
       url: session.url,
       createdAt: session.createdAt,
       lastActive: session.lastActive,
-      repositoryUrl: session.repositoryUrl
+      repositoryUrl: session.repositoryUrl,
     }));
 
     res.json({
       status: 'success',
       data: {
         containers: containerList,
-        count: containerList.length
-      }
+        count: containerList.length,
+      },
     });
-
   } catch (error) {
     console.error('Container list error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to list containers'
-      }
+        message: 'Failed to list containers',
+      },
     });
   }
 });
@@ -101,16 +99,16 @@ router.get('/:containerId', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
     const userId = req.user!.userId;
-    
-    const session = await containerManager.getSession(containerId);
-    
+
+    const session = await containerManager.getSession(containerId!);
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -120,8 +118,8 @@ router.get('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -133,18 +131,17 @@ router.get('/:containerId', async (req: Request, res: Response) => {
         url: session.url,
         createdAt: session.createdAt,
         lastActive: session.lastActive,
-        repositoryUrl: session.repositoryUrl
-      }
+        repositoryUrl: session.repositoryUrl,
+      },
     });
-
   } catch (error) {
     console.error('Container status error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to get container status'
-      }
+        message: 'Failed to get container status',
+      },
     });
   }
 });
@@ -157,16 +154,16 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
     const userId = req.user!.userId;
-    
-    const session = await containerManager.getSession(containerId);
-    
+
+    const session = await containerManager.getSession(containerId!);
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -176,30 +173,29 @@ router.delete('/:containerId', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
-    await containerManager.terminateSession(containerId);
+    await containerManager.terminateSession(containerId!);
 
     console.log(`🗑️  Container ${containerId} terminated by user ${userId}`);
 
     res.json({
       status: 'success',
       data: {
-        message: 'Container terminated successfully'
-      }
+        message: 'Container terminated successfully',
+      },
     });
-
   } catch (error) {
     console.error('Container termination error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to terminate container'
-      }
+        message: 'Failed to terminate container',
+      },
     });
   }
 });
@@ -212,16 +208,16 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
     const userId = req.user!.userId;
-    
-    const session = await containerManager.getSession(containerId);
-    
+
+    const session = await containerManager.getSession(containerId!);
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -231,14 +227,14 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
     // Terminate existing session
-    await containerManager.terminateSession(containerId);
-    
+    await containerManager.terminateSession(containerId!);
+
     // Create new session
     const newSession = await containerManager.createSession(userId);
 
@@ -247,22 +243,21 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
     const response: ContainerCreateResponse = {
       containerId: newSession.id,
       status: newSession.status,
-      url: newSession.url
+      url: newSession.url,
     };
 
     res.json({
       status: 'success',
-      data: response
+      data: response,
     });
-
   } catch (error) {
     console.error('Container restart error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to restart container'
-      }
+        message: 'Failed to restart container',
+      },
     });
   }
 });
@@ -274,7 +269,7 @@ router.post('/:containerId/restart', async (req: Request, res: Response) => {
 router.post('/bootstrap', async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
-    const sessionId = req.headers['x-session-id'] as string || `bootstrap_${Date.now()}`;
+    const sessionId = (req.headers['x-session-id'] as string) || `bootstrap_${Date.now()}`;
     const { type = 'webcontainer', config = {} } = req.body;
 
     console.log(`🔧 Bootstrapping ${type} container for user: ${userId}, session: ${sessionId}`);
@@ -287,14 +282,14 @@ router.post('/bootstrap', async (req: Request, res: Response) => {
       memory: config.memory || 512,
       timeout: config.timeout || 1800000, // 30 minutes
       coep: config.coep || 'credentialless',
-      ...config
+      ...config,
     };
 
     // Update session with bootstrap config
     if (session.container) {
       // Store bootstrap config in session metadata
-      (session as any).bootstrapConfig = bootstrapConfig;
-      (session as any).sessionId = sessionId;
+      session.bootstrapConfig = bootstrapConfig;
+      session.sessionId = sessionId;
     }
 
     const response = {
@@ -304,24 +299,31 @@ router.post('/bootstrap', async (req: Request, res: Response) => {
       status: session.status,
       url: session.url,
       capabilities: [
-        'file:read', 'file:write', 'file:delete', 'file:list',
-        'git:clone', 'git:commit', 'git:push', 'git:pull',
-        'terminal:execute', 'terminal:stream',
-        'webcontainer:filesystem', 'webcontainer:terminal'
+        'file:read',
+        'file:write',
+        'file:delete',
+        'file:list',
+        'git:clone',
+        'git:commit',
+        'git:push',
+        'git:pull',
+        'terminal:execute',
+        'terminal:stream',
+        'webcontainer:filesystem',
+        'webcontainer:terminal',
       ],
-      config: bootstrapConfig
+      config: bootstrapConfig,
     };
 
     console.log(`✅ WebContainer bootstrapped: ${session.id}`);
 
     res.status(201).json({
       status: 'success',
-      data: response
+      data: response,
     });
-
   } catch (error) {
     console.error('Container bootstrap error:', error);
-    
+
     let statusCode = 500;
     let errorCode = ErrorCode.INTERNAL_ERROR;
     let message = 'Failed to bootstrap container';
@@ -341,8 +343,8 @@ router.post('/bootstrap', async (req: Request, res: Response) => {
       status: 'error',
       error: {
         code: errorCode,
-        message: message
-      }
+        message: message,
+      },
     });
   }
 });
@@ -364,11 +366,19 @@ router.get('/sessions', async (req: Request, res: Response) => {
       lastActive: session.lastActive,
       bootstrapConfig: (session as any).bootstrapConfig || {},
       capabilities: [
-        'file:read', 'file:write', 'file:delete', 'file:list',
-        'git:clone', 'git:commit', 'git:push', 'git:pull',
-        'terminal:execute', 'terminal:stream',
-        'webcontainer:filesystem', 'webcontainer:terminal'
-      ]
+        'file:read',
+        'file:write',
+        'file:delete',
+        'file:list',
+        'git:clone',
+        'git:commit',
+        'git:push',
+        'git:pull',
+        'terminal:execute',
+        'terminal:stream',
+        'webcontainer:filesystem',
+        'webcontainer:terminal',
+      ],
     }));
 
     res.json({
@@ -376,18 +386,17 @@ router.get('/sessions', async (req: Request, res: Response) => {
       data: {
         sessions,
         count: sessions.length,
-        maxSessions: 50 // From the problem statement
-      }
+        maxSessions: 50, // From the problem statement
+      },
     });
-
   } catch (error) {
     console.error('Container sessions error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to get container sessions'
-      }
+        message: 'Failed to get container sessions',
+      },
     });
   }
 });
@@ -399,20 +408,19 @@ router.get('/sessions', async (req: Request, res: Response) => {
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
     const stats = containerManager.getStats();
-    
+
     res.json({
       status: 'success',
-      data: stats
+      data: stats,
     });
-
   } catch (error) {
     console.error('Container stats error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to get container stats'
-      }
+        message: 'Failed to get container stats',
+      },
     });
   }
 });

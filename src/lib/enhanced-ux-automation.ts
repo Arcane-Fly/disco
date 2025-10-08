@@ -2,7 +2,7 @@ import { EnhancedBrowserAutomationManager, VisualRegressionResult } from './enha
 
 /**
  * Strategic UX Enhancement: Advanced UI/UX Automation with Accessibility and Semantic Analysis
- * 
+ *
  * This module extends the existing EnhancedBrowserAutomationManager with cutting-edge
  * UI/UX capabilities, accessibility validation, and semantic analysis as outlined in
  * the Strategic Intensification Plan.
@@ -117,10 +117,9 @@ export interface PerformanceComparison {
  * Implements strategic UI/UX innovations outlined in the Strategic Intensification Plan
  */
 export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManager {
-  
   /**
    * Strategic Enhancement: Intelligent UI automation with comprehensive validation
-   * 
+   *
    * This method extends the base UI automation with accessibility validation,
    * performance monitoring, semantic analysis, and usability scoring.
    */
@@ -129,37 +128,39 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     pageId: string,
     actions: UXAutomationAction[]
   ): Promise<UXAutomationResult[]> {
-    console.log(`🎯 Starting intelligent UI automation sequence with ${actions.length} enhanced actions`);
-    
+    console.log(
+      `🎯 Starting intelligent UI automation sequence with ${actions.length} enhanced actions`
+    );
+
     const session = await this.getSession(sessionId);
     if (!session) {
       throw new Error('Browser session not found');
     }
-    
+
     const page = session.pages.get(pageId);
     if (!page) {
       throw new Error('Page not found in session');
     }
 
     const results: UXAutomationResult[] = [];
-    
+
     for (let i = 0; i < actions.length; i++) {
       const action = actions[i];
       const startTime = Date.now();
-      
+
       console.log(`📋 Enhanced Action ${i + 1}/${actions.length}: ${action.type}`);
-      
+
       try {
         const result: UXAutomationResult = {
           action: action.type,
           success: false,
-          duration: 0
+          duration: 0,
         };
 
         // Pre-action validation if requested
         if (action.validation?.accessibility && action.selector) {
           result.accessibilityResults = await this.validateElementAccessibility(
-            page, 
+            page,
             action.selector
           );
         }
@@ -175,31 +176,34 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
             await this.performEnhancedClick(page, action);
             result.success = true;
             break;
-            
+
           case 'type':
             await this.performEnhancedTyping(page, action);
             result.success = true;
             break;
-            
+
           case 'validate':
             await this.performComprehensiveValidation(page, action);
             result.success = true;
             break;
-            
+
           case 'analyze':
             result.semanticValidation = await this.performSemanticAnalysisInternal(page, action);
             result.success = true;
             break;
-            
-          default:
+
+          default: {
             // Fall back to base automation for standard actions
-            const baseActions = [{
-              type: action.type as any,
-              selector: action.selector,
-              text: action.text
-            }];
+            const baseActions = [
+              {
+                type: action.type as any,
+                selector: action.selector,
+                text: action.text,
+              },
+            ];
             await super.performUIAutomation(sessionId, pageId, baseActions);
             result.success = true;
+          }
         }
 
         // Post-action analysis if requested
@@ -216,26 +220,27 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
 
         // Strategic pause for stability and analysis
         await page.waitForTimeout(200);
-
       } catch (error) {
         console.error(`❌ Enhanced action ${i + 1} failed:`, error);
         results.push({
           action: action.type,
           success: false,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
       }
     }
 
     const successfulActions = results.filter(r => r.success).length;
-    console.log(`✅ Enhanced UI automation completed: ${successfulActions}/${results.length} actions successful`);
-    
+    console.log(
+      `✅ Enhanced UI automation completed: ${successfulActions}/${results.length} actions successful`
+    );
+
     return results;
   }
 
   /**
    * Strategic Enhancement: Advanced visual regression with semantic understanding
-   * 
+   *
    * Extends the base visual regression testing with accessibility validation,
    * semantic analysis, and performance comparison.
    */
@@ -256,27 +261,25 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       createBaseline = false,
       validateAccessibility = true,
       analyzeSemantics = true,
-      comparePerformance = true
+      comparePerformance = true,
     } = options;
 
-    const safeTestName = testName.replace(/\r|\n/g, "");
+    const safeTestName = testName.replace(/\r|\n/g, '');
     console.log(`🔍 Performing advanced visual regression test: "${safeTestName}"`);
 
     // Perform base visual regression
-    const baseResult = await super.performVisualRegression(
-      sessionId,
-      pageId,
-      testName,
-      { threshold, createBaseline }
-    );
+    const baseResult = await super.performVisualRegression(sessionId, pageId, testName, {
+      threshold,
+      createBaseline,
+    });
 
     const enhancedResult: EnhancedVisualRegressionResult = {
-      ...baseResult
+      ...baseResult,
     };
 
     const session = await this.getSession(sessionId);
     const page = session?.pages.get(pageId);
-    
+
     if (!page) {
       return enhancedResult;
     }
@@ -296,10 +299,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     // Strategic enhancement: Performance comparison
     if (comparePerformance) {
       console.log(`⚡ Comparing performance metrics...`);
-      enhancedResult.performanceComparison = await this.comparePerformanceMetrics(
-        page, 
-        testName
-      );
+      enhancedResult.performanceComparison = await this.comparePerformanceMetrics(page, testName);
     }
 
     // Strategic enhancement: Usability scoring
@@ -319,7 +319,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     selector: string
   ): Promise<AccessibilityValidationResult> {
     const issues: AccessibilityIssue[] = [];
-    
+
     try {
       const element = await page.$(selector);
       if (!element) {
@@ -329,14 +329,14 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: selector,
           message: 'Element not found for accessibility validation',
           wcagCriterion: 'N/A',
-          suggestion: 'Ensure element exists before validation'
+          suggestion: 'Ensure element exists before validation',
         });
-        
+
         return {
           compliant: false,
           issues,
           wcagLevel: 'A',
-          score: 0
+          score: 0,
         };
       }
 
@@ -349,7 +349,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: selector,
           message: 'Interactive element lacks proper labeling',
           wcagCriterion: '1.3.1, 2.4.6',
-          suggestion: 'Add aria-label, aria-labelledby, or associated label element'
+          suggestion: 'Add aria-label, aria-labelledby, or associated label element',
         });
       }
 
@@ -362,7 +362,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: selector,
           message: 'Element not accessible via keyboard',
           wcagCriterion: '2.1.1',
-          suggestion: 'Ensure element is focusable and operable with keyboard'
+          suggestion: 'Ensure element is focusable and operable with keyboard',
         });
       }
 
@@ -375,7 +375,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: selector,
           message: `Color contrast ratio ${contrastRatio.toFixed(2)} is below WCAG standards`,
           wcagCriterion: '1.4.3',
-          suggestion: 'Increase color contrast to at least 4.5:1 for normal text'
+          suggestion: 'Increase color contrast to at least 4.5:1 for normal text',
         });
       }
 
@@ -388,10 +388,9 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: selector,
           message: 'Element lacks visible focus indicator',
           wcagCriterion: '2.4.7',
-          suggestion: 'Add visible focus styles (outline, border, etc.)'
+          suggestion: 'Add visible focus styles (outline, border, etc.)',
         });
       }
-
     } catch (error) {
       issues.push({
         type: 'validation-error',
@@ -399,21 +398,21 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
         element: selector,
         message: `Accessibility validation failed: ${error}`,
         wcagCriterion: 'N/A',
-        suggestion: 'Review element structure and accessibility implementation'
+        suggestion: 'Review element structure and accessibility implementation',
       });
     }
 
     const errorCount = issues.filter(i => i.severity === 'error').length;
     const warningCount = issues.filter(i => i.severity === 'warning').length;
-    
-    const score = Math.max(0, 100 - (errorCount * 25) - (warningCount * 10));
+
+    const score = Math.max(0, 100 - errorCount * 25 - warningCount * 10);
     const wcagLevel = errorCount === 0 ? (warningCount === 0 ? 'AAA' : 'AA') : 'A';
 
     return {
       compliant: errorCount === 0,
       issues,
       wcagLevel,
-      score
+      score,
     };
   }
 
@@ -422,7 +421,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
    */
   private async validatePageAccessibility(page: any): Promise<AccessibilityValidationResult> {
     const issues: AccessibilityIssue[] = [];
-    
+
     try {
       // Check page structure
       const hasMainLandmark = await page.$('main, [role="main"]');
@@ -433,7 +432,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: 'page',
           message: 'Page lacks main landmark',
           wcagCriterion: '1.3.1',
-          suggestion: 'Add <main> element or role="main" to identify main content'
+          suggestion: 'Add <main> element or role="main" to identify main content',
         });
       }
 
@@ -445,9 +444,9 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       for (const heading of headings) {
         const tagName = await heading.tagName();
         const level = parseInt(tagName.charAt(1));
-        
+
         if (level === 1) hasH1 = true;
-        
+
         if (level > previousLevel + 1) {
           issues.push({
             type: 'heading-hierarchy-skip',
@@ -455,10 +454,10 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
             element: tagName.toLowerCase(),
             message: `Heading level skipped from h${previousLevel} to h${level}`,
             wcagCriterion: '1.3.1',
-            suggestion: 'Use sequential heading levels (h1, h2, h3, etc.)'
+            suggestion: 'Use sequential heading levels (h1, h2, h3, etc.)',
           });
         }
-        
+
         previousLevel = level;
       }
 
@@ -469,7 +468,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
           element: 'page',
           message: 'Page lacks h1 heading',
           wcagCriterion: '1.3.1',
-          suggestion: 'Add h1 element to identify page topic'
+          suggestion: 'Add h1 element to identify page topic',
         });
       }
 
@@ -477,8 +476,8 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       const images = await page.$$('img');
       for (const img of images) {
         const alt = await img.getAttribute('alt');
-        const isDecorative = await img.getAttribute('role') === 'presentation';
-        
+        const isDecorative = (await img.getAttribute('role')) === 'presentation';
+
         if (!alt && !isDecorative) {
           issues.push({
             type: 'missing-alt-text',
@@ -486,7 +485,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
             element: 'img',
             message: 'Image missing alt text',
             wcagCriterion: '1.1.1',
-            suggestion: 'Add descriptive alt text or role="presentation" for decorative images'
+            suggestion: 'Add descriptive alt text or role="presentation" for decorative images',
           });
         }
       }
@@ -496,18 +495,17 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       for (const control of formControls) {
         const hasLabel = await this.checkElementLabeling(control);
         if (!hasLabel) {
-          const type = await control.getAttribute('type') || 'form control';
+          const type = (await control.getAttribute('type')) || 'form control';
           issues.push({
             type: 'form-control-unlabeled',
             severity: 'error',
             element: type,
             message: `Form control lacks proper labeling`,
             wcagCriterion: '1.3.1, 2.4.6',
-            suggestion: 'Associate form control with label element or add aria-label'
+            suggestion: 'Associate form control with label element or add aria-label',
           });
         }
       }
-
     } catch (error) {
       issues.push({
         type: 'page-validation-error',
@@ -515,64 +513,67 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
         element: 'page',
         message: `Page accessibility validation failed: ${error}`,
         wcagCriterion: 'N/A',
-        suggestion: 'Review page structure and accessibility implementation'
+        suggestion: 'Review page structure and accessibility implementation',
       });
     }
 
     const errorCount = issues.filter(i => i.severity === 'error').length;
     const warningCount = issues.filter(i => i.severity === 'warning').length;
-    
-    const score = Math.max(0, 100 - (errorCount * 15) - (warningCount * 5));
+
+    const score = Math.max(0, 100 - errorCount * 15 - warningCount * 5);
     const wcagLevel = errorCount === 0 ? (warningCount === 0 ? 'AAA' : 'AA') : 'A';
 
     return {
       compliant: errorCount === 0,
       issues,
       wcagLevel,
-      score
+      score,
     };
   }
 
   /**
    * Strategic Enhancement: Semantic analysis of page changes
    */
-  private async analyzePageSemantics(page: any, testName: string): Promise<SemanticAnalysisResult> {
+  private async analyzePageSemantics(
+    _page: any,
+    _testName: string
+  ): Promise<SemanticAnalysisResult> {
     const structuralChanges: StructuralChange[] = [];
     const contentChanges: ContentChange[] = [];
     const layoutChanges: LayoutChange[] = [];
 
     try {
-      // Analyze page structure
+      // Future enhancement: page structure analysis
+      /*
       const pageStructure = await page.evaluate(() => {
         const getElementStructure = (element: Element): any => {
           return {
             tagName: element.tagName,
             id: element.id,
             className: element.className,
-            children: Array.from(element.children).map(getElementStructure)
+            children: Array.from(element.children).map(getElementStructure),
           };
         };
-        
+
         return getElementStructure(document.body);
       });
 
       // Compare with baseline structure (simplified implementation)
       // In a real implementation, this would compare with stored baseline
-      
+
       // Analyze content changes
       const textContent = await page.textContent('body');
       const linkCount = await page.$$eval('a', links => links.length);
       const imageCount = await page.$$eval('img', imgs => imgs.length);
-      
+      */
       // Calculate semantic score based on changes
-      const semanticScore = this.calculateSemanticScore(
-        structuralChanges,
-        contentChanges,
-        layoutChanges
-      );
-
-      const impact = semanticScore > 0.8 ? 'low' : semanticScore > 0.5 ? 'medium' : 'high';
-
+      // const semanticScore = this.calculateSemanticScore(
+      //   structuralChanges,
+      //   contentChanges,
+      //   layoutChanges
+      // );
+      // Future enhancement: impact calculation
+      // const impact = semanticScore > 0.8 ? 'low' : semanticScore > 0.5 ? 'medium' : 'high';
     } catch (error) {
       console.error('Semantic analysis error:', error);
     }
@@ -582,7 +583,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       contentChanges,
       layoutChanges,
       semanticScore: 0.95, // Placeholder - would be calculated based on actual changes
-      impact: 'low'
+      impact: 'low',
     };
   }
 
@@ -591,17 +592,20 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
    */
   private async capturePerformanceMetrics(page: any): Promise<PerformanceMetrics> {
     const metrics = await page.evaluate(() => {
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const navigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming;
       const paintEntries = performance.getEntriesByType('paint');
-      
+
       return {
         responseTime: navigation.responseEnd - navigation.requestStart,
         renderTime: navigation.loadEventEnd - navigation.responseEnd,
         interactiveTime: navigation.domInteractive - navigation.domContentLoadedEventStart,
-        firstContentfulPaint: paintEntries.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,
+        firstContentfulPaint:
+          paintEntries.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,
         // Note: CLS and LCP would require more complex measurement
         cumulativeLayoutShift: 0,
-        largestContentfulPaint: 0
+        largestContentfulPaint: 0,
       };
     });
 
@@ -611,7 +615,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
   /**
    * Strategic Enhancement: Usability scoring algorithm
    */
-  private async calculateUsabilityScore(page: any, action: UXAutomationAction): Promise<number> {
+  private async calculateUsabilityScore(page: any, _action: UXAutomationAction): Promise<number> {
     let score = 100;
 
     try {
@@ -619,8 +623,9 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       const actionStart = Date.now();
       // Simulate action completion time check
       const actionTime = Date.now() - actionStart;
-      
-      if (actionTime > 2000) score -= 20; // Slow response
+
+      if (actionTime > 2000)
+        score -= 20; // Slow response
       else if (actionTime > 1000) score -= 10;
 
       // Check for error states
@@ -634,7 +639,6 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       // Check for success feedback
       const hasSuccessFeedback = await page.$('.success, .alert-success, [role="status"]');
       if (hasSuccessFeedback) score += 10;
-
     } catch (error) {
       score -= 20; // Penalty for errors during usability calculation
     }
@@ -645,19 +649,25 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
   /**
    * Strategic Enhancement: User journey analysis
    */
-  private async analyzeUserJourney(page: any, action: UXAutomationAction): Promise<UserJourneyAnalysis> {
+  private async analyzeUserJourney(
+    page: any,
+    action: UXAutomationAction
+  ): Promise<UserJourneyAnalysis> {
     return {
       step: action.type,
       difficulty: await this.calculateStepDifficulty(page, action),
       completionRate: 95, // Would be calculated from historical data
-      suggestions: await this.generateJourneyImprovementSuggestions(page, action)
+      suggestions: await this.generateJourneyImprovementSuggestions(page, action),
     };
   }
 
   /**
    * Internal semantic analysis method (renamed to avoid conflicts)
    */
-  private async performSemanticAnalysisInternal(page: any, action: UXAutomationAction): Promise<SemanticAnalysisResult> {
+  private async performSemanticAnalysisInternal(
+    page: any,
+    action: UXAutomationAction
+  ): Promise<SemanticAnalysisResult> {
     return this.analyzePageSemantics(page, `action_${action.type}`);
   }
 
@@ -666,7 +676,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     const ariaLabel = await element.getAttribute('aria-label');
     const ariaLabelledBy = await element.getAttribute('aria-labelledby');
     const ariaDescribedBy = await element.getAttribute('aria-describedby');
-    
+
     if (ariaLabel || ariaLabelledBy || ariaDescribedBy) return true;
 
     // Check for associated label
@@ -675,7 +685,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       const label = await element.evaluateHandle((el: any, elementId: string) => {
         return document.querySelector(`label[for="${elementId}"]`);
       }, id);
-      
+
       if (label) return true;
     }
 
@@ -685,25 +695,28 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
   private async checkKeyboardAccessibility(element: any): Promise<boolean> {
     const tabIndex = await element.getAttribute('tabindex');
     const tagName = await element.tagName();
-    
+
     // Elements that are naturally focusable
     const focusableElements = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'];
-    
+
     if (focusableElements.includes(tagName.toUpperCase())) return true;
     if (tabIndex && parseInt(tabIndex) >= 0) return true;
-    
+
     return false;
   }
 
-  private async checkColorContrast(element: any): Promise<number> {
+  private async checkColorContrast(_element: any): Promise<number> {
     // Simplified contrast calculation - in practice would use more sophisticated color analysis
+    // Future enhancement: color contrast calculation using computed styles
+    /*
     const styles = await element.evaluate((el: any) => {
       const computed = window.getComputedStyle(el);
       return {
         color: computed.color,
-        backgroundColor: computed.backgroundColor
+        backgroundColor: computed.backgroundColor,
       };
     });
+    */
 
     // Placeholder calculation - would implement proper contrast ratio calculation
     return 7.5; // Assume good contrast for demo
@@ -717,17 +730,20 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
         outline: computed.outline,
         outlineWidth: computed.outlineWidth,
         boxShadow: computed.boxShadow,
-        border: computed.border
+        border: computed.border,
       };
     });
 
     // Check if element has visible focus indicator
-    return focusStyles.outline !== 'none' || 
-           focusStyles.outlineWidth !== '0px' ||
-           focusStyles.boxShadow !== 'none';
+    return (
+      focusStyles.outline !== 'none' ||
+      focusStyles.outlineWidth !== '0px' ||
+      focusStyles.boxShadow !== 'none'
+    );
   }
 
-  // Additional helper methods
+  // Future enhancement: semantic score calculation
+  /*
   private calculateSemanticScore(
     structural: StructuralChange[],
     content: ContentChange[],
@@ -737,44 +753,45 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     const structuralImpact = structural.length * 0.1;
     const contentImpact = content.reduce((sum, change) => sum + change.significance, 0) * 0.05;
     const layoutImpact = layout.reduce((sum, change) => sum + change.significance, 0) * 0.03;
-    
+
     return Math.max(0, 1 - (structuralImpact + contentImpact + layoutImpact));
   }
+  */
 
   private calculateOverallQualityScore(result: EnhancedVisualRegressionResult): number {
     let score = (result as any).similarity ? (result as any).similarity * 100 : 100;
-    
+
     if (result.accessibilityValidation) {
       score = (score + result.accessibilityValidation.score) / 2;
     }
-    
+
     if (result.usabilityScore) {
       score = (score + result.usabilityScore) / 2;
     }
-    
+
     return Math.round(score);
   }
 
   private async calculateStepDifficulty(page: any, action: UXAutomationAction): Promise<number> {
     // Simplified difficulty calculation based on action complexity
     const complexityMap = {
-      'click': 1,
-      'type': 2,
-      'validate': 3,
-      'analyze': 4,
-      'scroll': 1,
-      'wait': 0
+      click: 1,
+      type: 2,
+      validate: 3,
+      analyze: 4,
+      scroll: 1,
+      wait: 0,
     };
 
     return complexityMap[action.type as keyof typeof complexityMap] || 2;
   }
 
   private async generateJourneyImprovementSuggestions(
-    page: any, 
-    action: UXAutomationAction
+    page: any,
+    _action: UXAutomationAction
   ): Promise<string[]> {
     const suggestions: string[] = [];
-    
+
     // Analyze current page state and provide suggestions
     const hasLoadingStates = await page.$('.loading, .spinner');
     if (hasLoadingStates) {
@@ -791,10 +808,10 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
 
   private async comparePerformanceMetrics(
     page: any,
-    testName: string
+    _testName: string
   ): Promise<PerformanceComparison> {
     const current = await this.capturePerformanceMetrics(page);
-    
+
     // In a real implementation, this would load baseline metrics from storage
     const baseline: PerformanceMetrics = {
       responseTime: 500,
@@ -802,7 +819,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       interactiveTime: 1000,
       cumulativeLayoutShift: 0.1,
       firstContentfulPaint: 800,
-      largestContentfulPaint: 1200
+      largestContentfulPaint: 1200,
     };
 
     const improvement = this.calculatePerformanceImprovement(baseline, current);
@@ -812,7 +829,7 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       baseline,
       current,
       improvement,
-      regressions
+      regressions,
     };
   }
 
@@ -820,9 +837,10 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     baseline: PerformanceMetrics,
     current: PerformanceMetrics
   ): number {
-    const responseImprovement = (baseline.responseTime - current.responseTime) / baseline.responseTime;
+    const responseImprovement =
+      (baseline.responseTime - current.responseTime) / baseline.responseTime;
     const renderImprovement = (baseline.renderTime - current.renderTime) / baseline.renderTime;
-    
+
     return Math.round(((responseImprovement + renderImprovement) / 2) * 100);
   }
 
@@ -831,15 +849,15 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     current: PerformanceMetrics
   ): string[] {
     const regressions: string[] = [];
-    
+
     if (current.responseTime > baseline.responseTime * 1.1) {
       regressions.push('Response time regression detected');
     }
-    
+
     if (current.renderTime > baseline.renderTime * 1.1) {
       regressions.push('Render time regression detected');
     }
-    
+
     return regressions;
   }
 
@@ -849,7 +867,9 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     try {
       // Check page load performance
       const loadTime = await page.evaluate(() => {
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const navigation = performance.getEntriesByType(
+          'navigation'
+        )[0] as PerformanceNavigationTiming;
         return navigation.loadEventEnd - navigation.domContentLoadedEventStart;
       });
 
@@ -866,7 +886,6 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
       // Check for responsive design indicators
       const hasViewportMeta = await page.$('meta[name="viewport"]');
       if (!hasViewportMeta) score -= 10;
-
     } catch (error) {
       score -= 10;
     }
@@ -876,14 +895,14 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
 
   private async performEnhancedClick(page: any, action: UXAutomationAction): Promise<void> {
     if (!action.selector) throw new Error('Selector required for click action');
-    
+
     const element = await page.$(action.selector);
     if (!element) throw new Error(`Element not found: ${action.selector}`);
-    
+
     // Ensure element is visible and clickable
     await element.scrollIntoViewIfNeeded();
     await element.click();
-    
+
     // Wait for potential navigation or state changes
     await page.waitForTimeout(100);
   }
@@ -892,19 +911,22 @@ export class EnhancedUXAutomationManager extends EnhancedBrowserAutomationManage
     if (!action.selector || !action.text) {
       throw new Error('Selector and text required for type action');
     }
-    
+
     const element = await page.$(action.selector);
     if (!element) throw new Error(`Element not found: ${action.selector}`);
-    
+
     await element.scrollIntoViewIfNeeded();
     await element.click(); // Focus the element
     await element.fill(action.text);
   }
 
-  private async performComprehensiveValidation(page: any, action: UXAutomationAction): Promise<void> {
+  private async performComprehensiveValidation(
+    page: any,
+    _action: UXAutomationAction
+  ): Promise<void> {
     // Perform comprehensive page validation including accessibility, performance, and usability
     console.log('🔍 Performing comprehensive validation...');
-    
+
     // This would trigger various validation checks
     await this.validatePageAccessibility(page);
     await this.capturePerformanceMetrics(page);

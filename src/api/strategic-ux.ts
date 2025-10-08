@@ -5,7 +5,7 @@ import { ErrorCode } from '../types/index.js';
 
 /**
  * Strategic UX Enhancement API
- * 
+ *
  * This module provides API endpoints for the enhanced UI/UX automation capabilities
  * as outlined in the Strategic Intensification Plan. It demonstrates the practical
  * implementation of cutting-edge user experience validation and optimization features.
@@ -16,7 +16,7 @@ const router = Router();
 /**
  * POST /api/v1/strategic-ux/:containerId/intelligent-automation
  * Perform intelligent UI automation with comprehensive validation
- * 
+ *
  * Strategic Enhancement: This endpoint extends basic UI automation with:
  * - Accessibility validation (WCAG 2.1 compliance)
  * - Performance monitoring and optimization
@@ -27,17 +27,16 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
   try {
     const { containerId } = req.params;
     // Sanitize containerId to prevent log injection
-    const safeContainerId = typeof containerId === 'string'
-      ? containerId.replace(/[\r\n]/g, '')
-      : String(containerId);
-    const { 
+    const safeContainerId =
+      typeof containerId === 'string' ? containerId.replace(/[\r\n]/g, '') : String(containerId);
+    const {
       sessionId,
       pageId,
       actions,
       enableAccessibilityValidation = true,
       enablePerformanceMonitoring = true,
       enableSemanticAnalysis = true,
-      enableUsabilityScoring = true
+      enableUsabilityScoring = true,
     } = req.body;
     const userId = req.user!.userId;
 
@@ -46,8 +45,8 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'sessionId, pageId, and actions array are required'
-        }
+          message: 'sessionId, pageId, and actions array are required',
+        },
       });
     }
 
@@ -58,8 +57,8 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -71,18 +70,22 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
         performance: enablePerformanceMonitoring,
         semantics: enableSemanticAnalysis,
         usability: enableUsabilityScoring,
-        ...action.validation
+        ...action.validation,
       },
       analysis: {
         userJourney: true,
         conversionFunnel: false,
         behaviorPattern: false,
-        ...action.analysis
-      }
+        ...action.analysis,
+      },
     }));
 
-    console.log(`🎯 Starting intelligent UI automation for container [user-input:${safeContainerId}]`);
-    console.log(`📊 Enhanced features: Accessibility=${enableAccessibilityValidation}, Performance=${enablePerformanceMonitoring}, Semantics=${enableSemanticAnalysis}, Usability=${enableUsabilityScoring}`);
+    console.log(
+      `🎯 Starting intelligent UI automation for container [user-input:${safeContainerId}]`
+    );
+    console.log(
+      `📊 Enhanced features: Accessibility=${enableAccessibilityValidation}, Performance=${enablePerformanceMonitoring}, Semantics=${enableSemanticAnalysis}, Usability=${enableUsabilityScoring}`
+    );
 
     const results = await enhancedUXAutomationManager.performIntelligentUIAutomation(
       sessionId,
@@ -93,28 +96,30 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
     // Calculate overall automation quality score
     const qualityMetrics = {
       successRate: (results.filter(r => r.success).length / results.length) * 100,
-      averageAccessibilityScore: results
-        .filter(r => r.accessibilityResults)
-        .reduce((sum, r) => sum + (r.accessibilityResults?.score || 0), 0) / 
-        results.filter(r => r.accessibilityResults).length || 0,
-      averageUsabilityScore: results
-        .filter(r => r.usabilityScore)
-        .reduce((sum, r) => sum + (r.usabilityScore || 0), 0) / 
-        results.filter(r => r.usabilityScore).length || 0,
-      averagePerformanceScore: results
-        .filter(r => r.performanceMetrics)
-        .reduce((sum, r) => sum + (100 - (r.performanceMetrics?.responseTime || 0) / 10), 0) /
-        results.filter(r => r.performanceMetrics).length || 0
+      averageAccessibilityScore:
+        results
+          .filter(r => r.accessibilityResults)
+          .reduce((sum, r) => sum + (r.accessibilityResults?.score || 0), 0) /
+          results.filter(r => r.accessibilityResults).length || 0,
+      averageUsabilityScore:
+        results.filter(r => r.usabilityScore).reduce((sum, r) => sum + (r.usabilityScore || 0), 0) /
+          results.filter(r => r.usabilityScore).length || 0,
+      averagePerformanceScore:
+        results
+          .filter(r => r.performanceMetrics)
+          .reduce((sum, r) => sum + (100 - (r.performanceMetrics?.responseTime || 0) / 10), 0) /
+          results.filter(r => r.performanceMetrics).length || 0,
     };
 
-    const overallQualityScore = (
+    const overallQualityScore =
       qualityMetrics.successRate * 0.4 +
       qualityMetrics.averageAccessibilityScore * 0.3 +
       qualityMetrics.averageUsabilityScore * 0.2 +
-      qualityMetrics.averagePerformanceScore * 0.1
-    );
+      qualityMetrics.averagePerformanceScore * 0.1;
 
-    console.log(`✅ Intelligent UI automation completed with ${qualityMetrics.successRate.toFixed(1)}% success rate`);
+    console.log(
+      `✅ Intelligent UI automation completed with ${qualityMetrics.successRate.toFixed(1)}% success rate`
+    );
     console.log(`📈 Overall Quality Score: ${overallQualityScore.toFixed(1)}%`);
 
     res.json({
@@ -129,23 +134,24 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
         summary: {
           totalActions: actions.length,
           successfulActions: results.filter(r => r.success).length,
-          accessibilityIssuesFound: results.reduce((sum, r) => 
-            sum + (r.accessibilityResults?.issues.length || 0), 0),
+          accessibilityIssuesFound: results.reduce(
+            (sum, r) => sum + (r.accessibilityResults?.issues.length || 0),
+            0
+          ),
           averageActionDuration: results.reduce((sum, r) => sum + r.duration, 0) / results.length,
-          userJourneyAnalysis: results.filter(r => r.userJourneyAnalysis).length > 0
+          userJourneyAnalysis: results.filter(r => r.userJourneyAnalysis).length > 0,
         },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('Intelligent UI automation error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to perform intelligent UI automation'
-      }
+        message: 'Failed to perform intelligent UI automation',
+      },
     });
   }
 });
@@ -153,7 +159,7 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
 /**
  * POST /api/v1/strategic-ux/:containerId/advanced-visual-regression
  * Perform advanced visual regression testing with semantic analysis
- * 
+ *
  * Strategic Enhancement: This endpoint provides comprehensive visual regression testing with:
  * - AI-powered semantic analysis of changes
  * - Accessibility compliance validation
@@ -164,7 +170,7 @@ router.post('/:containerId/intelligent-automation', async (req: Request, res: Re
 router.post('/:containerId/advanced-visual-regression', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
-    const { 
+    const {
       sessionId,
       pageId,
       testName,
@@ -173,8 +179,8 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
       validateAccessibility = true,
       analyzeSemantics = true,
       comparePerformance = true,
-      enableCrossBrowserTesting = false,
-      enableMobileResponsiveness = false
+      // _enableCrossBrowserTesting = false,
+      // _enableMobileResponsiveness = false,
     } = req.body;
     const userId = req.user!.userId;
 
@@ -183,8 +189,8 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'sessionId, pageId, and testName are required'
-        }
+          message: 'sessionId, pageId, and testName are required',
+        },
       });
     }
 
@@ -195,13 +201,17 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
-    console.log(`🔍 Starting advanced visual regression test "${testName}" for container ${containerId}`);
-    console.log(`🎯 Enhanced analysis: Accessibility=${validateAccessibility}, Semantics=${analyzeSemantics}, Performance=${comparePerformance}`);
+    console.log(
+      `🔍 Starting advanced visual regression test "${testName}" for container ${containerId}`
+    );
+    console.log(
+      `🎯 Enhanced analysis: Accessibility=${validateAccessibility}, Semantics=${analyzeSemantics}, Performance=${comparePerformance}`
+    );
 
     const result = await enhancedUXAutomationManager.performAdvancedVisualRegression(
       sessionId,
@@ -212,7 +222,7 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
         createBaseline,
         validateAccessibility,
         analyzeSemantics,
-        comparePerformance
+        comparePerformance,
       }
     );
 
@@ -222,30 +232,40 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
         passed: result.passed,
         similarity: result.similarity,
         differences: result.differences,
-        threshold
+        threshold,
       },
-      accessibility: result.accessibilityValidation ? {
-        compliant: result.accessibilityValidation.compliant,
-        wcagLevel: result.accessibilityValidation.wcagLevel,
-        score: result.accessibilityValidation.score,
-        issueCount: result.accessibilityValidation.issues.length,
-        criticalIssues: result.accessibilityValidation.issues.filter(i => i.severity === 'error').length
-      } : null,
-      semanticAnalysis: result.semanticAnalysis ? {
-        semanticScore: result.semanticAnalysis.semanticScore,
-        impact: result.semanticAnalysis.impact,
-        structuralChanges: result.semanticAnalysis.structuralChanges.length,
-        contentChanges: result.semanticAnalysis.contentChanges.length,
-        layoutChanges: result.semanticAnalysis.layoutChanges.length
-      } : null,
-      performance: result.performanceComparison ? {
-        improvement: result.performanceComparison.improvement,
-        regressions: result.performanceComparison.regressions.length,
-        currentMetrics: result.performanceComparison.current
-      } : null,
-      usability: result.usabilityScore ? {
-        score: result.usabilityScore
-      } : null
+      accessibility: result.accessibilityValidation
+        ? {
+            compliant: result.accessibilityValidation.compliant,
+            wcagLevel: result.accessibilityValidation.wcagLevel,
+            score: result.accessibilityValidation.score,
+            issueCount: result.accessibilityValidation.issues.length,
+            criticalIssues: result.accessibilityValidation.issues.filter(
+              i => i.severity === 'error'
+            ).length,
+          }
+        : null,
+      semanticAnalysis: result.semanticAnalysis
+        ? {
+            semanticScore: result.semanticAnalysis.semanticScore,
+            impact: result.semanticAnalysis.impact,
+            structuralChanges: result.semanticAnalysis.structuralChanges.length,
+            contentChanges: result.semanticAnalysis.contentChanges.length,
+            layoutChanges: result.semanticAnalysis.layoutChanges.length,
+          }
+        : null,
+      performance: result.performanceComparison
+        ? {
+            improvement: result.performanceComparison.improvement,
+            regressions: result.performanceComparison.regressions.length,
+            currentMetrics: result.performanceComparison.current,
+          }
+        : null,
+      usability: result.usabilityScore
+        ? {
+            score: result.usabilityScore,
+          }
+        : null,
     };
 
     // Calculate overall test quality score
@@ -269,7 +289,9 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
 
     const finalScore = Math.round(overallScore / scoreFactors);
 
-    console.log(`${result.passed ? '✅' : '❌'} Advanced visual regression test "${testName}": ${(result.similarity * 100).toFixed(2)}% similarity`);
+    console.log(
+      `${result.passed ? '✅' : '❌'} Advanced visual regression test "${testName}": ${(result.similarity * 100).toFixed(2)}% similarity`
+    );
     console.log(`📊 Overall Quality Score: ${finalScore}%`);
 
     res.json({
@@ -283,18 +305,17 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
         testReport,
         overallScore: finalScore,
         recommendations: generateTestRecommendations(result),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
     console.error('Advanced visual regression testing error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to perform advanced visual regression testing'
-      }
+        message: 'Failed to perform advanced visual regression testing',
+      },
     });
   }
 });
@@ -302,7 +323,7 @@ router.post('/:containerId/advanced-visual-regression', async (req: Request, res
 /**
  * GET /api/v1/strategic-ux/:containerId/quality-assessment
  * Comprehensive quality assessment of the current page/application state
- * 
+ *
  * Strategic Enhancement: This endpoint provides a holistic quality assessment including:
  * - UI/UX quality metrics
  * - Accessibility compliance analysis
@@ -321,8 +342,8 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'sessionId and pageId are required as query parameters'
-        }
+          message: 'sessionId and pageId are required as query parameters',
+        },
       });
     }
 
@@ -333,8 +354,8 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -348,9 +369,9 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
           accessibility: true,
           performance: true,
           semantics: true,
-          usability: true
-        }
-      }
+          usability: true,
+        },
+      },
     ];
 
     const assessmentResults = await enhancedUXAutomationManager.performIntelligentUIAutomation(
@@ -367,68 +388,82 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
           score: 0,
           issues: [] as any[],
           wcagLevel: 'A',
-          recommendations: [] as string[]
+          recommendations: [] as string[],
         },
         performance: {
           score: 0,
           metrics: {} as any,
-          recommendations: [] as string[]
+          recommendations: [] as string[],
         },
         usability: {
           score: 0,
           issues: [] as string[],
-          recommendations: [] as string[]
+          recommendations: [] as string[],
         },
         semantic: {
           score: 0,
           structure: 'good',
-          recommendations: [] as string[]
-        }
+          recommendations: [] as string[],
+        },
       },
       trends: {
         improving: [] as string[],
         declining: [] as string[],
-        stable: [] as string[]
+        stable: [] as string[],
       },
-      actionableInsights: [] as string[]
+      actionableInsights: [] as string[],
     };
 
     // Process assessment results
     if (assessmentResults.length > 0) {
       const result = assessmentResults[0];
-      
+
       if (result.accessibilityResults) {
         qualityAssessment.categories.accessibility.score = result.accessibilityResults.score;
         qualityAssessment.categories.accessibility.issues = result.accessibilityResults.issues;
-        qualityAssessment.categories.accessibility.wcagLevel = result.accessibilityResults.wcagLevel;
-        qualityAssessment.categories.accessibility.recommendations = generateAccessibilityRecommendations(result.accessibilityResults);
+        qualityAssessment.categories.accessibility.wcagLevel =
+          result.accessibilityResults.wcagLevel;
+        qualityAssessment.categories.accessibility.recommendations =
+          generateAccessibilityRecommendations(result.accessibilityResults);
       }
 
       if (result.performanceMetrics) {
-        qualityAssessment.categories.performance.score = Math.max(0, 100 - (result.performanceMetrics.responseTime / 10));
+        qualityAssessment.categories.performance.score = Math.max(
+          0,
+          100 - result.performanceMetrics.responseTime / 10
+        );
         qualityAssessment.categories.performance.metrics = result.performanceMetrics;
-        qualityAssessment.categories.performance.recommendations = generatePerformanceRecommendations(result.performanceMetrics);
+        qualityAssessment.categories.performance.recommendations =
+          generatePerformanceRecommendations(result.performanceMetrics);
       }
 
       if (result.usabilityScore) {
         qualityAssessment.categories.usability.score = result.usabilityScore;
-        qualityAssessment.categories.usability.recommendations = generateUsabilityRecommendations(result.usabilityScore);
+        qualityAssessment.categories.usability.recommendations = generateUsabilityRecommendations(
+          result.usabilityScore
+        );
       }
 
       if (result.semanticValidation) {
         qualityAssessment.categories.semantic.score = result.semanticValidation.semanticScore * 100;
-        qualityAssessment.categories.semantic.recommendations = generateSemanticRecommendations(result.semanticValidation);
+        qualityAssessment.categories.semantic.recommendations = generateSemanticRecommendations(
+          result.semanticValidation
+        );
       }
     }
 
     // Calculate overall score
     const scores = Object.values(qualityAssessment.categories).map(cat => cat.score);
-    qualityAssessment.overallScore = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+    qualityAssessment.overallScore = Math.round(
+      scores.reduce((sum, score) => sum + score, 0) / scores.length
+    );
 
     // Generate actionable insights
     qualityAssessment.actionableInsights = generateActionableInsights(qualityAssessment);
 
-    console.log(`📈 Quality assessment completed - Overall Score: ${qualityAssessment.overallScore}%`);
+    console.log(
+      `📈 Quality assessment completed - Overall Score: ${qualityAssessment.overallScore}%`
+    );
 
     res.json({
       status: 'success',
@@ -438,18 +473,17 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
         pageId,
         assessment: qualityAssessment,
         timestamp: new Date().toISOString(),
-        nextSteps: generateNextSteps(qualityAssessment)
-      }
+        nextSteps: generateNextSteps(qualityAssessment),
+      },
     });
-
   } catch (error) {
     console.error('Quality assessment error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to perform quality assessment'
-      }
+        message: 'Failed to perform quality assessment',
+      },
     });
   }
 });
@@ -457,7 +491,7 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
 /**
  * POST /api/v1/strategic-ux/:containerId/optimization-recommendations
  * Generate AI-powered optimization recommendations based on analysis
- * 
+ *
  * Strategic Enhancement: This endpoint provides intelligent recommendations for:
  * - UI/UX improvements
  * - Performance optimizations
@@ -468,11 +502,11 @@ router.get('/:containerId/quality-assessment', async (req: Request, res: Respons
 router.post('/:containerId/optimization-recommendations', async (req: Request, res: Response) => {
   try {
     const { containerId } = req.params;
-    const { 
+    const {
       sessionId,
       pageId,
       analysisType = 'comprehensive', // 'accessibility', 'performance', 'usability', 'comprehensive'
-      priorityLevel = 'high' // 'low', 'medium', 'high', 'critical'
+      priorityLevel = 'high', // 'low', 'medium', 'high', 'critical'
     } = req.body;
     const userId = req.user!.userId;
 
@@ -481,8 +515,8 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'sessionId and pageId are required'
-        }
+          message: 'sessionId and pageId are required',
+        },
       });
     }
 
@@ -493,8 +527,8 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -511,8 +545,8 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
         estimatedEffort: 'medium',
         priorityOrder: [] as string[],
         dependencyMap: {} as any,
-        timeline: '2-4 weeks'
-      }
+        timeline: '2-4 weeks',
+      },
     };
 
     // Add strategic UI/UX improvements
@@ -522,7 +556,7 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
       description: 'Add semantic landmarks to improve screen reader navigation',
       impact: 'high',
       effort: 'low',
-      implementation: 'Add role="main", role="navigation", role="banner" to appropriate elements'
+      implementation: 'Add role="main", role="navigation", role="banner" to appropriate elements',
     });
 
     recommendations.shortTerm.push({
@@ -531,7 +565,7 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
       description: 'Implement lazy loading and WebP format for images',
       impact: 'medium',
       effort: 'medium',
-      implementation: 'Use intersection observer API and picture element with WebP sources'
+      implementation: 'Use intersection observer API and picture element with WebP sources',
     });
 
     recommendations.longTerm.push({
@@ -540,7 +574,7 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
       description: 'Implement advanced user behavior tracking and analysis',
       impact: 'high',
       effort: 'high',
-      implementation: 'Integrate user journey mapping with conversion funnel analysis'
+      implementation: 'Integrate user journey mapping with conversion funnel analysis',
     });
 
     recommendations.strategic.push({
@@ -549,10 +583,12 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
       description: 'Implement PWA capabilities for enhanced user experience',
       impact: 'high',
       effort: 'high',
-      implementation: 'Add service worker, manifest file, and offline capabilities'
+      implementation: 'Add service worker, manifest file, and offline capabilities',
     });
 
-    console.log(`✅ Generated ${Object.values(recommendations).flat().length} optimization recommendations`);
+    console.log(
+      `✅ Generated ${Object.values(recommendations).flat().length} optimization recommendations`
+    );
 
     res.json({
       status: 'success',
@@ -565,21 +601,22 @@ router.post('/:containerId/optimization-recommendations', async (req: Request, r
         recommendations,
         metadata: {
           totalRecommendations: Object.values(recommendations).flat().length,
-          highImpactCount: Object.values(recommendations).flat().filter((r: any) => r.impact === 'high').length,
+          highImpactCount: Object.values(recommendations)
+            .flat()
+            .filter((r: any) => r.impact === 'high').length,
           estimatedImprovementScore: '+15-25%',
-          generatedAt: new Date().toISOString()
-        }
-      }
+          generatedAt: new Date().toISOString(),
+        },
+      },
     });
-
   } catch (error) {
     console.error('Optimization recommendations error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.EXECUTION_ERROR,
-        message: 'Failed to generate optimization recommendations'
-      }
+        message: 'Failed to generate optimization recommendations',
+      },
     });
   }
 });
@@ -606,7 +643,7 @@ function generateTestRecommendations(result: any): string[] {
 
 function generateAccessibilityRecommendations(accessibilityResult: any): string[] {
   const recommendations: string[] = [];
-  
+
   accessibilityResult.issues.forEach((issue: any) => {
     recommendations.push(issue.suggestion);
   });
@@ -618,7 +655,9 @@ function generatePerformanceRecommendations(performanceMetrics: any): string[] {
   const recommendations: string[] = [];
 
   if (performanceMetrics.responseTime > 1000) {
-    recommendations.push('Optimize server response time - consider caching, database optimization, or CDN');
+    recommendations.push(
+      'Optimize server response time - consider caching, database optimization, or CDN'
+    );
   }
 
   if (performanceMetrics.renderTime > 500) {
@@ -665,7 +704,7 @@ function generateActionableInsights(qualityAssessment: any): string[] {
   return insights;
 }
 
-function generateNextSteps(qualityAssessment: any): string[] {
+function generateNextSteps(_qualityAssessment: any): string[] {
   const nextSteps: string[] = [];
 
   nextSteps.push('Review and prioritize recommendations based on impact and effort');

@@ -1,0 +1,41 @@
+{
+  "request": {
+    "query": "repo:Arcane-Fly/disco is:issue is:open label:enhancement",
+    "sort": "updated",
+    "order": "desc",
+    "perPage": 30,
+    "page": 1
+  },
+  "response": {
+    "totalCount": 42,
+    "items": [
+      {
+        "id": 123456789,
+        "number": 15,
+        "title": "Add MCP contract schemas with JSON validation",
+        "state": "open",
+        "url": "https://github.com/Arcane-Fly/disco/issues/15",
+        "body": "Implement JSON Schema contracts for MCP servers...",
+        "labels": ["enhancement", "mcp"],
+        "createdAt": "2024-10-01T10:00:00Z",
+        "updatedAt": "2024-10-02T14:30:00Z"
+      },
+      {
+        "id": 123456790,
+        "number": 14,
+        "title": "Improve error handling in browser automation",
+        "state": "open",
+        "url": "https://github.com/Arcane-Fly/disco/issues/14",
+        "body": "Better error messages for browser failures...",
+        "labels": ["enhancement", "browser"],
+        "createdAt": "2024-09-30T15:00:00Z",
+        "updatedAt": "2024-10-01T09:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "perPage": 30,
+      "hasNextPage": true
+    }
+  }
+}

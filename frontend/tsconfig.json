@@ -5,12 +5,20 @@
     "noEmit": true,
     "allowJs": true,
     "rootDir": ".",
+    "noUnusedLocals": false,
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
-    "incremental": true
+    "incremental": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/contexts/*": ["./contexts/*"]
+    }
   },
   "include": [
     "next-env.d.ts",

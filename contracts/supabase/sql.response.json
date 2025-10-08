@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/supabase/sql.response.json",
+  "title": "supabase.sql.response",
+  "description": "Response schema for Supabase SQL operation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["data"],
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Array of result rows"
+    },
+    "rowCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of rows affected or returned"
+    },
+    "executionTime": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Query execution time in milliseconds"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Non-fatal warnings during execution"
+    }
+  }
+}

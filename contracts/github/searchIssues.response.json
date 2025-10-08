@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/github/searchIssues.response.json",
+  "title": "github.searchIssues.response",
+  "description": "Response schema for GitHub issue search",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["totalCount", "items"],
+  "properties": {
+    "totalCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of matching issues"
+    },
+    "items": {
+      "type": "array",
+      "description": "Array of matching issues",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "number", "title", "state", "url"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Issue ID"
+          },
+          "number": {
+            "type": "integer",
+            "description": "Issue number"
+          },
+          "title": {
+            "type": "string",
+            "description": "Issue title"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["open", "closed"],
+            "description": "Issue state"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Issue URL"
+          },
+          "body": {
+            "type": "string",
+            "description": "Issue body/description"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Issue labels"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Issue creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Issue last update timestamp"
+          }
+        }
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "perPage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "hasNextPage": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

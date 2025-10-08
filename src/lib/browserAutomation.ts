@@ -14,11 +14,13 @@ interface BrowserSession {
  */
 class BrowserAutomationManager {
   private sessions: Map<string, BrowserSession> = new Map();
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval?: NodeJS.Timeout;
 
   constructor() {
-    // Clean up inactive browser sessions every 5 minutes
-    this.cleanupInterval = setInterval(() => this.cleanupInactiveSessions(), 5 * 60 * 1000);
+    // Clean up inactive browser sessions every 5 minutes (skip in tests)
+    if (process.env.NODE_ENV !== 'test') {
+      this.cleanupInterval = setInterval(() => this.cleanupInactiveSessions(), 5 * 60 * 1000);
+    }
   }
 
   /**
@@ -26,12 +28,12 @@ class BrowserAutomationManager {
    */
   async getBrowserSession(containerId: string, containerUrl?: string): Promise<BrowserSession> {
     let session = this.sessions.get(containerId);
-    
+
     if (!session) {
       session = await this.createBrowserSession(containerId, containerUrl);
       this.sessions.set(containerId, session);
     }
-    
+
     session.lastUsed = new Date();
     return session;
   }
@@ -39,7 +41,10 @@ class BrowserAutomationManager {
   /**
    * Create a new browser session
    */
-  private async createBrowserSession(containerId: string, containerUrl?: string): Promise<BrowserSession> {
+  private async createBrowserSession(
+    containerId: string,
+    containerUrl?: string
+  ): Promise<BrowserSession> {
     try {
       const browser = await chromium.launch({
         headless: true,
@@ -47,18 +52,18 @@ class BrowserAutomationManager {
           '--no-sandbox',
           '--disable-dev-shm-usage',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
-        ]
+          '--disable-features=VizDisplayCompositor',
+        ],
       });
 
       const context = await browser.newContext({
         viewport: { width: 1920, height: 1080 },
         ignoreHTTPSErrors: true,
-        permissions: ['camera', 'microphone', 'geolocation']
+        permissions: ['camera', 'microphone', 'geolocation'],
       });
 
       const page = await context.newPage();
-      
+
       // Navigate to container URL if provided
       if (containerUrl) {
         try {
@@ -66,11 +71,19 @@ class BrowserAutomationManager {
         } catch (navError) {
           console.warn(`Could not navigate to container URL ${containerUrl}:`, navError);
           // Navigate to a default page instead
-          await page.goto('data:text/html,<html><body><h1>WebContainer Environment</h1><p>Container ID: ' + containerId + '</p></body></html>');
+          await page.goto(
+            'data:text/html,<html><body><h1>WebContainer Environment</h1><p>Container ID: ' +
+              containerId +
+              '</p></body></html>'
+          );
         }
       } else {
         // Create a basic HTML page as default
-        await page.goto('data:text/html,<html><body><h1>WebContainer Environment</h1><p>Container ID: ' + containerId + '</p></body></html>');
+        await page.goto(
+          'data:text/html,<html><body><h1>WebContainer Environment</h1><p>Container ID: ' +
+            containerId +
+            '</p></body></html>'
+        );
       }
 
       const session: BrowserSession = {
@@ -79,15 +92,16 @@ class BrowserAutomationManager {
         page,
         containerId,
         createdAt: new Date(),
-        lastUsed: new Date()
+        lastUsed: new Date(),
       };
 
       console.log(`🌐 Created browser session for container: ${containerId}`);
       return session;
-
     } catch (error) {
       console.error('Failed to create browser session:', error);
-      throw new Error(`Browser session creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Browser session creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -95,7 +109,7 @@ class BrowserAutomationManager {
    * Take a screenshot of the browser session
    */
   async takeScreenshot(
-    containerId: string, 
+    containerId: string,
     options: { width?: number; height?: number; format?: 'png' | 'jpeg' } = {}
   ): Promise<string> {
     try {
@@ -108,15 +122,16 @@ class BrowserAutomationManager {
       // Take screenshot
       const screenshot = await session.page.screenshot({
         type: format,
-        fullPage: false
+        fullPage: false,
       });
 
       // Return base64 encoded screenshot
       return screenshot.toString('base64');
-
     } catch (error) {
       console.error('Screenshot error:', error);
-      throw new Error(`Failed to take screenshot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to take screenshot: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -138,10 +153,11 @@ class BrowserAutomationManager {
       }
 
       console.log(`🖱️  Simulated ${doubleClick ? 'double ' : ''}${button} click at (${x}, ${y})`);
-
     } catch (error) {
       console.error('Click simulation error:', error);
-      throw new Error(`Failed to simulate click: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to simulate click: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -159,10 +175,11 @@ class BrowserAutomationManager {
       await session.page.keyboard.type(text, { delay });
 
       console.log(`⌨️  Simulated typing: "${text}"`);
-
     } catch (error) {
       console.error('Typing simulation error:', error);
-      throw new Error(`Failed to simulate typing: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to simulate typing: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -191,10 +208,11 @@ class BrowserAutomationManager {
       }
 
       console.log(`⌨️  Simulated key press: "${key}" with modifiers [${modifiers.join(', ')}]`);
-
     } catch (error) {
       console.error('Key press simulation error:', error);
-      throw new Error(`Failed to simulate key press: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to simulate key press: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -205,12 +223,13 @@ class BrowserAutomationManager {
     try {
       const session = await this.getBrowserSession(containerId);
       await session.page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-      
-      console.log(`🌐 Navigated to: ${url}`);
 
+      console.log(`🌐 Navigated to: ${url}`);
     } catch (error) {
       console.error('Navigation error:', error);
-      throw new Error(`Failed to navigate to URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to navigate to URL: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -221,13 +240,14 @@ class BrowserAutomationManager {
     try {
       const session = await this.getBrowserSession(containerId);
       const result = await session.page.evaluate(script);
-      
+
       console.log(`🔧 Executed script in browser session`);
       return result;
-
     } catch (error) {
       console.error('Script execution error:', error);
-      throw new Error(`Failed to execute script: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to execute script: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -256,7 +276,7 @@ class BrowserAutomationManager {
 
     for (const [containerId, session] of this.sessions.entries()) {
       const inactiveMinutes = (now.getTime() - session.lastUsed.getTime()) / (1000 * 60);
-      
+
       if (inactiveMinutes > maxInactiveMinutes) {
         await this.closeBrowserSession(containerId);
       }
@@ -268,7 +288,7 @@ class BrowserAutomationManager {
    */
   async shutdown(): Promise<void> {
     console.log('🔄 Shutting down Browser Automation Manager...');
-    
+
     // Clear cleanup interval
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
@@ -289,7 +309,7 @@ class BrowserAutomationManager {
   getStats() {
     return {
       activeSessions: this.sessions.size,
-      sessionsByContainer: Array.from(this.sessions.keys())
+      sessionsByContainer: Array.from(this.sessions.keys()),
     };
   }
 }

@@ -6,22 +6,27 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { ThemeProvider } from '../contexts/ui/ThemeContext';
 import { ToastProvider } from '../contexts/ui/ToastContext';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
+import { HydrationSafeWrapper } from '../components/ui/HydrationSafeWrapper';
 import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <WebSocketProvider>
-              <NotificationProvider>
-                <Component {...pageProps} />
-              </NotificationProvider>
-            </WebSocketProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </ThemeProvider>
+      <HydrationSafeWrapper>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <WebSocketProvider>
+                <NotificationProvider>
+                  <div suppressHydrationWarning>
+                    <Component {...pageProps} />
+                  </div>
+                </NotificationProvider>
+              </WebSocketProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </HydrationSafeWrapper>
     </ErrorBoundary>
   );
 }

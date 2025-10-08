@@ -1,0 +1,842 @@
+{
+  "graph": {
+    "nodes": {
+      "frontend": {
+        "name": "frontend",
+        "type": "app",
+        "data": {
+          "root": "frontend",
+          "targets": {
+            "build": {
+              "executor": "@nx/next:build",
+              "outputs": [
+                "{projectRoot}/.next"
+              ],
+              "options": {
+                "root": "frontend",
+                "outputPath": "frontend/.next"
+              },
+              "configurations": {
+                "production": {
+                  "outputPath": "frontend/.next"
+                },
+                "development": {
+                  "outputPath": "frontend/.next"
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "frontend",
+                "command": "next dev"
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "start": {
+              "continuous": true,
+              "options": {
+                "cwd": "frontend",
+                "command": "next start"
+              },
+              "dependsOn": [
+                "build"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "options": {
+                "cwd": "frontend",
+                "command": "next start"
+              },
+              "dependsOn": [
+                "build"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "yarn nx watch --projects frontend --includeDependentProjects -- yarn nx build-deps frontend"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "executor": "@nx/next:server",
+              "options": {
+                "buildTarget": "frontend:build",
+                "dev": true,
+                "port": 3001
+              },
+              "configurations": {},
+              "parallelism": true,
+              "continuous": true
+            },
+            "export": {
+              "executor": "@nx/next:export",
+              "options": {
+                "buildTarget": "frontend:build:production"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "options": {
+                "lintFilePatterns": [
+                  "frontend/**/*.{ts,tsx,js,jsx}"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "frontend",
+          "sourceRoot": "frontend",
+          "projectType": "application",
+          "tags": [
+            "scope:frontend",
+            "type:app"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "server": {
+        "name": "server",
+        "type": "app",
+        "data": {
+          "root": ".",
+          "targets": {
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist",
+                "main": "src/server.ts",
+                "tsConfig": "tsconfig.server.json",
+                "assets": []
+              },
+              "configurations": {
+                "production": {
+                  "optimization": true,
+                  "sourceMap": false
+                },
+                "development": {
+                  "optimization": false,
+                  "sourceMap": true
+                }
+              },
+              "defaultConfiguration": "development",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "nodemon --exec tsx src/server.ts",
+                "runCommand": "yarn dev"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start"
+              },
+              "metadata": {
+                "scriptContent": "node dist/server.js",
+                "runCommand": "yarn start"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "options": {
+                "cwd": ".",
+                "command": "next start"
+              },
+              "dependsOn": [
+                "build"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "yarn nx watch --projects server --includeDependentProjects -- yarn nx build-deps server"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Build commands with Nx": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Build commands with Nx"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Build commands with Nx"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "prebuild": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "prebuild"
+              },
+              "metadata": {
+                "scriptContent": "echo 'TypeScript build with Nx caching - ignoring non-critical errors for Railway deployment compatibility'",
+                "runCommand": "yarn prebuild"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build:server": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:server"
+              },
+              "metadata": {
+                "scriptContent": "nx build server",
+                "runCommand": "yarn build:server"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build:next": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:next"
+              },
+              "metadata": {
+                "scriptContent": "nx build frontend",
+                "runCommand": "yarn build:next"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build:frontend": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:frontend"
+              },
+              "metadata": {
+                "scriptContent": "nx build frontend",
+                "runCommand": "yarn build:frontend"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build:all": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "build:all"
+              },
+              "metadata": {
+                "scriptContent": "nx run-many --target=build --all --parallel=2",
+                "runCommand": "yarn build:all"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Development commands": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Development commands"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Development commands"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev:frontend": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev:frontend"
+              },
+              "metadata": {
+                "scriptContent": "nx serve frontend",
+                "runCommand": "yarn dev:frontend"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Testing commands": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Testing commands"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Testing commands"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:server": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:server"
+              },
+              "metadata": {
+                "scriptContent": "nx test server",
+                "runCommand": "yarn test:server"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:contracts": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:contracts"
+              },
+              "metadata": {
+                "scriptContent": "jest test/contract-validation.test.ts",
+                "runCommand": "yarn test:contracts"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:affected": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:affected"
+              },
+              "metadata": {
+                "scriptContent": "nx affected --target=test",
+                "runCommand": "yarn test:affected"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Linting commands": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Linting commands"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Linting commands"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint:server": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint:server"
+              },
+              "metadata": {
+                "scriptContent": "nx lint server",
+                "runCommand": "yarn lint:server"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint:fix": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint:fix"
+              },
+              "metadata": {
+                "scriptContent": "nx run-many --target=lint --all --fix",
+                "runCommand": "yarn lint:fix"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint:affected": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint:affected"
+              },
+              "metadata": {
+                "scriptContent": "nx affected --target=lint",
+                "runCommand": "yarn lint:affected"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Formatting commands": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Formatting commands"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Formatting commands"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "format": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format"
+              },
+              "metadata": {
+                "scriptContent": "prettier --write \"src/**/*.{ts,js,json}\" \"test/**/*.{ts,js}\" \"*.{json,md}\"",
+                "runCommand": "yarn format"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "format:check": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "format:check"
+              },
+              "metadata": {
+                "scriptContent": "prettier --check \"src/**/*.{ts,js,json}\" \"test/**/*.{ts,js}\" \"*.{json,md}\"",
+                "runCommand": "yarn format:check"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "quality": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "quality"
+              },
+              "metadata": {
+                "scriptContent": "yarn lint:fix && yarn format",
+                "runCommand": "yarn quality"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Nx utilities": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Nx utilities"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Nx utilities"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "graph": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "graph"
+              },
+              "metadata": {
+                "scriptContent": "nx graph",
+                "runCommand": "yarn graph"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "affected:graph": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "affected:graph"
+              },
+              "metadata": {
+                "scriptContent": "nx affected:graph",
+                "runCommand": "yarn affected:graph"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "reset": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "reset"
+              },
+              "metadata": {
+                "scriptContent": "nx reset",
+                "runCommand": "yarn reset"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Maintenance commands": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Maintenance commands"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Maintenance commands"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "clean": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "clean"
+              },
+              "metadata": {
+                "scriptContent": "rimraf dist && nx reset",
+                "runCommand": "yarn clean"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "verify": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "verify"
+              },
+              "metadata": {
+                "scriptContent": "node scripts/verify-build.js || echo 'Verification skipped'",
+                "runCommand": "yarn verify"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Railway validation": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Railway validation"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Railway validation"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "railway:validate": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "railway:validate"
+              },
+              "metadata": {
+                "scriptContent": "node scripts/railway-validation/validator.cjs",
+                "runCommand": "yarn railway:validate"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "railway:validate-env": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "railway:validate-env"
+              },
+              "metadata": {
+                "scriptContent": "node scripts/railway-validation/env-validator.cjs",
+                "runCommand": "yarn railway:validate-env"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "railway:validate-auth": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "railway:validate-auth"
+              },
+              "metadata": {
+                "scriptContent": "node scripts/railway-validation/auth-validator.cjs",
+                "runCommand": "yarn railway:validate-auth"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "railway:report": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "railway:report"
+              },
+              "metadata": {
+                "scriptContent": "node scripts/railway-validation/generate-report.cjs",
+                "runCommand": "yarn railway:report"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "railway:check-all": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "railway:check-all"
+              },
+              "metadata": {
+                "scriptContent": "yarn railway:validate && yarn railway:validate-env && yarn railway:validate-auth",
+                "runCommand": "yarn railway:check-all"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "// Documentation": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "// Documentation"
+              },
+              "metadata": {
+                "scriptContent": "",
+                "runCommand": "yarn // Documentation"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "docs:check-links": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "docs:check-links"
+              },
+              "metadata": {
+                "scriptContent": "yarn dlx linkinator docs/ --recurse --timeout 10000",
+                "runCommand": "yarn docs:check-links"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "setup:dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "setup:dev"
+              },
+              "metadata": {
+                "scriptContent": "./scripts/setup-dev-environment.sh",
+                "runCommand": "yarn setup:dev"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "constraints": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "constraints"
+              },
+              "metadata": {
+                "scriptContent": "yarn constraints check",
+                "runCommand": "yarn constraints"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "constraints:fix": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "constraints:fix"
+              },
+              "metadata": {
+                "scriptContent": "yarn constraints --fix",
+                "runCommand": "yarn constraints:fix"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "executor": "@nx/js:node",
+              "options": {
+                "buildTarget": "server:build",
+                "inspect": false,
+                "watch": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "executor": "@nx/js:tsc",
+              "options": {
+                "tsConfig": "tsconfig.server.json",
+                "noEmit": true
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/server"
+              ],
+              "options": {
+                "jestConfig": "jest.config.json",
+                "passWithNoTests": true
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.config.json"
+              ]
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "options": {
+                "lintFilePatterns": [
+                  "src/**/*.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "server",
+          "tags": [
+            "npm:public",
+            "npm:mcp",
+            "npm:webcontainer",
+            "npm:chatgpt",
+            "npm:railway",
+            "npm:development-environment",
+            "scope:backend",
+            "type:app"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "// Build commands with Nx",
+                "prebuild",
+                "build:server",
+                "build:next",
+                "build:frontend",
+                "build:all",
+                "// Development commands",
+                "start",
+                "dev",
+                "dev:frontend",
+                "// Testing commands",
+                "test:server",
+                "test:contracts",
+                "test:affected",
+                "// Linting commands",
+                "lint:server",
+                "lint:fix",
+                "lint:affected",
+                "// Formatting commands",
+                "format",
+                "format:check",
+                "quality",
+                "// Nx utilities",
+                "graph",
+                "affected:graph",
+                "reset",
+                "// Maintenance commands",
+                "clean",
+                "verify",
+                "// Railway validation",
+                "railway:validate",
+                "railway:validate-env",
+                "railway:validate-auth",
+                "railway:report",
+                "railway:check-all",
+                "// Documentation",
+                "docs:check-links",
+                "setup:dev",
+                "constraints",
+                "constraints:fix"
+              ]
+            },
+            "description": "MCP (Model Control Plane) server that integrates with ChatGPT through Railway deployment with WebContainers",
+            "js": {
+              "packageName": "mcp-server",
+              "packageVersion": "1.0.0",
+              "packageMain": "dist/server.js",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "sourceRoot": "src",
+          "projectType": "application",
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "frontend": [],
+      "server": []
+    }
+  }
+}

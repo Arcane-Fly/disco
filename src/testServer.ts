@@ -8,7 +8,7 @@ export * from './server.js';
 
 // Create a test-friendly server factory
 export async function createTestServer() {
-  // Import the server module after Next.js is ready  
+  // Import the server module after Next.js is ready
   const { app, initializeServer } = await import('./server.js');
   await initializeServer();
   return app;

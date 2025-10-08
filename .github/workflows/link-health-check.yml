@@ -20,16 +20,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Enable Corepack and setup Yarn 4.9.2
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.2 --activate
+          yarn --version
           
       - name: Install dependencies
         run: yarn install --immutable
         
       - name: Install link checker
-        run: yarn global add linkinator
+        run: yarn dlx linkinator --version
         
       - name: Create docs directory if not exists
         run: mkdir -p docs
@@ -43,7 +46,7 @@ jobs:
           
           # Check all markdown files
           echo "## Checking all documentation links..." >> link-health-report.md
-          linkinator . --recurse --markdown --timeout 10000 \
+          yarn dlx linkinator . --recurse --markdown --timeout 10000 \
             --skip "node_modules/**" \
             --skip ".git/**" \
             --skip "dist/**" \

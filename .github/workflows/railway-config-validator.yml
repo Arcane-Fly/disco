@@ -32,10 +32,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Enable Corepack and setup Yarn 4.9.2
+        run: |
+          corepack enable
+          corepack prepare yarn@4.9.2 --activate
+          yarn --version
           
       - name: Install dependencies
         run: yarn install --immutable
@@ -45,11 +48,11 @@ jobs:
           curl -fsSL https://railway.app/install.sh | sh
           echo "$HOME/.railway/bin" >> $GITHUB_PATH
           
-      - name: Validate TypeScript compilation
-        run: yarn build
+      - name: Validate TypeScript compilation with Nx
+        run: npx nx run-many --target=build --all --parallel=2
         
-      - name: Run ESLint
-        run: yarn lint
+      - name: Run ESLint with Nx
+        run: npx nx run-many --target=lint --all
         
       - name: Validate Railway configuration
         run: |

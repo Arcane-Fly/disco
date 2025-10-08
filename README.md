@@ -7,22 +7,27 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
 ### Local Development
 
 1. **Clone and install dependencies:**
+
    ```bash
    git clone https://github.com/Arcane-Fly/disco.git
    cd disco
-   npm install
+   corepack enable
+   corepack prepare yarn@4.9.2 --activate
+   yarn install
    ```
 
 2. **Set up environment:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 3. **Build and run:**
+
    ```bash
-   npm run build
-   npm start
+   yarn build
+   yarn start
    ```
 
 4. **Test the server:**
@@ -34,6 +39,7 @@ MCP (Model Control Plane) server that integrates with ChatGPT through Railway de
 ### Production Testing
 
 You can also test the live Railway deployment:
+
 ```bash
 curl https://disco-mcp.up.railway.app/health
 curl https://disco-mcp.up.railway.app/capabilities
@@ -42,6 +48,7 @@ curl https://disco-mcp.up.railway.app/capabilities
 ### Railway Deployment
 
 1. **Install Railway CLI:**
+
    ```bash
    npm install -g @railway/cli
    ```
@@ -98,8 +105,41 @@ The server provides a comprehensive REST API for:
 - **Terminal Operations**: Execute commands with streaming support
 - **Git Operations**: Clone, commit, push, pull repositories
 - **Health Checks**: Monitoring and diagnostics
+- **Contract Demo**: JSON Schema validated MCP operations
 
 See [API.md](./API.md) for complete API documentation.
+
+### 📜 MCP Contracts
+
+The server includes JSON Schema contracts for all MCP operations, providing:
+
+- ✅ **Type-safe validation** for requests and responses
+- ✅ **Standardized error codes** across all operations
+- ✅ **Self-documenting APIs** with examples
+- ✅ **Contract testing** to ensure compatibility
+
+Supported MCP services:
+- **Pinecone** (vector database): `upsert`, `query`
+- **Supabase** (database): `sql`
+- **Browserbase** (browser automation): `navigate`
+- **GitHub** (API operations): `searchIssues`
+
+See [contracts/README.md](./contracts/README.md) for detailed contract documentation.
+
+Demo endpoints with validation:
+```bash
+# Validate and execute Pinecone upsert
+curl -X POST https://disco-mcp.up.railway.app/api/v1/contract-demo/pinecone/upsert \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"namespace":"default","vectors":[{"id":"vec1","values":[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]}]}'
+
+# Get contract schema
+curl https://disco-mcp.up.railway.app/api/v1/contract-demo/pinecone/upsert/request
+
+# List all available contracts
+curl https://disco-mcp.up.railway.app/api/v1/contract-demo/contracts
+```
 
 ## 🛡️ Security Features
 
@@ -158,6 +198,7 @@ npm run railway:report
 ### Logging
 
 The server provides comprehensive logging for:
+
 - Request/response cycles
 - Container operations
 - Authentication events
@@ -166,6 +207,7 @@ The server provides comprehensive logging for:
 ## 🔄 Background Tasks
 
 The worker process handles:
+
 - Container cleanup (inactive containers)
 - Pool pre-warming (faster startup)
 - Memory monitoring
@@ -189,14 +231,14 @@ For production use:
 
 ## 📝 Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | Yes | Secret for JWT token signing |
-| `WEBCONTAINER_API_KEY` | Yes | StackBlitz WebContainer API key |
-| `ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
-| `REDIS_URL` | No | Redis connection string |
-| `GITHUB_CLIENT_ID` | No | GitHub OAuth client ID |
-| `GITHUB_CLIENT_SECRET` | No | GitHub OAuth client secret |
+| Variable               | Required | Description                     |
+| ---------------------- | -------- | ------------------------------- |
+| `JWT_SECRET`           | Yes      | Secret for JWT token signing    |
+| `WEBCONTAINER_API_KEY` | Yes      | StackBlitz WebContainer API key |
+| `ALLOWED_ORIGINS`      | Yes      | Comma-separated allowed origins |
+| `REDIS_URL`            | No       | Redis connection string         |
+| `GITHUB_CLIENT_ID`     | No       | GitHub OAuth client ID          |
+| `GITHUB_CLIENT_SECRET` | No       | GitHub OAuth client secret      |
 
 ## 🧪 Testing
 

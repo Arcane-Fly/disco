@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import Navigation from './Navigation';
 
 interface LayoutProps {
@@ -27,11 +28,11 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             <div className="footer-section">
               <h4>Interfaces</h4>
-              <a href="/app-dashboard">Dashboard</a>
-              <a href="/workflow-builder">Workflow Builder</a>
-              <a href="/analytics">Analytics</a>
-              <a href="/webcontainer-loader">WebContainer</a>
-              <a href="/legacy-root">Classic UI</a>
+              <Link href="/app-dashboard">Dashboard</Link>
+              <Link href="/workflow-builder">Workflow Builder</Link>
+              <Link href="/analytics">Analytics</Link>
+              <Link href="/webcontainer-loader">WebContainer</Link>
+              <Link href="/legacy-root">Classic UI</Link>
             </div>
           </div>
           <div className="footer-bottom">

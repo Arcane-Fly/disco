@@ -21,8 +21,7 @@ pnpm-lock.yaml
 .env.production.local
 
 # Build output
-dist/
-build/
+
 
 # Next.js build output
 .next/
@@ -71,6 +70,10 @@ temp/
 # WebContainer cache
 .webcontainer/
 
+# Nx
+.nx/cache
+.nx/workspace-data
+
 # Test files
 test-results/
 coverage/
@@ -85,3 +88,15 @@ data/
 railway-validation-report.md
 link-health-report.md
 link-results.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing
+*.test.js.snap
+
+# Visual test screenshots (large binary files)
+screenshots/

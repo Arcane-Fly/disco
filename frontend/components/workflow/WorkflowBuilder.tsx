@@ -1,9 +1,9 @@
 /**
  * Advanced Workflow Builder - Visual Pipeline Editor
- * 
+ *
  * Purpose: Empowers users to create complex workflows through intuitive drag-and-drop
  * interface with real-time data flow visualization and advanced configuration options.
- * 
+ *
  * Key Features:
  * - Visual node-based workflow creation with physics simulation
  * - Real-time data flow with animated connections and type validation
@@ -13,7 +13,7 @@
  * - Multi-user collaboration with operational transformation
  * - Performance optimization with canvas virtualization
  * - Accessibility-first design with keyboard navigation
- * 
+ *
  * Future Expansion:
  * - Machine learning integration for workflow optimization
  * - Community marketplace for workflow templates
@@ -28,10 +28,12 @@ import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { 
-  Play, 
-  Square, 
-  Save, 
+import CanvasGrid from './CanvasGrid';
+import WebContainerCompatibilityCheck from '../WebContainerCompatibilityCheck';
+import {
+  Play,
+  Square,
+  Save,
   Zap,
   GitBranch,
   Brain,
@@ -177,7 +179,7 @@ const VisualNode: React.FC<{
         strokeWidth={isSelected ? 3 : 1}
         className="transition-all duration-200"
       />
-      
+
       {/* Node icon */}
       <text
         x="20"
@@ -187,7 +189,7 @@ const VisualNode: React.FC<{
       >
         {getNodeIcon()}
       </text>
-      
+
       {/* Node label */}
       <text
         x="50"
@@ -198,7 +200,7 @@ const VisualNode: React.FC<{
       >
         {node.label}
       </text>
-      
+
       {/* Node type */}
       <text
         x="50"
@@ -281,7 +283,7 @@ const ConnectionLine: React.FC<{
         opacity={isActive ? 1 : 0.6}
         className="transition-all duration-200"
       />
-      
+
       {isActive && (
         <circle r="4" fill="#6366f1" opacity="0.8">
           <animateMotion dur="2s" repeatCount="indefinite">
@@ -372,9 +374,9 @@ const TemplateMarketplace: React.FC<{
                     <p className="text-sm text-gray-600">{template.metadata.author}</p>
                   </div>
                 </div>
-                
+
                 <p className="text-sm text-gray-700 mb-3">{template.description}</p>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     {template.tags.slice(0, 2).map(tag => (
@@ -504,7 +506,12 @@ export const WorkflowBuilder: React.FC = () => {
     node: WorkflowNode | null;
     offset: { x: number; y: number };
   }>({ isDragging: false, node: null, offset: { x: 0, y: 0 } });
-  
+
+  const [paletteDropState, setPaletteDropState] = useState<{
+    isDraggingFromPalette: boolean;
+    nodeType: WorkflowNode['type'] | null;
+  }>({ isDraggingFromPalette: false, nodeType: null });
+
   const { triggerHaptic } = useHapticFeedback();
   const { socket } = useWebSocket();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -516,10 +523,10 @@ export const WorkflowBuilder: React.FC = () => {
   }, [triggerHaptic]);
 
   const handleNodeUpdate = useCallback((updatedNode: WorkflowNode) => {
-    setNodes(prev => prev.map(node => 
+    setNodes(prev => prev.map(node =>
       node.id === updatedNode.id ? updatedNode : node
     ));
-    
+
     // Broadcast update to collaborators
     if (socket && socket.connected) {
       socket.emit('workflow:node-update', updatedNode);
@@ -528,7 +535,7 @@ export const WorkflowBuilder: React.FC = () => {
 
   const handleNodeDelete = useCallback((nodeId: string) => {
     setNodes(prev => prev.filter(node => node.id !== nodeId));
-    setConnections(prev => prev.filter(conn => 
+    setConnections(prev => prev.filter(conn =>
       conn.sourceNodeId !== nodeId && conn.targetNodeId !== nodeId
     ));
     if (selectedNode?.id === nodeId) {
@@ -573,27 +580,88 @@ export const WorkflowBuilder: React.FC = () => {
     // showNotification(`Added ${type} node`, 'success');
   }, [triggerHaptic]);
 
-  const handleDragStart = useCallback((node: WorkflowNode, event: React.MouseEvent) => {
+  const handleNodeDragStart = useCallback((event: React.DragEvent, nodeType: WorkflowNode['type']) => {
+    setPaletteDropState({ isDraggingFromPalette: true, nodeType });
+    event.dataTransfer.effectAllowed = 'copy';
+    event.dataTransfer.setData('application/json', JSON.stringify({ type: 'palette-node', nodeType }));
+    triggerHaptic('impact', { intensity: 'light' });
+  }, [triggerHaptic]);
+
+  const handleNodeDragEnd = useCallback(() => {
+    setPaletteDropState({ isDraggingFromPalette: false, nodeType: null });
+  }, []);
+
+  const handleCanvasDragOver = useCallback((event: React.DragEvent) => {
+    if (paletteDropState.isDraggingFromPalette) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }, [paletteDropState.isDraggingFromPalette]);
+
+  const handleCanvasDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+
+    if (paletteDropState.isDraggingFromPalette && paletteDropState.nodeType && svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      const x = event.clientX - rect.left - 80; // Center the node
+      const y = event.clientY - rect.top - 40;
+
+      const newNode: WorkflowNode = {
+        id: `node-${Date.now()}`,
+        type: paletteDropState.nodeType,
+        label: `${paletteDropState.nodeType.charAt(0).toUpperCase() + paletteDropState.nodeType.slice(1)} Node`,
+        position: { x: Math.max(0, x), y: Math.max(0, y) },
+        data: {},
+        inputs: paletteDropState.nodeType !== 'input' ? [{ id: 'input-1', name: 'Input', type: 'any', required: false }] : [],
+        outputs: paletteDropState.nodeType !== 'output' ? [{ id: 'output-1', name: 'Output', type: 'any', required: false }] : [],
+        config: {
+          color: paletteDropState.nodeType === 'input' ? '#10b981' : paletteDropState.nodeType === 'output' ? '#f59e0b' : '#6366f1',
+          icon: 'zap',
+          category: paletteDropState.nodeType,
+          description: `A ${paletteDropState.nodeType} node for workflow processing`
+        },
+        metadata: {
+          created: new Date(),
+          modified: new Date(),
+          author: 'Current User',
+          version: '1.0.0',
+          tags: [paletteDropState.nodeType],
+          usage: {
+            count: 0,
+            successRate: 100,
+            avgExecutionTime: 0
+          }
+        }
+      };
+
+      setNodes(prev => [...prev, newNode]);
+      triggerHaptic('impact', { intensity: 'medium' });
+    }
+
+    setPaletteDropState({ isDraggingFromPalette: false, nodeType: null });
+  }, [paletteDropState, triggerHaptic]);
+
+  const handleExistingNodeDragStart = useCallback((node: WorkflowNode, event: React.MouseEvent) => {
     if (!svgRef.current) return;
-    
+
     const rect = svgRef.current.getBoundingClientRect();
     const offset = {
       x: event.clientX - rect.left - node.position.x,
       y: event.clientY - rect.top - node.position.y
     };
-    
+
     setDragState({ isDragging: true, node, offset });
   }, []);
 
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
     if (!dragState.isDragging || !dragState.node || !svgRef.current) return;
-    
+
     const rect = svgRef.current.getBoundingClientRect();
     const newPosition = {
       x: event.clientX - rect.left - dragState.offset.x,
       y: event.clientY - rect.top - dragState.offset.y
     };
-    
+
     handleNodeUpdate({
       ...dragState.node,
       position: newPosition
@@ -613,7 +681,7 @@ export const WorkflowBuilder: React.FC = () => {
       // Simulate workflow execution
       await new Promise(resolve => setTimeout(resolve, 3000));
       // showNotification('Workflow completed successfully!', 'success');
-    } catch (error) {
+    } catch {
       // showNotification('Workflow execution failed', 'error');
     } finally {
       setIsRunning(false);
@@ -629,7 +697,7 @@ export const WorkflowBuilder: React.FC = () => {
         version: '1.0.0'
       }
     };
-    
+
     localStorage.setItem('workflow', JSON.stringify(workflow));
     // showNotification('Workflow saved', 'success');
     triggerHaptic('impact', { intensity: 'light' });
@@ -683,6 +751,14 @@ export const WorkflowBuilder: React.FC = () => {
         </div>
       </div>
 
+      {/* WebContainer Compatibility Check */}
+      <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <WebContainerCompatibilityCheck
+          showDetails={false}
+          className="mb-0"
+        />
+      </div>
+
       {/* Main Content */}
       <div className="flex-1 flex">
         {/* Node Palette */}
@@ -690,15 +766,22 @@ export const WorkflowBuilder: React.FC = () => {
           <h3 className="font-semibold mb-4">Node Library</h3>
           <div className="space-y-2">
             {(['input', 'process', 'output', 'condition', 'loop'] as const).map(type => (
-              <Button
+              <div
                 key={type}
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => handleAddNode(type)}
+                draggable
+                onDragStart={(e) => handleNodeDragStart(e, type)}
+                onDragEnd={handleNodeDragEnd}
+                className="group cursor-grab active:cursor-grabbing"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors"
+                  onClick={() => handleAddNode(type)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </Button>
+              </div>
             ))}
           </div>
 
@@ -719,57 +802,76 @@ export const WorkflowBuilder: React.FC = () => {
           </div>
         </div>
 
-        {/* Canvas Area */}
-        <div className="flex-1 relative overflow-hidden">
-          <svg
-            ref={svgRef}
-            width="100%"
-            height="100%"
-            className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+        {/* Canvas Area with hydration-safe rendering */}
+        <div className={`flex-1 relative overflow-hidden ${paletteDropState.isDraggingFromPalette ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-dashed border-blue-400' : ''}`}>
+          <CanvasGrid
+            className="absolute inset-0 w-full h-full"
+            onCanvasReady={(_canvas) => {
+              console.log('Canvas ready for WebContainer integration');
+            }}
           >
-            {/* Grid background */}
-            <defs>
-              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="1" opacity="0.3"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+            {/* SVG overlay for workflow elements */}
+            <div className="absolute inset-0 w-full h-full" suppressHydrationWarning>
+              <svg
+                ref={svgRef}
+                width="100%"
+                height="100%"
+                className="absolute inset-0"
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onDragOver={handleCanvasDragOver}
+                onDrop={handleCanvasDrop}
+                style={{ background: 'transparent' }}
+              >
+                {/* Render connections */}
+                {connections.map(connection => {
+                  const sourceNode = nodes.find(n => n.id === connection.sourceNodeId);
+                  const targetNode = nodes.find(n => n.id === connection.targetNodeId);
 
-            {/* Render connections */}
-            {connections.map(connection => {
-              const sourceNode = nodes.find(n => n.id === connection.sourceNodeId);
-              const targetNode = nodes.find(n => n.id === connection.targetNodeId);
-              
-              if (sourceNode && targetNode) {
-                return (
-                  <ConnectionLine
-                    key={connection.id}
-                    connection={connection}
-                    sourceNode={sourceNode}
-                    targetNode={targetNode}
-                    isActive={isRunning}
+                  if (sourceNode && targetNode) {
+                    return (
+                      <ConnectionLine
+                        key={connection.id}
+                        connection={connection}
+                        sourceNode={sourceNode}
+                        targetNode={targetNode}
+                        isActive={isRunning}
+                      />
+                    );
+                  }
+                  return null;
+                })}
+
+                {/* Render nodes */}
+                {nodes.map(node => (
+                  <VisualNode
+                    key={node.id}
+                    node={node}
+                    isSelected={selectedNode?.id === node.id}
+                    onSelect={handleNodeSelect}
+                    _onUpdate={handleNodeUpdate}
+                    onDelete={handleNodeDelete}
+                    onDragStart={handleExistingNodeDragStart}
                   />
-                );
-              }
-              return null;
-            })}
+                ))}
+              </svg>
+            </div>
+          </CanvasGrid>
 
-            {/* Render nodes */}
-            {nodes.map(node => (
-              <VisualNode
-                key={node.id}
-                node={node}
-                isSelected={selectedNode?.id === node.id}
-                onSelect={handleNodeSelect}
-                _onUpdate={handleNodeUpdate}
-                onDelete={handleNodeDelete}
-                onDragStart={handleDragStart}
-              />
-            ))}
-          </svg>
+          {/* Drop instruction overlay */}
+          {paletteDropState.isDraggingFromPalette && (
+            <div className="absolute inset-0 flex items-center justify-center bg-blue-50/80 dark:bg-blue-900/40 z-30 pointer-events-none">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border-2 border-dashed border-blue-400">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <div className="font-medium text-blue-700 dark:text-blue-300">
+                    Drop to create {paletteDropState.nodeType} node
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Status overlays */}
           {isRunning && (

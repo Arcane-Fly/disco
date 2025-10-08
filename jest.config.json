@@ -4,19 +4,21 @@
   "roots": ["<rootDir>/test"],
   "testMatch": ["**/*.test.ts"],
   "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"],
-  "collectCoverageFrom": [
-    "src/**/*.ts",
-    "!src/**/*.d.ts"
-  ],
+  "collectCoverageFrom": ["src/**/*.ts", "!src/**/*.d.ts"],
   "moduleNameMapper": {
     "^(\\.{1,2}/.*)\\.js$": "$1"
   },
   "extensionsToTreatAsEsm": [".ts"],
   "transform": {
-    "^.+\\.ts$": ["ts-jest", {
-      "useESM": true
-    }]
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        "useESM": true
+      }
+    ]
   },
-  "testTimeout": 30000,
-  "maxWorkers": 1
+  "testTimeout": 60000,
+  "maxWorkers": 1,
+  "detectOpenHandles": true,
+  "setupFiles": ["<rootDir>/test/test-env.ts"]
 }

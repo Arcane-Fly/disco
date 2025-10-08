@@ -92,13 +92,13 @@ router.get('/api/metrics', async (_req: Request, res: Response) => {
     const stats = containerManager.getStats();
     const memoryUsage = process.memoryUsage();
     const uptime = process.uptime();
-    
+
     // Calculate memory usage percentage
     const memoryUsagePercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
-    
+
     // Calculate container utilization
-    const containerUtilization = stats.maxContainers > 0 ? 
-      (stats.activeSessions / stats.maxContainers) * 100 : 0;
+    const containerUtilization =
+      stats.maxContainers > 0 ? (stats.activeSessions / stats.maxContainers) * 100 : 0;
 
     const metrics = {
       timestamp: new Date().toISOString(),
@@ -109,11 +109,11 @@ router.get('/api/metrics', async (_req: Request, res: Response) => {
           total: Math.round(memoryUsage.heapTotal / 1024 / 1024),
           external: Math.round(memoryUsage.external / 1024 / 1024),
           rss: Math.round(memoryUsage.rss / 1024 / 1024),
-          usage_percent: Math.round(memoryUsagePercent * 100) / 100
+          usage_percent: Math.round(memoryUsagePercent * 100) / 100,
         },
         cpu: {
-          load_average: process.platform !== 'win32' ? (os.loadavg() || [0, 0, 0]) : [0, 0, 0]
-        }
+          load_average: process.platform !== 'win32' ? os.loadavg() || [0, 0, 0] : [0, 0, 0],
+        },
       },
       containers: {
         active: stats.activeSessions,
@@ -122,15 +122,15 @@ router.get('/api/metrics', async (_req: Request, res: Response) => {
         pool_initializing: stats.poolInitializing,
         max_containers: stats.maxContainers,
         utilization_percent: Math.round(containerUtilization * 100) / 100,
-        sessions_by_user: stats.sessionsByUser
+        sessions_by_user: stats.sessionsByUser,
       },
       performance: {
         avg_response_time: getAverageResponseTime(),
         requests_per_minute: getRequestsPerMinute(),
         error_rate: getErrorRate(),
-        success_rate: getSuccessRate()
+        success_rate: getSuccessRate(),
       },
-      health_status: getHealthStatus(memoryUsagePercent, containerUtilization)
+      health_status: getHealthStatus(memoryUsagePercent, containerUtilization),
     };
 
     res.json(metrics);
@@ -138,7 +138,7 @@ router.get('/api/metrics', async (_req: Request, res: Response) => {
     console.error('Dashboard metrics error:', error);
     res.status(500).json({
       error: 'Failed to collect metrics',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -163,21 +163,21 @@ router.get('/api/metrics', async (_req: Request, res: Response) => {
  */
 router.get('/api/historical', async (req: Request, res: Response) => {
   try {
-    const period = req.query.period as string || '1h';
-    
+    const period = (req.query.period as string) || '1h';
+
     // In a production system, this would query a time-series database
     // For now, generate sample historical data
     const historicalData = generateHistoricalData(period);
-    
+
     res.json({
       period,
       data: historicalData,
-      generated_at: new Date().toISOString()
+      generated_at: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Historical metrics error:', error);
     res.status(500).json({
-      error: 'Failed to retrieve historical data'
+      error: 'Failed to retrieve historical data',
     });
   }
 });
@@ -196,16 +196,16 @@ router.get('/api/historical', async (req: Request, res: Response) => {
 router.get('/api/alerts', async (_req: Request, res: Response) => {
   try {
     const alerts = generateCurrentAlerts();
-    
+
     res.json({
       alerts,
       alert_count: alerts.length,
-      last_updated: new Date().toISOString()
+      last_updated: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Alerts error:', error);
     res.status(500).json({
-      error: 'Failed to retrieve alerts'
+      error: 'Failed to retrieve alerts',
     });
   }
 });
@@ -216,7 +216,7 @@ function getAverageResponseTime(): number {
   // For now, return a simulated value based on system load
   const memUsage = process.memoryUsage();
   const loadFactor = memUsage.heapUsed / memUsage.heapTotal;
-  return Math.round((50 + (loadFactor * 200)) * 100) / 100; // 50-250ms range
+  return Math.round((50 + loadFactor * 200) * 100) / 100; // 50-250ms range
 }
 
 function getRequestsPerMinute(): number {
@@ -253,7 +253,7 @@ function generateHistoricalData(period: string) {
     '6h': { points: 72, interval: 300000 }, // 5 minute intervals for 6 hours
     '24h': { points: 96, interval: 900000 }, // 15 minute intervals for 24 hours
     '7d': { points: 168, interval: 3600000 }, // 1 hour intervals for 7 days
-    '30d': { points: 180, interval: 14400000 } // 4 hour intervals for 30 days
+    '30d': { points: 180, interval: 14400000 }, // 4 hour intervals for 30 days
   };
 
   const config = intervals[period as keyof typeof intervals] || intervals['1h'];
@@ -267,16 +267,16 @@ function generateHistoricalData(period: string) {
   }> = [];
 
   for (let i = config.points - 1; i >= 0; i--) {
-    const timestamp = new Date(now - (i * config.interval));
+    const timestamp = new Date(now - i * config.interval);
     const baseValue = 50 + Math.sin((i / config.points) * Math.PI * 2) * 20;
-    
+
     data.push({
       timestamp: timestamp.toISOString(),
       memory_usage: Math.round((baseValue + Math.random() * 10) * 100) / 100,
       container_usage: Math.round((baseValue * 0.8 + Math.random() * 15) * 100) / 100,
       response_time: Math.round((100 + Math.random() * 50) * 100) / 100,
       requests_per_minute: Math.round(60 + Math.random() * 40),
-      error_rate: Math.round(Math.random() * 3 * 100) / 100
+      error_rate: Math.round(Math.random() * 3 * 100) / 100,
     });
   }
 
@@ -294,7 +294,7 @@ function generateCurrentAlerts() {
   }> = [];
   const stats = containerManager.getStats();
   const memoryUsage = process.memoryUsage();
-  
+
   // Memory usage alert
   const memoryPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
   if (memoryPercent > 85) {
@@ -304,7 +304,7 @@ function generateCurrentAlerts() {
       title: 'High Memory Usage',
       message: `Memory usage is at ${Math.round(memoryPercent)}%`,
       created_at: new Date().toISOString(),
-      suggested_action: 'Consider restarting containers or scaling up resources'
+      suggested_action: 'Consider restarting containers or scaling up resources',
     });
   }
 
@@ -318,7 +318,7 @@ function generateCurrentAlerts() {
         title: 'High Container Utilization',
         message: `Container utilization is at ${Math.round(utilization)}%`,
         created_at: new Date().toISOString(),
-        suggested_action: 'Consider increasing container limits or scaling horizontally'
+        suggested_action: 'Consider increasing container limits or scaling horizontally',
       });
     }
   }
@@ -332,7 +332,7 @@ function generateCurrentAlerts() {
       title: 'Slow Response Times',
       message: `Average response time is ${avgResponseTime}ms`,
       created_at: new Date().toISOString(),
-      suggested_action: 'Check system resources and optimize container performance'
+      suggested_action: 'Check system resources and optimize container performance',
     });
   }
 

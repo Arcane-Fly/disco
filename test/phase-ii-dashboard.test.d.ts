@@ -11,10 +11,10 @@
  * - Analytics Integration
  */
 export declare const testSummary: {
-    totalTests: number;
-    categories: string[];
-    phaseIICompliance: string;
-    businessValue: string;
-    performanceGain: string;
+  totalTests: number;
+  categories: string[];
+  phaseIICompliance: string;
+  businessValue: string;
+  performanceGain: string;
 };
 //# sourceMappingURL=phase-ii-dashboard.test.d.ts.map

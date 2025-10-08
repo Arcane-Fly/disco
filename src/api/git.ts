@@ -1,6 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { containerManager } from '../lib/containerManager.js';
-import { GitCloneRequest, GitCommitRequest, GitPushRequest, GitResponse, ErrorCode } from '../types/index.js';
+import {
+  GitCloneRequest,
+  GitCommitRequest,
+  GitPushRequest,
+  GitResponse,
+  ErrorCode,
+} from '../types/index.js';
 import { loggers } from '../lib/logger.js';
 
 const router = Router();
@@ -20,20 +26,20 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Repository URL is required'
-        }
+          message: 'Repository URL is required',
+        },
       });
     }
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -42,8 +48,8 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -53,7 +59,7 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
       url,
       branch: branch || 'main',
       authToken,
-      directory: directory || '.'
+      directory: directory || '.',
     });
 
     // Update session with repository info
@@ -61,17 +67,16 @@ router.post('/:containerId/clone', async (req: Request, res: Response) => {
 
     res.json({
       status: 'success',
-      data: result
+      data: result,
     });
-
   } catch (error) {
     loggers.git.error('Git clone error', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.GIT_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to clone repository'
-      }
+        message: error instanceof Error ? error.message : 'Failed to clone repository',
+      },
     });
   }
 });
@@ -91,20 +96,20 @@ router.post('/:containerId/commit', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Commit message is required'
-        }
+          message: 'Commit message is required',
+        },
       });
     }
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -113,8 +118,8 @@ router.post('/:containerId/commit', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -123,22 +128,21 @@ router.post('/:containerId/commit', async (req: Request, res: Response) => {
     const result = await commitChanges(session.container, {
       message,
       files,
-      author
+      author,
     });
 
     res.json({
       status: 'success',
-      data: result
+      data: result,
     });
-
   } catch (error) {
     console.error('Git commit error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.GIT_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to commit changes'
-      }
+        message: error instanceof Error ? error.message : 'Failed to commit changes',
+      },
     });
   }
 });
@@ -158,20 +162,20 @@ router.post('/:containerId/push', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'Authentication token is required for push operations'
-        }
+          message: 'Authentication token is required for push operations',
+        },
       });
     }
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -180,8 +184,8 @@ router.post('/:containerId/push', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -191,22 +195,21 @@ router.post('/:containerId/push', async (req: Request, res: Response) => {
       remote,
       branch,
       authToken,
-      force
+      force,
     });
 
     res.json({
       status: 'success',
-      data: result
+      data: result,
     });
-
   } catch (error) {
     console.error('Git push error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.GIT_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to push changes'
-      }
+        message: error instanceof Error ? error.message : 'Failed to push changes',
+      },
     });
   }
 });
@@ -222,14 +225,14 @@ router.post('/:containerId/pull', async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -238,8 +241,8 @@ router.post('/:containerId/pull', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -248,22 +251,21 @@ router.post('/:containerId/pull', async (req: Request, res: Response) => {
     const result = await pullChanges(session.container, {
       remote,
       branch,
-      authToken
+      authToken,
     });
 
     res.json({
       status: 'success',
-      data: result
+      data: result,
     });
-
   } catch (error) {
     console.error('Git pull error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.GIT_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to pull changes'
-      }
+        message: error instanceof Error ? error.message : 'Failed to pull changes',
+      },
     });
   }
 });
@@ -278,14 +280,14 @@ router.get('/:containerId/status', async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -294,8 +296,8 @@ router.get('/:containerId/status', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
@@ -303,17 +305,16 @@ router.get('/:containerId/status', async (req: Request, res: Response) => {
 
     res.json({
       status: 'success',
-      data: status
+      data: status,
     });
-
   } catch (error) {
     console.error('Git status error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.GIT_ERROR,
-        message: 'Failed to get repository status'
-      }
+        message: 'Failed to get repository status',
+      },
     });
   }
 });
@@ -329,14 +330,14 @@ router.get('/:containerId/log', async (req: Request, res: Response) => {
     const userId = req.user!.userId;
 
     const session = await containerManager.getSession(containerId);
-    
+
     if (!session) {
       return res.status(404).json({
         status: 'error',
         error: {
           code: ErrorCode.CONTAINER_NOT_FOUND,
-          message: 'Container not found'
-        }
+          message: 'Container not found',
+        },
       });
     }
 
@@ -345,29 +346,28 @@ router.get('/:containerId/log', async (req: Request, res: Response) => {
         status: 'error',
         error: {
           code: ErrorCode.PERMISSION_DENIED,
-          message: 'Access denied to this container'
-        }
+          message: 'Access denied to this container',
+        },
       });
     }
 
     const log = await getGitLog(session.container, {
       limit: parseInt(limit as string) || 10,
-      branch: branch as string
+      branch: branch as string,
     });
 
     res.json({
       status: 'success',
-      data: log
+      data: log,
     });
-
   } catch (error) {
     console.error('Git log error:', error);
     res.status(500).json({
       status: 'error',
       error: {
         code: ErrorCode.GIT_ERROR,
-        message: 'Failed to get commit history'
-      }
+        message: 'Failed to get commit history',
+      },
     });
   }
 });
@@ -377,43 +377,43 @@ router.get('/:containerId/log', async (req: Request, res: Response) => {
 async function cloneRepository(container: any, options: GitCloneRequest): Promise<GitResponse> {
   try {
     const { url, branch = 'main', directory = '.', authToken } = options;
-    
+
     // Build git clone command with real WebContainer spawn
     const args = ['clone'];
-    
+
     if (branch) {
       args.push('-b', branch);
     }
-    
+
     // Handle authentication by setting up credentials if authToken is provided
     if (authToken) {
       // For GitHub, we can modify the URL to include the token
-      const authenticatedUrl = url.includes('github.com') 
+      const authenticatedUrl = url.includes('github.com')
         ? url.replace('https://github.com/', `https://${authToken}@github.com/`)
         : url;
       args.push(authenticatedUrl);
     } else {
       args.push(url);
     }
-    
+
     if (directory !== '.') {
       args.push(directory);
     }
-    
+
     console.log(`Executing git clone with args:`, args);
-    
+
     // Execute git clone using WebContainer spawn
     const process = await container.spawn('git', args);
-    
+
     // Capture output
     let stdout = '';
     const stderr = '';
-    
+
     // Handle output streams if available
     if (process.output?.readable) {
       const reader = process.output.getReader();
       const decoder = new TextDecoder();
-      
+
       let reading = true;
       while (reading) {
         const { done, value } = await reader.read();
@@ -424,26 +424,26 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
         stdout += decoder.decode(value, { stream: true });
       }
     }
-    
+
     // Wait for process to complete and capture output
     const exitCode = await process.exit;
-    
+
     if (exitCode !== 0) {
       throw new Error(`Git clone failed with exit code ${exitCode}. Output: ${stderr || stdout}`);
     }
-    
+
     // Get current commit hash after successful clone
     let commitHash = 'unknown';
     try {
       const hashProcess = await container.spawn('git', ['rev-parse', 'HEAD'], {
-        cwd: directory !== '.' ? directory : undefined
+        cwd: directory !== '.' ? directory : undefined,
       });
-      
+
       if (hashProcess.output?.readable) {
         const reader = hashProcess.output.getReader();
         const decoder = new TextDecoder();
         let hashOutput = '';
-        
+
         let reading = true;
         while (reading) {
           const { done, value } = await reader.read();
@@ -453,7 +453,7 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
           }
           hashOutput += decoder.decode(value, { stream: true });
         }
-        
+
         const hashExitCode = await hashProcess.exit;
         if (hashExitCode === 0) {
           commitHash = hashOutput.trim();
@@ -462,7 +462,7 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
     } catch (hashError) {
       console.warn('Could not get commit hash after clone:', hashError);
     }
-    
+
     return {
       success: true,
       message: `Repository cloned successfully to ${directory}`,
@@ -471,8 +471,8 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
         branch,
         directory,
         commit: commitHash,
-        output: stdout
-      }
+        output: stdout,
+      },
     };
   } catch (error) {
     console.error('Git clone error:', error);
@@ -483,7 +483,7 @@ async function cloneRepository(container: any, options: GitCloneRequest): Promis
 async function commitChanges(container: any, options: GitCommitRequest): Promise<GitResponse> {
   try {
     const { message, files, author } = options;
-    
+
     // Set git author if provided
     if (author) {
       try {
@@ -493,7 +493,7 @@ async function commitChanges(container: any, options: GitCommitRequest): Promise
         console.warn('Could not set git author:', configError);
       }
     }
-    
+
     // Stage files
     const addArgs = ['add'];
     if (files && files.length > 0) {
@@ -501,24 +501,24 @@ async function commitChanges(container: any, options: GitCommitRequest): Promise
     } else {
       addArgs.push('.');
     }
-    
+
     console.log(`Executing git add with args:`, addArgs);
     const addProcess = await container.spawn('git', addArgs);
     const addExitCode = await addProcess.exit;
-    
+
     if (addExitCode !== 0) {
       throw new Error(`Git add failed with exit code ${addExitCode}`);
     }
-    
+
     // Commit changes
     console.log(`Executing git commit with message: "${message}"`);
     const commitProcess = await container.spawn('git', ['commit', '-m', message]);
     const commitExitCode = await commitProcess.exit;
-    
+
     if (commitExitCode !== 0) {
       throw new Error(`Git commit failed with exit code ${commitExitCode}`);
     }
-    
+
     // Get the commit hash
     let commitHash = 'unknown';
     try {
@@ -530,7 +530,7 @@ async function commitChanges(container: any, options: GitCommitRequest): Promise
     } catch (hashError) {
       console.warn('Could not get commit hash:', hashError);
     }
-    
+
     return {
       success: true,
       message: 'Changes committed successfully',
@@ -538,8 +538,8 @@ async function commitChanges(container: any, options: GitCommitRequest): Promise
         commitHash,
         message,
         files: files || [],
-        author
-      }
+        author,
+      },
     };
   } catch (error) {
     console.error('Git commit error:', error);
@@ -550,46 +550,49 @@ async function commitChanges(container: any, options: GitCommitRequest): Promise
 async function pushChanges(container: any, options: GitPushRequest): Promise<GitResponse> {
   try {
     const { remote = 'origin', branch = 'main', authToken, force = false } = options;
-    
+
     // Build push arguments
     const args = ['push'];
-    
+
     if (force) {
       args.push('--force');
     }
-    
+
     args.push(remote, branch);
-    
+
     // Handle authentication by setting up git config if authToken is provided
     if (authToken) {
       try {
         // For GitHub, we can set up credential helper or use URL with token
         const remoteUrl = await getRemoteUrl(container, remote);
         if (remoteUrl && remoteUrl.includes('github.com')) {
-          const authenticatedUrl = remoteUrl.replace('https://github.com/', `https://${authToken}@github.com/`);
+          const authenticatedUrl = remoteUrl.replace(
+            'https://github.com/',
+            `https://${authToken}@github.com/`
+          );
           await container.spawn('git', ['remote', 'set-url', remote, authenticatedUrl]);
         }
       } catch (authError) {
         console.warn('Could not set up authentication:', authError);
       }
     }
-    
+
     console.log(`Executing git push with args:`, args);
     const pushProcess = await container.spawn('git', args);
     const exitCode = await pushProcess.exit;
-    
+
     if (exitCode !== 0) {
       throw new Error(`Git push failed with exit code ${exitCode}`);
     }
-    
+
     return {
       success: true,
       message: `Changes pushed successfully to ${remote}/${branch}`,
       data: {
         remote,
         branch,
-        force
-      }
+        force,
+      },
     };
   } catch (error) {
     console.error('Git push error:', error);
@@ -602,7 +605,7 @@ async function getRemoteUrl(container: any, remote: string = 'origin'): Promise<
   try {
     const process = await container.spawn('git', ['remote', 'get-url', remote]);
     const exitCode = await process.exit;
-    
+
     if (exitCode === 0) {
       // In a real implementation, we would read the stdout
       // For now, return null since we can't easily capture stdout
@@ -618,38 +621,41 @@ async function getRemoteUrl(container: any, remote: string = 'origin'): Promise<
 async function pullChanges(container: any, options: any): Promise<GitResponse> {
   try {
     const { remote = 'origin', branch = 'main', authToken } = options;
-    
+
     // Handle authentication similar to push
     if (authToken) {
       try {
         const remoteUrl = await getRemoteUrl(container, remote);
         if (remoteUrl && remoteUrl.includes('github.com')) {
-          const authenticatedUrl = remoteUrl.replace('https://github.com/', `https://${authToken}@github.com/`);
+          const authenticatedUrl = remoteUrl.replace(
+            'https://github.com/',
+            `https://${authToken}@github.com/`
+          );
           await container.spawn('git', ['remote', 'set-url', remote, authenticatedUrl]);
         }
       } catch (authError) {
         console.warn('Could not set up authentication for pull:', authError);
       }
     }
-    
+
     const args = ['pull', remote, branch];
-    
+
     console.log(`Executing git pull with args:`, args);
     const pullProcess = await container.spawn('git', args);
     const exitCode = await pullProcess.exit;
-    
+
     if (exitCode !== 0) {
       throw new Error(`Git pull failed with exit code ${exitCode}`);
     }
-    
+
     return {
       success: true,
       message: `Changes pulled successfully from ${remote}/${branch}`,
       data: {
         remote,
         branch,
-        commits: [] // Would need stdout parsing to get actual commit info
-      }
+        commits: [], // Would need stdout parsing to get actual commit info
+      },
     };
   } catch (error) {
     console.error('Git pull error:', error);
@@ -662,11 +668,11 @@ async function getGitStatus(container: any): Promise<any> {
     // Get git status using real WebContainer spawn
     const statusProcess = await container.spawn('git', ['status', '--porcelain']);
     const statusExitCode = await statusProcess.exit;
-    
+
     if (statusExitCode !== 0) {
       throw new Error(`Git status failed with exit code ${statusExitCode}`);
     }
-    
+
     // Get current branch
     let branch = 'main';
     try {
@@ -679,7 +685,7 @@ async function getGitStatus(container: any): Promise<any> {
     } catch (branchError) {
       console.warn('Could not get current branch:', branchError);
     }
-    
+
     // Note: In a real implementation, we would parse the status output
     // For now, return a basic structure indicating the command succeeded
     return {
@@ -689,7 +695,7 @@ async function getGitStatus(container: any): Promise<any> {
       staged: [],
       modified: [],
       untracked: [],
-      conflicted: []
+      conflicted: [],
     };
   } catch (error) {
     console.error('Git status error:', error);
@@ -701,36 +707,39 @@ async function getGitStatus(container: any): Promise<any> {
       staged: [],
       modified: [],
       untracked: [],
-      conflicted: []
+      conflicted: [],
     };
   }
 }
 
-async function getGitLog(container: any, options: { limit: number; branch?: string }): Promise<any> {
+async function getGitLog(
+  container: any,
+  options: { limit: number; branch?: string }
+): Promise<any> {
   try {
     const { limit, branch } = options;
-    
+
     // Build git log command
     const args = ['log', `--max-count=${limit}`, '--oneline'];
-    
+
     if (branch) {
       args.push(branch);
     }
-    
+
     console.log(`Executing git log with args:`, args);
     const logProcess = await container.spawn('git', args);
     const exitCode = await logProcess.exit;
-    
+
     if (exitCode !== 0) {
       throw new Error(`Git log failed with exit code ${exitCode}`);
     }
-    
+
     // Note: In a real implementation, we would parse the log output from stdout
     // For now, return a basic structure indicating the command succeeded
     return {
       commits: [],
       total: 0,
-      branch: branch || 'current'
+      branch: branch || 'current',
     };
   } catch (error) {
     console.error('Git log error:', error);
@@ -738,7 +747,7 @@ async function getGitLog(container: any, options: { limit: number; branch?: stri
     return {
       commits: [],
       total: 0,
-      branch: options.branch || 'unknown'
+      branch: options.branch || 'unknown',
     };
   }
 }

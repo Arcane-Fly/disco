@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { ErrorCode } from '../types/index.js';
 
-export const errorHandler = (error: Error & { name?: string; code?: string; type?: string }, req: Request, res: Response, _next: NextFunction) => {
+export const errorHandler = (
+  error: Error & { name?: string; code?: string; type?: string },
+  req: Request,
+  res: Response,
+  _next: NextFunction
+) => {
   console.error('Error:', {
     message: error.message,
     stack: error.stack,
@@ -48,9 +53,9 @@ export const errorHandler = (error: Error & { name?: string; code?: string; type
     error: {
       code: errorCode,
       message: message,
-      ...(process.env.NODE_ENV === 'development' && { 
-        stack: error.stack 
-      })
-    }
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: error.stack,
+      }),
+    },
   });
 };

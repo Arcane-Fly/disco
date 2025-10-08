@@ -1,10 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
-import { TerminalSession, TerminalHistoryEntry, TerminalSessionRequest, TerminalSessionResponse, TerminalRecording, TerminalEvent } from '../types/index.js';
+import { getStringOrDefault } from './guards.js';
+import {
+  TerminalSession,
+  TerminalHistoryEntry,
+  TerminalSessionRequest,
+  TerminalSessionResponse,
+  TerminalRecording,
+  TerminalEvent,
+} from '../types/index.js';
 import { redisSessionManager } from './redisSession.js';
 
 /**
  * Terminal Session Manager for persistent terminal sessions across reconnections
- * 
+ *
  * Features:
  * - Session persistence across reconnections
  * - Command history storage and retrieval
@@ -16,11 +24,13 @@ class TerminalSessionManager {
   private sessions: Map<string, TerminalSession> = new Map();
   private readonly SESSION_TIMEOUT_MINUTES = 60; // Sessions expire after 1 hour of inactivity
   private readonly MAX_HISTORY_ENTRIES = 1000; // Maximum command history per session
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval?: NodeJS.Timeout;
 
   constructor() {
-    // Start cleanup interval (check every 10 minutes)
-    this.cleanupInterval = setInterval(() => this.cleanupExpiredSessions(), 10 * 60 * 1000);
+    // Start cleanup interval (check every 10 minutes) - skip in tests
+    if (process.env.NODE_ENV !== 'test') {
+      this.cleanupInterval = setInterval(() => this.cleanupExpiredSessions(), 10 * 60 * 1000);
+    }
     console.log('🖥️  Terminal Session Manager initialized');
   }
 
@@ -37,15 +47,15 @@ class TerminalSessionManager {
         existingSession.lastActive = new Date();
         existingSession.status = 'active';
         await this.saveSession(existingSession);
-        
+
         console.log(`🔄 Resumed terminal session ${sessionId} for container ${containerId}`);
-        
+
         return {
           sessionId: existingSession.id,
           status: 'resumed',
           cwd: existingSession.cwd,
           env: existingSession.env,
-          history: existingSession.history.slice(-50) // Return last 50 commands
+          history: existingSession.history.slice(-50), // Return last 50 commands
         };
       }
     }
@@ -59,15 +69,15 @@ class TerminalSessionManager {
       createdAt: new Date(),
       lastActive: new Date(),
       cwd,
-      env: { 
-        ...Object.fromEntries(
+      env: {
+        ...(Object.fromEntries(
           Object.entries(process.env).filter(([_, value]) => value !== undefined)
-        ) as Record<string, string>, 
-        ...env 
+        ) as Record<string, string>),
+        ...env,
       }, // Merge with process env
       history: [],
       status: 'active',
-      processIds: []
+      processIds: [],
     };
 
     this.sessions.set(newSessionId, newSession);
@@ -80,7 +90,7 @@ class TerminalSessionManager {
       status: 'created',
       cwd: newSession.cwd,
       env: newSession.env,
-      history: []
+      history: [],
     };
   }
 
@@ -90,7 +100,7 @@ class TerminalSessionManager {
   async getSession(sessionId: string): Promise<TerminalSession | null> {
     // First try in-memory cache
     let session = this.sessions.get(sessionId);
-    
+
     // If not in memory, try to restore from Redis
     if (!session) {
       const restoredSession = await this.restoreSession(sessionId);
@@ -107,10 +117,10 @@ class TerminalSessionManager {
    * Add a command to session history and recording
    */
   async addCommandToHistory(
-    sessionId: string, 
-    command: string, 
-    output: string, 
-    exitCode: number, 
+    sessionId: string,
+    command: string,
+    output: string,
+    exitCode: number,
     duration: number
   ): Promise<void> {
     const session = await this.getSession(sessionId);
@@ -126,7 +136,7 @@ class TerminalSessionManager {
       output,
       exitCode,
       duration,
-      cwd: session.cwd
+      cwd: session.cwd,
     };
 
     session.history.push(historyEntry);
@@ -136,12 +146,12 @@ class TerminalSessionManager {
     if (session.recording) {
       await this.addRecordingEvent(sessionId, {
         type: 'command',
-        data: { command, exitCode, duration }
+        data: { command, exitCode, duration },
       });
-      
+
       await this.addRecordingEvent(sessionId, {
         type: 'output',
-        data: { output }
+        data: { output },
       });
     }
 
@@ -162,15 +172,15 @@ class TerminalSessionManager {
       const oldCwd = session.cwd;
       session.cwd = newCwd;
       session.lastActive = new Date();
-      
+
       // Add to recording if active
       if (session.recording && oldCwd !== newCwd) {
         await this.addRecordingEvent(sessionId, {
           type: 'cwd_change',
-          data: { cwd: newCwd }
+          data: { cwd: newCwd },
         });
       }
-      
+
       await this.saveSession(session);
     }
   }
@@ -184,21 +194,21 @@ class TerminalSessionManager {
       const oldEnv = { ...session.env };
       session.env = { ...session.env, ...env };
       session.lastActive = new Date();
-      
+
       // Add to recording if active
       if (session.recording) {
         const changedEnv = Object.fromEntries(
           Object.entries(env).filter(([key, value]) => oldEnv[key] !== value)
         );
-        
+
         if (Object.keys(changedEnv).length > 0) {
           await this.addRecordingEvent(sessionId, {
             type: 'env_change',
-            data: { env: changedEnv }
+            data: { env: changedEnv },
           });
         }
       }
-      
+
       await this.saveSession(session);
     }
   }
@@ -207,8 +217,8 @@ class TerminalSessionManager {
    * Get session history with filtering and search
    */
   async getSessionHistory(
-    sessionId: string, 
-    limit: number = 50, 
+    sessionId: string,
+    limit: number = 50,
     search?: string,
     commandsOnly: boolean = false
   ): Promise<TerminalHistoryEntry[]> {
@@ -222,9 +232,10 @@ class TerminalSessionManager {
     // Filter by search term if provided
     if (search) {
       const searchLower = search.toLowerCase();
-      history = history.filter(entry => 
-        entry.command.toLowerCase().includes(searchLower) ||
-        (!commandsOnly && entry.output.toLowerCase().includes(searchLower))
+      history = history.filter(
+        entry =>
+          entry.command.toLowerCase().includes(searchLower) ||
+          (!commandsOnly && entry.output.toLowerCase().includes(searchLower))
       );
     }
 
@@ -255,11 +266,35 @@ class TerminalSessionManager {
 
     // Add common commands that match
     const commonCommands = [
-      'ls -la', 'ls -l', 'cd', 'pwd', 'cat', 'echo', 'mkdir', 'rm', 'cp', 'mv',
-      'npm install', 'npm run', 'npm start', 'npm test', 'npm run build',
-      'git status', 'git add', 'git commit', 'git push', 'git pull', 'git log',
-      'docker build', 'docker run', 'docker ps', 'docker stop',
-      'python', 'node', 'yarn', 'pip install'
+      'ls -la',
+      'ls -l',
+      'cd',
+      'pwd',
+      'cat',
+      'echo',
+      'mkdir',
+      'rm',
+      'cp',
+      'mv',
+      'npm install',
+      'npm run',
+      'npm start',
+      'npm test',
+      'npm run build',
+      'git status',
+      'git add',
+      'git commit',
+      'git push',
+      'git pull',
+      'git log',
+      'docker build',
+      'docker run',
+      'docker ps',
+      'docker stop',
+      'python',
+      'node',
+      'yarn',
+      'pip install',
     ];
 
     commonCommands
@@ -272,7 +307,10 @@ class TerminalSessionManager {
   /**
    * Get frequently used commands
    */
-  async getFrequentCommands(sessionId: string, limit: number = 10): Promise<Array<{command: string, count: number}>> {
+  async getFrequentCommands(
+    sessionId: string,
+    limit: number = 10
+  ): Promise<Array<{ command: string; count: number }>> {
     const session = await this.getSession(sessionId);
     if (!session) {
       return [];
@@ -281,7 +319,7 @@ class TerminalSessionManager {
     // Count command frequency
     const commandCounts = new Map<string, number>();
     session.history.forEach(entry => {
-      const baseCommand = entry.command.split(' ')[0]; // Get the base command (e.g., 'git' from 'git status')
+      const baseCommand = getStringOrDefault(entry.command.split(' ')[0], 'unknown'); // Get the base command (e.g., 'git' from 'git status')
       commandCounts.set(baseCommand, (commandCounts.get(baseCommand) || 0) + 1);
     });
 
@@ -310,8 +348,8 @@ class TerminalSessionManager {
       metadata: {
         totalCommands: 0,
         totalDuration: 0,
-        finalStatus: 'completed'
-      }
+        finalStatus: 'completed',
+      },
     };
 
     session.recording = recording;
@@ -332,24 +370,29 @@ class TerminalSessionManager {
 
     session.recording.endTime = new Date();
     session.recording.metadata.finalStatus = 'completed';
-    
+
     const recording = { ...session.recording };
-    
+
     // Save recording separately for later retrieval
     await this.saveRecording(recording);
-    
+
     // Remove recording from session (keep session light)
     delete session.recording;
     await this.saveSession(session);
 
-    console.log(`🎬 Stopped recording session ${sessionId} (${recording.events.length} events captured)`);
+    console.log(
+      `🎬 Stopped recording session ${sessionId} (${recording.events.length} events captured)`
+    );
     return recording;
   }
 
   /**
    * Add an event to the current recording
    */
-  async addRecordingEvent(sessionId: string, event: Omit<TerminalEvent, 'timestamp'>): Promise<void> {
+  async addRecordingEvent(
+    sessionId: string,
+    event: Omit<TerminalEvent, 'timestamp'>
+  ): Promise<void> {
     const session = await this.getSession(sessionId);
     if (!session || !session.recording) {
       return; // No recording active
@@ -357,11 +400,11 @@ class TerminalSessionManager {
 
     const recordingEvent: TerminalEvent = {
       ...event,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     session.recording.events.push(recordingEvent);
-    
+
     // Update metadata
     if (event.type === 'command') {
       session.recording.metadata.totalCommands++;
@@ -381,7 +424,7 @@ class TerminalSessionManager {
       if (redisSessionManager.isConnected()) {
         const recordingKey = `terminal_recording:${recordingId}`;
         const recordingData = await redisSessionManager.get(recordingKey);
-        
+
         if (recordingData) {
           const recording = JSON.parse(recordingData);
           // Convert date strings back to Date objects
@@ -391,16 +434,16 @@ class TerminalSessionManager {
           }
           recording.events = recording.events.map((event: any) => ({
             ...event,
-            timestamp: new Date(event.timestamp)
+            timestamp: new Date(event.timestamp),
           }));
-          
+
           return recording;
         }
       }
     } catch (error) {
       console.error('Failed to get recording from Redis:', error);
     }
-    
+
     return null;
   }
 
@@ -412,7 +455,7 @@ class TerminalSessionManager {
       if (redisSessionManager.isConnected()) {
         const recordingKey = `session_recordings:${sessionId}`;
         const recordingIds = await redisSessionManager.sMembers(recordingKey);
-        
+
         const recordings: TerminalRecording[] = [];
         for (const recordingId of recordingIds) {
           const recording = await this.getRecording(recordingId);
@@ -420,24 +463,27 @@ class TerminalSessionManager {
             recordings.push(recording);
           }
         }
-        
+
         return recordings.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
       }
     } catch (error) {
       console.error('Failed to get session recordings from Redis:', error);
     }
-    
+
     return [];
   }
 
   /**
    * Replay a terminal recording
    */
-  async replayRecording(recordingId: string, options: {
-    speed?: number; // Playback speed multiplier (1 = normal, 2 = 2x speed, 0.5 = half speed)
-    skipCommands?: boolean; // Only show output
-    skipOutput?: boolean; // Only show commands
-  } = {}): Promise<AsyncIterable<TerminalEvent>> {
+  async replayRecording(
+    recordingId: string,
+    options: {
+      speed?: number; // Playback speed multiplier (1 = normal, 2 = 2x speed, 0.5 = half speed)
+      skipCommands?: boolean; // Only show output
+      skipOutput?: boolean; // Only show commands
+    } = {}
+  ): Promise<AsyncIterable<TerminalEvent>> {
     const recording = await this.getRecording(recordingId);
     if (!recording) {
       throw new Error('Recording not found');
@@ -448,26 +494,26 @@ class TerminalSessionManager {
     return {
       async *[Symbol.asyncIterator]() {
         let lastTimestamp: Date | null = null;
-        
+
         for (const event of recording.events) {
           // Skip events based on options
           if (skipCommands && event.type === 'command') continue;
           if (skipOutput && event.type === 'output') continue;
-          
+
           // Calculate delay based on real timing and speed
           if (lastTimestamp) {
             const realDelay = event.timestamp.getTime() - lastTimestamp.getTime();
             const adjustedDelay = realDelay / speed;
-            
+
             if (adjustedDelay > 0) {
               await new Promise(resolve => setTimeout(resolve, adjustedDelay));
             }
           }
-          
+
           lastTimestamp = event.timestamp;
           yield event;
         }
-      }
+      },
     };
   }
   async searchCommandHistory(
@@ -491,9 +537,10 @@ class TerminalSessionManager {
     // Apply filters
     if (options.query) {
       const queryLower = options.query.toLowerCase();
-      results = results.filter(entry => 
-        entry.command.toLowerCase().includes(queryLower) ||
-        entry.output.toLowerCase().includes(queryLower)
+      results = results.filter(
+        entry =>
+          entry.command.toLowerCase().includes(queryLower) ||
+          entry.output.toLowerCase().includes(queryLower)
       );
     }
 
@@ -551,7 +598,7 @@ class TerminalSessionManager {
       session.status = 'terminated';
       session.lastActive = new Date();
       await this.saveSession(session);
-      
+
       // Remove from memory cache
       this.sessions.delete(sessionId);
       console.log(`🔒 Terminated terminal session ${sessionId}`);
@@ -586,10 +633,10 @@ class TerminalSessionManager {
       if (redisSessionManager.isConnected()) {
         const recordingKey = `terminal_recording:${recording.id}`;
         const sessionRecordingKey = `session_recordings:${recording.sessionId}`;
-        
+
         // Save recording data
         await redisSessionManager.set(recordingKey, JSON.stringify(recording), 24 * 60 * 60); // 24 hour TTL
-        
+
         // Add to session recordings list
         await redisSessionManager.sAdd(sessionRecordingKey, recording.id);
       }
@@ -606,10 +653,10 @@ class TerminalSessionManager {
       if (redisSessionManager.isConnected()) {
         const sessionKey = `terminal_session:${session.id}`;
         const containerKey = `container_sessions:${session.containerId}`;
-        
+
         // Save session data
         await redisSessionManager.set(sessionKey, JSON.stringify(session), 60 * 60); // 1 hour TTL
-        
+
         // Add to container session list
         await redisSessionManager.sAdd(containerKey, session.id);
       }
@@ -627,7 +674,7 @@ class TerminalSessionManager {
       if (redisSessionManager.isConnected()) {
         const sessionKey = `terminal_session:${sessionId}`;
         const sessionData = await redisSessionManager.get(sessionKey);
-        
+
         if (sessionData) {
           const session = JSON.parse(sessionData);
           // Convert date strings back to Date objects
@@ -635,9 +682,9 @@ class TerminalSessionManager {
           session.lastActive = new Date(session.lastActive);
           session.history = session.history.map((entry: any) => ({
             ...entry,
-            timestamp: new Date(entry.timestamp)
+            timestamp: new Date(entry.timestamp),
           }));
-          
+
           console.log(`🔄 Restored terminal session ${sessionId} from Redis`);
           return session;
         }
@@ -645,7 +692,7 @@ class TerminalSessionManager {
     } catch (error) {
       console.error('Failed to restore terminal session from Redis:', error);
     }
-    
+
     return null;
   }
 
@@ -661,7 +708,7 @@ class TerminalSessionManager {
     } catch (error) {
       console.error('Failed to get container sessions from Redis:', error);
     }
-    
+
     return [];
   }
 
@@ -672,7 +719,7 @@ class TerminalSessionManager {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }
-    
+
     // Save all active sessions to Redis
     for (const session of this.sessions.values()) {
       if (session.status === 'active') {
@@ -680,7 +727,7 @@ class TerminalSessionManager {
         await this.saveSession(session);
       }
     }
-    
+
     console.log('🛑 Terminal Session Manager shutdown complete');
   }
 }

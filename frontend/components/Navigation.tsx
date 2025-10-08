@@ -1,23 +1,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { CompactThemeToggle } from './ui/ThemeToggle';
-import { 
-  Menu, 
-  X, 
-  Code2, 
-  BarChart3, 
-  Terminal, 
-  Github, 
-  LogOut,
-  User,
-  ChevronDown,
-  Settings,
-  GitBranch,
-  TrendingUp
-} from 'lucide-react';
+import { Icon } from './ui/Icon';
 
 export default function Navigation() {
   const { user, login, logout } = useAuth();
@@ -27,11 +15,12 @@ export default function Navigation() {
   const router = useRouter();
 
   const navLinks = [
-    { href: '/app-dashboard', label: 'Dashboard', icon: <BarChart3 className="w-4 h-4" />, protected: true },
-    { href: '/workflow-builder', label: 'Workflow Builder', icon: <GitBranch className="w-4 h-4" />, protected: true },
-    { href: '/analytics', label: 'Analytics', icon: <TrendingUp className="w-4 h-4" />, protected: true },
-    { href: '/webcontainer-loader', label: 'WebContainer', icon: <Terminal className="w-4 h-4" />, protected: true },
-    { href: '/legacy-root', label: 'Classic', icon: <Code2 className="w-4 h-4" />, protected: false },
+    { href: '/app-dashboard', label: 'Dashboard', icon: 'BarChart3', protected: true },
+    { href: '/workflow-builder', label: 'Workflow Builder', icon: 'GitBranch', protected: true },
+    { href: '/api-config', label: 'API', icon: 'Key', protected: true },
+    { href: '/analytics', label: 'Analytics', icon: 'TrendingUp', protected: true },
+    { href: '/webcontainer-loader', label: 'WebContainer', icon: 'Terminal', protected: true },
+    { href: '/legacy-root', label: 'Classic', icon: 'Code2', protected: false },
   ];
 
   const visibleLinks = navLinks.filter(link => !link.protected || user);
@@ -52,12 +41,12 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="navigation">
+    <nav className="navigation" suppressHydrationWarning>
       <div className="nav-container">
         <div className="nav-content">
           {/* Logo */}
           <Link href="/" className="nav-logo">
-            <Code2 className="w-8 h-8" />
+            <Icon name="Code2" size={32} className="text-blue-500" />
             <span>Disco MCP</span>
           </Link>
 
@@ -70,7 +59,7 @@ export default function Navigation() {
                 className={`nav-link ${router.pathname === link.href ? 'active' : ''}`}
                 onClick={handleNavClick}
               >
-                {link.icon}
+                <Icon name={link.icon as keyof typeof import('lucide-react')} size={16} />
                 <span>{link.label}</span>
               </Link>
             ))}
@@ -86,56 +75,53 @@ export default function Navigation() {
                   onClick={handleUserMenuToggle}
                 >
                   {user.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.username} className="user-avatar" />
+                    <Image 
+                      src={user.avatar_url} 
+                      alt={user.username} 
+                      className="user-avatar"
+                      width={20}
+                      height={20}
+                    />
                   ) : (
-                    <User className="w-5 h-5" />
+                    <Icon name="User" size={20} />
                   )}
-                  <span className="user-name">{user.username}</span>
-                  <ChevronDown className="w-4 h-4" />
+                  <span>{user.username}</span>
+                  <Icon name="ChevronDown" size={16} />
                 </button>
 
                 {userMenuOpen && (
                   <div className="user-dropdown">
-                    <div className="dropdown-header">
-                      <div className="user-info">
-                        <p className="user-name">{user.username}</p>
-                        <p className="user-email">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="dropdown-divider"></div>
                     <Link href="/profile" className="dropdown-item">
-                      <User className="w-4 h-4" />
-                      Profile
+                      <Icon name="User" size={16} />
+                      <span>Profile</span>
                     </Link>
-                    <Link href="/settings" className="dropdown-item">
-                      <Settings className="w-4 h-4" />
-                      Settings
+                    <Link href="/api-config" className="dropdown-item">
+                      <Icon name="Settings" size={16} />
+                      <span>Settings</span>
                     </Link>
-                    <div className="dropdown-divider"></div>
-                    <div className="px-3 py-2">
-                      <CompactThemeToggle />
-                    </div>
-                    <div className="dropdown-divider"></div>
+                    <hr className="dropdown-divider" />
                     <button onClick={logout} className="dropdown-item danger">
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
+                      <Icon name="LogOut" size={16} />
+                      <span>Sign Out</span>
                     </button>
                   </div>
                 )}
               </div>
             ) : (
               <button onClick={login} className="btn-signin">
-                <Github className="w-5 h-5" />
+                <Icon name="Github" size={16} />
                 <span>Sign In</span>
               </button>
             )}
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile menu toggle */}
             <button
               className="mobile-menu-toggle"
               onClick={handleMobileMenuToggle}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              title={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <Icon name={mobileMenuOpen ? "X" : "Menu"} size={20} />
             </button>
           </div>
         </div>
@@ -150,15 +136,14 @@ export default function Navigation() {
                 className={`nav-link-mobile ${router.pathname === link.href ? 'active' : ''}`}
                 onClick={handleNavClick}
               >
-                {link.icon}
+                <Icon name={link.icon as keyof typeof import('lucide-react')} size={16} />
                 <span>{link.label}</span>
               </Link>
             ))}
-            
             {!user && (
-              <button onClick={login} className="btn-signin-mobile">
-                <Github className="w-5 h-5" />
-                Sign In with GitHub
+              <button onClick={() => { login(); handleNavClick(); }} className="btn-signin-mobile">
+                <Icon name="Github" size={16} />
+                <span>Sign In</span>
               </button>
             )}
           </div>

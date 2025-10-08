@@ -1,0 +1,42 @@
+name: "disco-codeql-config"
+
+# Paths to include in the analysis
+paths:
+  - "src"
+  - "frontend"
+  - "scripts"
+  - "middleware.ts"
+  - "next.config.js"
+
+# Paths to exclude from the analysis
+paths-ignore:
+  - "node_modules"
+  - "dist"
+  - ".next"
+  - "test"
+  - "**/*.test.ts"
+  - "**/*.spec.ts" 
+  - "**/*.test.js"
+  - "**/*.spec.js"
+  - "**/node_modules/**"
+  - "**/.yarn/**"
+  - "**/.git/**"
+  - "**/coverage/**"
+
+# Query suites and packs to use for analysis
+query-filters:
+  - include:
+      problem-severity: [error, warning]
+  - exclude:
+      query-id: 
+        - "js/unused-local-variable"  # Reduce noise from dev code
+
+# Disable certain queries if needed
+disable-default-queries: false
+
+# Custom configuration for TypeScript/JavaScript analysis
+javascript-typescript:
+  # Include TypeScript-specific security queries
+  include-default-queries: true
+  # Use extended security suite
+  security-extended: true

@@ -63,14 +63,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
         ownerId: team.ownerId,
         memberCount: team.members.size,
         createdAt: team.createdAt,
-        settings: team.settings
-      }
+        settings: team.settings,
+      },
     });
   } catch (error) {
     console.error('Error creating team:', error);
     res.status(500).json({
       error: 'Failed to create team',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -101,14 +101,14 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
         memberCount: team.members.size,
         containerCount: team.containerShares.size,
         createdAt: team.createdAt,
-        updatedAt: team.updatedAt
-      }))
+        updatedAt: team.updatedAt,
+      })),
     });
   } catch (error) {
     console.error('Error getting user teams:', error);
     res.status(500).json({
       error: 'Failed to get teams',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -160,13 +160,13 @@ router.post('/:teamId/members', authMiddleware, async (req: Request, res: Respon
 
     res.json({
       success,
-      message: 'Member added to team successfully'
+      message: 'Member added to team successfully',
     });
   } catch (error) {
     console.error('Error adding team member:', error);
     res.status(500).json({
       error: 'Failed to add team member',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -218,46 +218,50 @@ router.post('/:teamId/members', authMiddleware, async (req: Request, res: Respon
  *       200:
  *         description: Container shared successfully
  */
-router.post('/:teamId/containers/:containerId/share', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { teamId, containerId } = req.params;
-    const { accessLevel, expiresAt, metadata } = req.body;
-    const sharedBy = (req as any).user?.id;
+router.post(
+  '/:teamId/containers/:containerId/share',
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const { teamId, containerId } = req.params;
+      const { accessLevel, expiresAt, metadata } = req.body;
+      const sharedBy = (req as any).user?.id;
 
-    if (!accessLevel) {
-      return res.status(400).json({ error: 'Access level is required' });
-    }
-
-    const expirationDate = expiresAt ? new Date(expiresAt) : undefined;
-
-    const containerShare = teamCollaborationManager.shareContainer(
-      containerId,
-      teamId,
-      sharedBy,
-      accessLevel,
-      expirationDate,
-      metadata
-    );
-
-    res.json({
-      success: true,
-      containerShare: {
-        containerId: containerShare.containerId,
-        accessLevel: containerShare.accessLevel,
-        sharedAt: containerShare.sharedAt,
-        expiresAt: containerShare.expiresAt,
-        allowedOperations: Array.from(containerShare.allowedOperations),
-        metadata: containerShare.metadata
+      if (!accessLevel) {
+        return res.status(400).json({ error: 'Access level is required' });
       }
-    });
-  } catch (error) {
-    console.error('Error sharing container:', error);
-    res.status(500).json({
-      error: 'Failed to share container',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
+
+      const expirationDate = expiresAt ? new Date(expiresAt) : undefined;
+
+      const containerShare = teamCollaborationManager.shareContainer(
+        containerId,
+        teamId,
+        sharedBy,
+        accessLevel,
+        expirationDate,
+        metadata
+      );
+
+      res.json({
+        success: true,
+        containerShare: {
+          containerId: containerShare.containerId,
+          accessLevel: containerShare.accessLevel,
+          sharedAt: containerShare.sharedAt,
+          expiresAt: containerShare.expiresAt,
+          allowedOperations: Array.from(containerShare.allowedOperations),
+          metadata: containerShare.metadata,
+        },
+      });
+    } catch (error) {
+      console.error('Error sharing container:', error);
+      res.status(500).json({
+        error: 'Failed to share container',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
-});
+);
 
 /**
  * @swagger
@@ -313,8 +317,8 @@ router.post('/:teamId/workspaces', authMiddleware, async (req: Request, res: Res
     const createdBy = (req as any).user?.id;
 
     if (!name || !description || !templateName) {
-      return res.status(400).json({ 
-        error: 'Name, description, and template name are required' 
+      return res.status(400).json({
+        error: 'Name, description, and template name are required',
       });
     }
 
@@ -336,14 +340,14 @@ router.post('/:teamId/workspaces', authMiddleware, async (req: Request, res: Res
         template: workspace.template,
         createdBy: workspace.createdBy,
         createdAt: workspace.createdAt,
-        settings: workspace.settings
-      }
+        settings: workspace.settings,
+      },
     });
   } catch (error) {
     console.error('Error creating workspace:', error);
     res.status(500).json({
       error: 'Failed to create workspace',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -386,13 +390,13 @@ router.get('/:teamId/activity', authMiddleware, async (req: Request, res: Respon
 
     res.json({
       activity,
-      teamId
+      teamId,
     });
   } catch (error) {
     console.error('Error getting team activity:', error);
     res.status(500).json({
       error: 'Failed to get team activity',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -414,13 +418,13 @@ router.get('/workspace-templates', authMiddleware, async (req: Request, res: Res
     const templates = teamCollaborationManager.getWorkspaceTemplates();
 
     res.json({
-      templates
+      templates,
     });
   } catch (error) {
     console.error('Error getting workspace templates:', error);
     res.status(500).json({
       error: 'Failed to get workspace templates',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -449,34 +453,38 @@ router.get('/workspace-templates', authMiddleware, async (req: Request, res: Res
  *       200:
  *         description: Access permission result
  */
-router.get('/containers/:containerId/access', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { containerId } = req.params;
-    const { operation } = req.query;
-    const userId = (req as any).user?.id;
+router.get(
+  '/containers/:containerId/access',
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const { containerId } = req.params;
+      const { operation } = req.query;
+      const userId = (req as any).user?.id;
 
-    if (!operation) {
-      return res.status(400).json({ error: 'Operation parameter is required' });
+      if (!operation) {
+        return res.status(400).json({ error: 'Operation parameter is required' });
+      }
+
+      const hasAccess = teamCollaborationManager.canAccessContainer(
+        containerId,
+        userId,
+        operation as any
+      );
+
+      res.json({
+        containerId,
+        operation,
+        hasAccess,
+      });
+    } catch (error) {
+      console.error('Error checking container access:', error);
+      res.status(500).json({
+        error: 'Failed to check container access',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-
-    const hasAccess = teamCollaborationManager.canAccessContainer(
-      containerId,
-      userId,
-      operation as any
-    );
-
-    res.json({
-      containerId,
-      operation,
-      hasAccess
-    });
-  } catch (error) {
-    console.error('Error checking container access:', error);
-    res.status(500).json({
-      error: 'Failed to check container access',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
   }
-});
+);
 
 export { router as teamCollaborationRouter };

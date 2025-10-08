@@ -1,7 +1,7 @@
 /**
  * Centralized State Management Hooks
  * DRY Principle: Consolidates repeated state patterns across components
- * 
+ *
  * Previously scattered patterns:
  * - useState for loading/error states
  * - useEffect for data fetching
@@ -39,7 +39,7 @@ export function useAsyncState<T>(initialData: T | null = null): {
     data: initialData,
     loading: false,
     error: null,
-    lastUpdated: null
+    lastUpdated: null,
   });
 
   const setLoading = useCallback((loading: boolean) => {
@@ -51,7 +51,7 @@ export function useAsyncState<T>(initialData: T | null = null): {
       data,
       loading: false,
       error: null,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     });
   }, []);
 
@@ -60,7 +60,7 @@ export function useAsyncState<T>(initialData: T | null = null): {
       ...prev,
       loading: false,
       error,
-      lastUpdated: error ? Date.now() : prev.lastUpdated
+      lastUpdated: error ? Date.now() : prev.lastUpdated,
     }));
   }, []);
 
@@ -69,7 +69,7 @@ export function useAsyncState<T>(initialData: T | null = null): {
       data: initialData,
       loading: false,
       error: null,
-      lastUpdated: null
+      lastUpdated: null,
     });
   }, [initialData]);
 
@@ -81,7 +81,7 @@ export function useAsyncState<T>(initialData: T | null = null): {
  */
 export function useAsyncOperation<T, TArgs extends any[] = []>(
   operation: (...args: TArgs) => Promise<T>,
-  dependencies: any[] = []
+  _dependencies: any[] = []
 ): {
   state: AsyncState<T>;
   execute: (...args: TArgs) => Promise<void>;
@@ -97,19 +97,22 @@ export function useAsyncOperation<T, TArgs extends any[] = []>(
     };
   }, []);
 
-  const execute = useCallback(async (...args: TArgs) => {
-    setLoading(true);
-    try {
-      const result = await operation(...args);
-      if (isMountedRef.current) {
-        setData(result);
+  const execute = useCallback(
+    async (...args: TArgs) => {
+      setLoading(true);
+      try {
+        const result = await operation(...args);
+        if (isMountedRef.current) {
+          setData(result);
+        }
+      } catch (error) {
+        if (isMountedRef.current) {
+          setError(error instanceof Error ? error.message : 'An error occurred');
+        }
       }
-    } catch (error) {
-      if (isMountedRef.current) {
-        setError(error instanceof Error ? error.message : 'An error occurred');
-      }
-    }
-  }, [operation, setLoading, setData, setError]);
+    },
+    [operation, setLoading, setData, setError]
+  );
 
   return { state, execute, reset };
 }
@@ -117,7 +120,9 @@ export function useAsyncOperation<T, TArgs extends any[] = []>(
 /**
  * Toggle state hook for boolean flags
  */
-export function useToggle(initialValue: boolean = false): [boolean, () => void, (value: boolean) => void] {
+export function useToggle(
+  initialValue: boolean = false
+): [boolean, () => void, (value: boolean) => void] {
   const [value, setValue] = useState(initialValue);
 
   const toggle = useCallback(() => {
@@ -134,7 +139,10 @@ export function useToggle(initialValue: boolean = false): [boolean, () => void, 
 /**
  * Hook for persisting state to localStorage
  */
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void, () => void] {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T) => void, () => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -145,14 +153,17 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
     }
   });
 
-  const setValue = useCallback((value: T) => {
-    try {
-      setStoredValue(value);
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error);
-    }
-  }, [key]);
+  const setValue = useCallback(
+    (value: T) => {
+      try {
+        setStoredValue(value);
+        window.localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        console.warn(`Error setting localStorage key "${key}":`, error);
+      }
+    },
+    [key]
+  );
 
   const removeValue = useCallback(() => {
     try {

@@ -1,12 +1,11 @@
 /**
  * Enhanced Dashboard Integration Example
- * 
+ *
  * This file demonstrates how to integrate the Dynamic Dashboard Component System
  * with the existing MCP Enhancement Engine to create a unified Phase II experience.
  */
 
 import express from 'express';
-import { DynamicDashboard } from '../components/DynamicDashboard.js';
 import { mcpEnhancementEngine } from '../lib/mcpEnhancementEngine.js';
 import { performanceOptimizer } from '../lib/performanceOptimizer.js';
 
@@ -33,7 +32,7 @@ router.get('/', async (req, res) => {
     const enhancementMetrics = mcpEnhancementEngine.generatePerformanceReport();
     const optimizerMetrics = performanceOptimizer.getOptimizationMetrics();
     const systemHealth = await getSystemHealthData();
-    
+
     // Create HTML page with React Dashboard
     const dashboardHTML = `
 <!DOCTYPE html>
@@ -355,12 +354,11 @@ router.get('/', async (req, res) => {
 
     res.set('Content-Type', 'text/html');
     res.send(dashboardHTML);
-    
   } catch (error) {
     console.error('Dashboard rendering error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Dashboard unavailable',
-      message: 'Please try again later'
+      message: 'Please try again later',
     });
   }
 });
@@ -382,9 +380,9 @@ router.get('/data', async (req, res) => {
       enhancementMetrics: mcpEnhancementEngine.generatePerformanceReport(),
       optimizerMetrics: performanceOptimizer.getOptimizationMetrics(),
       systemHealth: await getSystemHealthData(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     res.json(data);
   } catch (error) {
     console.error('Data fetch error:', error);
@@ -402,14 +400,14 @@ async function getSystemHealthData() {
       { name: 'Enhancement Engine', status: 'healthy', uptime: 99.9 },
       { name: 'Performance Optimizer', status: 'healthy', uptime: 99.8 },
       { name: 'State Manager', status: 'healthy', uptime: 99.7 },
-      { name: 'Analytics Engine', status: 'warning', uptime: 98.5 }
+      { name: 'Analytics Engine', status: 'warning', uptime: 98.5 },
     ],
     metrics: {
       responseTime: Math.floor(20 + Math.random() * 30),
       memoryUsage: Math.floor(60 + Math.random() * 25),
       cpuUsage: Math.floor(15 + Math.random() * 25),
-      activeConnections: Math.floor(50 + Math.random() * 200)
-    }
+      activeConnections: Math.floor(50 + Math.random() * 200),
+    },
   };
 }
 

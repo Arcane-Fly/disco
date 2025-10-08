@@ -10,15 +10,16 @@ const router = Router();
 router.get('/session', (req: Request, res: Response) => {
   try {
     // Check for JWT token in cookies or Authorization header
-    const token = req.cookies['auth-token'] || 
-                  (req.headers.authorization?.startsWith('Bearer ') 
-                    ? req.headers.authorization.substring(7) 
-                    : null);
+    const token =
+      req.cookies['auth-token'] ||
+      (req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.substring(7)
+        : null);
 
     if (!token) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         authenticated: false,
-        error: 'No token provided' 
+        error: 'No token provided',
       });
     }
 
@@ -31,7 +32,7 @@ router.get('/session', (req: Request, res: Response) => {
       name?: string;
       provider?: string;
     };
-    
+
     // Extract user information from the token
     const user = {
       id: decoded.userId,
@@ -39,18 +40,19 @@ router.get('/session', (req: Request, res: Response) => {
       email: decoded.email,
       avatar_url: decoded.avatar_url,
       name: decoded.name,
-      provider: decoded.provider
+      provider: decoded.provider,
     };
 
-    res.status(200).json({ 
+    res.status(200).json({
       authenticated: true,
-      user 
+      user,
+      token, // Include the token in the response
     });
   } catch (error) {
     console.error('Session verification failed:', error);
-    res.status(401).json({ 
+    res.status(401).json({
       authenticated: false,
-      error: 'Invalid token' 
+      error: 'Invalid token',
     });
   }
 });
@@ -66,11 +68,11 @@ router.post('/logout', (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/'
+      path: '/',
     });
 
-    res.status(200).json({ 
-      message: 'Logged out successfully' 
+    res.status(200).json({
+      message: 'Logged out successfully',
     });
   } catch (error) {
     console.error('Logout failed:', error);

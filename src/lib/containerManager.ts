@@ -12,11 +12,13 @@ const isBrowserEnvironment = typeof window !== 'undefined';
 let WebContainer: any = null;
 if (isBrowserEnvironment) {
   // Only import WebContainer in browser environments
-  import('@webcontainer/api').then(module => {
-    WebContainer = module.WebContainer;
-  }).catch(error => {
-    console.warn('Failed to load WebContainer API:', error);
-  });
+  import('@webcontainer/api')
+    .then(module => {
+      WebContainer = module.WebContainer;
+    })
+    .catch(error => {
+      console.warn('Failed to load WebContainer API:', error);
+    });
 }
 
 interface ContainerPool {
@@ -27,45 +29,47 @@ interface ContainerPool {
 class ContainerManager {
   private sessions: Map<string, ContainerSession> = new Map();
   private pool: ContainerPool = { ready: [], initializing: [] };
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval?: NodeJS.Timeout;
   private readonly maxInactiveMinutes: number;
   private readonly maxContainers: number;
   private readonly poolSize: number;
   private circuitBreaker: CircuitBreaker<[string], ContainerSession>;
 
   constructor(
-    maxInactiveMinutes: number = parseInt(process.env.CONTAINER_TIMEOUT_MINUTES || "15", 10),
-    maxContainers: number = parseInt(process.env.MAX_CONTAINERS || "20", 10),
-    poolSize: number = parseInt(process.env.POOL_SIZE || "3", 10)
+    maxInactiveMinutes: number = parseInt(process.env.CONTAINER_TIMEOUT_MINUTES || '15', 10),
+    maxContainers: number = parseInt(process.env.MAX_CONTAINERS || '20', 10),
+    poolSize: number = parseInt(process.env.POOL_SIZE || '3', 10)
   ) {
     this.maxInactiveMinutes = maxInactiveMinutes;
     this.maxContainers = maxContainers;
     this.poolSize = poolSize;
-    
+
     // Initialize circuit breaker for container creation
     this.circuitBreaker = new CircuitBreaker(this.createSessionInternal.bind(this), {
       timeout: 30000, // 30 second timeout
       errorThresholdPercentage: 50, // Trip if 50% of requests fail
       resetTimeout: 60000, // Try again after 1 minute
       volumeThreshold: 10, // Minimum 10 requests before considering trips
-      capacitor: 10 // Number of recent requests to consider
+      capacitor: 10, // Number of recent requests to consider
     });
-    
+
     this.circuitBreaker.on('open', () => {
       console.warn('⚠️ Container creation circuit breaker opened - too many failures');
     });
-    
+
     this.circuitBreaker.on('halfOpen', () => {
       console.log('🔄 Container creation circuit breaker trying to close');
     });
-    
+
     this.circuitBreaker.on('close', () => {
       console.log('✅ Container creation circuit breaker closed - service recovered');
     });
-    
-    // Start cleanup interval (check every 5 minutes)
-    this.cleanupInterval = setInterval(() => this.cleanupInactive(), 5 * 60 * 1000);
-    
+
+    // Start cleanup interval (check every 5 minutes) - skip in tests
+    if (process.env.NODE_ENV !== 'test') {
+      this.cleanupInterval = setInterval(() => this.cleanupInactive(), 5 * 60 * 1000);
+    }
+
     // Only pre-warm container pool in browser environments
     if (isBrowserEnvironment) {
       this.preWarmPool();
@@ -94,7 +98,7 @@ class ContainerManager {
         if (!proxySession) {
           throw new Error('Failed to create container session');
         }
-        
+
         // Convert proxy session to ContainerSession format
         const session: ContainerSession = {
           id: sessionId,
@@ -102,16 +106,16 @@ class ContainerManager {
           container: null, // No WebContainer in server mode
           createdAt: proxySession.createdAt,
           lastActive: proxySession.lastActivity,
-          status: proxySession.status === 'running' ? 'ready' : proxySession.status as any
+          status: proxySession.status === 'running' ? 'ready' : (proxySession.status as any),
         };
-        
+
         this.sessions.set(sessionId, session);
-        
+
         // Store in Redis if available
         if (redisSessionManager.isAvailable()) {
           await redisSessionManager.setSession(sessionId, session);
         }
-        
+
         console.log(`📦 Created Docker container session: ${sessionId} for user: ${userId}`);
         return session;
       }
@@ -122,7 +126,8 @@ class ContainerManager {
 
       // Check if user has reached container limit
       const userContainers = this.getUserContainers(userId);
-      if (userContainers.length >= 3) { // Max 3 containers per user
+      if (userContainers.length >= 3) {
+        // Max 3 containers per user
         throw new Error('User container limit reached');
       }
 
@@ -132,35 +137,36 @@ class ContainerManager {
       }
 
       const sessionId = `${userId}-${uuidv4()}`;
-      
+
       // Try to get container from pool, otherwise create new one
       const container = await this.getOrCreateContainer();
-      
+
       const session: ContainerSession = {
         id: sessionId,
         userId,
         container,
         createdAt: new Date(),
         lastActive: new Date(),
-        status: 'initializing'
+        status: 'initializing',
       };
 
       this.sessions.set(sessionId, session);
-      
+
       // Store in Redis if available
       if (redisSessionManager.isAvailable()) {
         await redisSessionManager.setSession(sessionId, session);
       }
-      
+
       // Initialize container environment
       await this.initializeContainer(session);
-      
+
       console.log(`📦 Created container session: ${sessionId} for user: ${userId}`);
       return session;
-      
     } catch (error) {
       console.error('Failed to create container session:', error);
-      throw new Error(`Failed to create container: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create container: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -170,18 +176,18 @@ class ContainerManager {
   async getSession(sessionId: string): Promise<ContainerSession | undefined> {
     // First check in-memory cache
     const session = this.sessions.get(sessionId);
-    
+
     if (session) {
       session.lastActive = new Date();
-      
+
       // Update in Redis if available
       if (redisSessionManager.isAvailable()) {
         await redisSessionManager.setSession(sessionId, session);
       }
-      
+
       return session;
     }
-    
+
     // If not in memory, check Redis
     if (redisSessionManager.isAvailable()) {
       const redisSession = await redisSessionManager.getSession(sessionId);
@@ -193,7 +199,7 @@ class ContainerManager {
         return undefined;
       }
     }
-    
+
     return undefined;
   }
 
@@ -216,15 +222,15 @@ class ContainerManager {
     try {
       // Teardown WebContainer
       await session.container.teardown();
-      
+
       // Remove from sessions
       this.sessions.delete(sessionId);
-      
+
       // Remove from Redis if available
       if (redisSessionManager.isAvailable()) {
         await redisSessionManager.deleteSession(sessionId);
       }
-      
+
       console.log(`🗑️  Terminated container session: ${sessionId}`);
     } catch (error) {
       console.error(`Failed to terminate session ${sessionId}:`, error);
@@ -273,7 +279,9 @@ class ContainerManager {
       return container;
     } catch (error) {
       console.error('❌ Failed to create WebContainer:', error);
-      throw new Error(`WebContainer creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `WebContainer creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -283,20 +291,24 @@ class ContainerManager {
   private async initializeContainer(session: ContainerSession): Promise<void> {
     try {
       const { container } = session;
-      
+
       // Set up basic file structure
       await container.mount({
         'package.json': {
           file: {
-            contents: JSON.stringify({
-              name: 'workspace',
-              version: '1.0.0',
-              type: 'module',
-              scripts: {
-                dev: 'node server.js'
-              }
-            }, null, 2)
-          }
+            contents: JSON.stringify(
+              {
+                name: 'workspace',
+                version: '1.0.0',
+                type: 'module',
+                scripts: {
+                  dev: 'node server.js',
+                },
+              },
+              null,
+              2
+            ),
+          },
         },
         'server.js': {
           file: {
@@ -304,17 +316,16 @@ class ContainerManager {
 console.log('🚀 WebContainer workspace ready!');
 console.log('Node.js version:', process.version);
 console.log('Current directory:', process.cwd());
-            `.trim()
-          }
-        }
+            `.trim(),
+          },
+        },
       });
 
       // Update session status
       session.status = 'ready';
       session.url = await this.getContainerUrl(session);
-      
+
       console.log(`✅ Container ${session.id} initialized and ready`);
-      
     } catch (error) {
       console.error(`Failed to initialize container ${session.id}:`, error);
       session.status = 'error';
@@ -346,11 +357,11 @@ console.log('Current directory:', process.cwd());
     }
 
     console.log(`🔥 Pre-warming container pool with ${this.poolSize} containers...`);
-    
+
     for (let i = 0; i < this.poolSize; i++) {
       const containerPromise = this.createWebContainer();
       this.pool.initializing.push(containerPromise);
-      
+
       containerPromise
         .then(container => {
           this.pool.ready.push(container);
@@ -375,20 +386,21 @@ console.log('Current directory:', process.cwd());
   private async cleanupInactive(): Promise<void> {
     const now = new Date();
     const sessionsToCleanup: string[] = [];
-    
+
     // Check memory usage
     const memoryUsage = process.memoryUsage();
     const memoryPercentage = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
-    const memoryThreshold = parseInt(process.env.MEMORY_THRESHOLD || "75", 10);
-    
+    const memoryThreshold = parseInt(process.env.MEMORY_THRESHOLD || '75', 10);
+
     // If memory usage is high, be more aggressive with cleanup
-    const effectiveMaxInactiveMinutes = memoryPercentage > memoryThreshold 
-      ? Math.max(5, this.maxInactiveMinutes * 0.5)  // Clean up after half the time if memory is high
-      : this.maxInactiveMinutes;
+    const effectiveMaxInactiveMinutes =
+      memoryPercentage > memoryThreshold
+        ? Math.max(5, this.maxInactiveMinutes * 0.5) // Clean up after half the time if memory is high
+        : this.maxInactiveMinutes;
 
     for (const [sessionId, session] of this.sessions.entries()) {
       const inactiveMinutes = (now.getTime() - session.lastActive.getTime()) / (1000 * 60);
-      
+
       if (inactiveMinutes > effectiveMaxInactiveMinutes) {
         sessionsToCleanup.push(sessionId);
       }
@@ -396,23 +408,28 @@ console.log('Current directory:', process.cwd());
 
     // If we're still over memory threshold, clean up the oldest sessions regardless of time
     if (memoryPercentage > memoryThreshold && sessionsToCleanup.length === 0) {
-      const sortedSessions = Array.from(this.sessions.entries())
-        .sort(([,a], [,b]) => a.lastActive.getTime() - b.lastActive.getTime());
-      
+      const sortedSessions = Array.from(this.sessions.entries()).sort(
+        ([, a], [, b]) => a.lastActive.getTime() - b.lastActive.getTime()
+      );
+
       // Clean up oldest 25% of sessions if memory is critical
       const sessionsToRemove = Math.ceil(sortedSessions.length * 0.25);
       for (let i = 0; i < sessionsToRemove && i < sortedSessions.length; i++) {
         sessionsToCleanup.push(sortedSessions[i][0]);
       }
-      
+
       if (sessionsToCleanup.length > 0) {
-        console.warn(`⚠️ High memory usage (${memoryPercentage.toFixed(1)}%), force-cleaning ${sessionsToCleanup.length} oldest sessions`);
+        console.warn(
+          `⚠️ High memory usage (${memoryPercentage.toFixed(1)}%), force-cleaning ${sessionsToCleanup.length} oldest sessions`
+        );
       }
     }
 
     if (sessionsToCleanup.length > 0) {
-      console.log(`🧹 Cleaning up ${sessionsToCleanup.length} inactive containers (memory: ${memoryPercentage.toFixed(1)}%)`);
-      
+      console.log(
+        `🧹 Cleaning up ${sessionsToCleanup.length} inactive containers (memory: ${memoryPercentage.toFixed(1)}%)`
+      );
+
       for (const sessionId of sessionsToCleanup) {
         try {
           await this.terminateSession(sessionId);
@@ -420,7 +437,7 @@ console.log('Current directory:', process.cwd());
           console.error(`Failed to cleanup session ${sessionId}:`, error);
         }
       }
-      
+
       // Trigger garbage collection if available
       if (global.gc && memoryPercentage > memoryThreshold) {
         global.gc();
@@ -428,7 +445,9 @@ console.log('Current directory:', process.cwd());
       }
     }
 
-    console.log(`📊 Active containers: ${this.sessions.size}/${this.maxContainers} (Memory: ${memoryPercentage.toFixed(1)}%)`);
+    console.log(
+      `📊 Active containers: ${this.sessions.size}/${this.maxContainers} (Memory: ${memoryPercentage.toFixed(1)}%)`
+    );
   }
 
   /**
@@ -442,7 +461,7 @@ console.log('Current directory:', process.cwd());
       poolInitializing: this.pool.initializing.length,
       webContainerAvailable: isBrowserEnvironment && !!WebContainer,
       environment: isServerEnvironment ? 'server' : 'browser',
-      sessionsByUser: {} as Record<string, number>
+      sessionsByUser: {} as Record<string, number>,
     };
 
     // Count sessions by user
@@ -473,7 +492,7 @@ console.log('Current directory:', process.cwd());
       environment: isServerEnvironment ? 'server' : 'browser',
       webContainerSupported: !isServerEnvironment,
       webContainerLoaded: !!WebContainer,
-      containerFunctionalityAvailable: this.isContainerAvailable()
+      containerFunctionalityAvailable: this.isContainerAvailable(),
     };
   }
 
@@ -482,7 +501,7 @@ console.log('Current directory:', process.cwd());
    */
   async shutdown(): Promise<void> {
     console.log('🔄 Shutting down Container Manager...');
-    
+
     // Clear cleanup interval
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
@@ -520,7 +539,7 @@ console.log('Current directory:', process.cwd());
     this.sessions.clear();
     this.pool.ready = [];
     this.pool.initializing = [];
-    
+
     console.log('✅ Container Manager shutdown complete');
   }
 }

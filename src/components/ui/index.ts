@@ -7,9 +7,9 @@
 export { Button } from './Button';
 export { Card } from './Card';
 export { Input } from './Input';
-export { 
-  Badge, 
-  Skeleton, 
+export {
+  Badge,
+  Skeleton,
   Tooltip,
   NodeConnector,
   Grid,
@@ -19,7 +19,7 @@ export {
   MetricCard,
   ProgressIndicator,
   CodeGenerator,
-  SmartSuggestions
+  SmartSuggestions,
 } from './placeholders';
 
 // Advanced components for workflow building

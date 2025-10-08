@@ -1,4 +1,9 @@
-import { TeamCollaborationManager, TeamMember, Team, ContainerShare } from '../src/lib/teamCollaborationManager';
+import {
+  TeamCollaborationManager,
+  TeamMember,
+  Team,
+  ContainerShare,
+} from '../src/lib/teamCollaborationManager';
 
 describe('Team Collaboration Manager', () => {
   let manager: TeamCollaborationManager;
@@ -20,9 +25,9 @@ describe('Team Collaboration Manager', () => {
 
     test('should add member to team', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
+
       const success = manager.addTeamMember(team.id, 'member1', 'owner', 'developer');
-      
+
       expect(success).toBe(true);
       expect(team.members.size).toBe(2);
       expect(team.members.get('member1')?.role).toBe('developer');
@@ -31,7 +36,7 @@ describe('Team Collaboration Manager', () => {
     test('should prevent non-admin from adding members', () => {
       const team = manager.createTeam('owner', 'Test Team');
       manager.addTeamMember(team.id, 'member1', 'owner', 'developer');
-      
+
       expect(() => {
         manager.addTeamMember(team.id, 'member2', 'member1', 'developer');
       }).toThrow('Insufficient permissions to add members');
@@ -39,7 +44,7 @@ describe('Team Collaboration Manager', () => {
 
     test('should prevent adding duplicate members', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
+
       expect(() => {
         manager.addTeamMember(team.id, 'owner', 'owner', 'developer');
       }).toThrow('User is already a member of this team');
@@ -49,15 +54,11 @@ describe('Team Collaboration Manager', () => {
   describe('Container Sharing', () => {
     test('should share container with team', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
-      const share = manager.shareContainer(
-        'container1',
-        team.id,
-        'owner',
-        'write',
-        undefined,
-        { containerName: 'My Container', projectType: 'web' }
-      );
+
+      const share = manager.shareContainer('container1', team.id, 'owner', 'write', undefined, {
+        containerName: 'My Container',
+        projectType: 'web',
+      });
 
       expect(share.containerId).toBe('container1');
       expect(share.accessLevel).toBe('write');
@@ -69,12 +70,12 @@ describe('Team Collaboration Manager', () => {
     test('should check container access permissions', () => {
       const team = manager.createTeam('owner', 'Test Team');
       manager.addTeamMember(team.id, 'member1', 'owner', 'developer');
-      
+
       manager.shareContainer('container1', team.id, 'owner', 'read');
-      
+
       const canRead = manager.canAccessContainer('container1', 'member1', 'read_files');
       const canWrite = manager.canAccessContainer('container1', 'member1', 'write_files');
-      
+
       expect(canRead).toBe(true);
       expect(canWrite).toBe(false);
     });
@@ -82,12 +83,12 @@ describe('Team Collaboration Manager', () => {
     test('should respect container expiration', () => {
       const team = manager.createTeam('owner', 'Test Team');
       manager.addTeamMember(team.id, 'member1', 'owner', 'developer');
-      
+
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      
+
       manager.shareContainer('container1', team.id, 'owner', 'write', yesterday);
-      
+
       const canAccess = manager.canAccessContainer('container1', 'member1', 'read_files');
       expect(canAccess).toBe(false);
     });
@@ -118,7 +119,7 @@ describe('Team Collaboration Manager', () => {
 
     test('should return false for non-team members', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
+
       expect(manager.hasPermission(team.id, 'outsider', 'create_containers')).toBe(false);
     });
   });
@@ -126,7 +127,7 @@ describe('Team Collaboration Manager', () => {
   describe('Workspace Management', () => {
     test('should create team workspace from template', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
+
       const workspace = manager.createTeamWorkspace(
         team.id,
         'owner',
@@ -145,7 +146,7 @@ describe('Team Collaboration Manager', () => {
     test('should prevent non-authorized users from creating workspaces', () => {
       const team = manager.createTeam('owner', 'Test Team');
       manager.addTeamMember(team.id, 'viewer1', 'owner', 'viewer');
-      
+
       expect(() => {
         manager.createTeamWorkspace(
           team.id,
@@ -159,7 +160,7 @@ describe('Team Collaboration Manager', () => {
 
     test('should get available workspace templates', () => {
       const templates = manager.getWorkspaceTemplates();
-      
+
       expect(templates.length).toBeGreaterThan(0);
       expect(templates.some(t => t.name === 'Frontend Development')).toBe(true);
       expect(templates.some(t => t.name === 'Backend Development')).toBe(true);
@@ -172,9 +173,9 @@ describe('Team Collaboration Manager', () => {
       const team = manager.createTeam('owner', 'Test Team');
       manager.addTeamMember(team.id, 'member1', 'owner', 'developer');
       manager.shareContainer('container1', team.id, 'owner', 'write');
-      
+
       const activity = manager.getTeamActivity(team.id);
-      
+
       expect(activity.length).toBeGreaterThan(0);
       expect(activity.some(log => log.action === 'team_created')).toBe(true);
       expect(activity.some(log => log.action === 'member_added')).toBe(true);
@@ -183,7 +184,7 @@ describe('Team Collaboration Manager', () => {
 
     test('should limit activity log entries', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
+
       // Create many activities
       for (let i = 0; i < 100; i++) {
         try {
@@ -192,7 +193,7 @@ describe('Team Collaboration Manager', () => {
           // Ignore duplicate member errors
         }
       }
-      
+
       const activity = manager.getTeamActivity(team.id, 50);
       expect(activity.length).toBeLessThanOrEqual(50);
     });
@@ -203,10 +204,10 @@ describe('Team Collaboration Manager', () => {
       const team1 = manager.createTeam('owner', 'Team 1');
       const team2 = manager.createTeam('owner', 'Team 2');
       manager.addTeamMember(team1.id, 'member1', 'owner', 'developer');
-      
+
       const ownerTeams = manager.getUserTeams('owner');
       const memberTeams = manager.getUserTeams('member1');
-      
+
       expect(ownerTeams.length).toBe(2);
       expect(memberTeams.length).toBe(1);
       expect(memberTeams[0].id).toBe(team1.id);
@@ -222,19 +223,19 @@ describe('Team Collaboration Manager', () => {
     test('should map access levels to operations correctly', () => {
       const team = manager.createTeam('owner', 'Test Team');
       manager.addTeamMember(team.id, 'member1', 'owner', 'developer');
-      
+
       // Test read access
       manager.shareContainer('container1', team.id, 'owner', 'read');
       expect(manager.canAccessContainer('container1', 'member1', 'read_files')).toBe(true);
       expect(manager.canAccessContainer('container1', 'member1', 'write_files')).toBe(false);
       expect(manager.canAccessContainer('container1', 'member1', 'manage_processes')).toBe(false);
-      
+
       // Test write access
       manager.shareContainer('container2', team.id, 'owner', 'write');
       expect(manager.canAccessContainer('container2', 'member1', 'read_files')).toBe(true);
       expect(manager.canAccessContainer('container2', 'member1', 'write_files')).toBe(true);
       expect(manager.canAccessContainer('container2', 'member1', 'manage_processes')).toBe(false);
-      
+
       // Test admin access
       manager.shareContainer('container3', team.id, 'owner', 'admin');
       expect(manager.canAccessContainer('container3', 'member1', 'read_files')).toBe(true);
@@ -256,7 +257,7 @@ describe('Team Collaboration Manager', () => {
 
     test('should handle invalid template names', () => {
       const team = manager.createTeam('owner', 'Test Team');
-      
+
       expect(() => {
         manager.createTeamWorkspace(
           team.id,
