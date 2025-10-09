@@ -53,7 +53,10 @@ jest.mock('fs/promises', () => ({
 import { releaseAllPorts } from './utils/port-manager';
 
 // Global test environment setup
-process.env.NODE_ENV = 'test';
+Object.defineProperty(process.env, 'NODE_ENV', {
+  value: 'test',
+  writable: true
+});
 process.env.JWT_SECRET = 'test-secret-key-for-testing-only';
 process.env.WEBCONTAINER_CLIENT_ID = 'test-webcontainer-id';
 
