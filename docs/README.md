@@ -34,6 +34,8 @@ Welcome to the comprehensive documentation for the Disco MCP Server! This guide 
 
 ### Configuration & Deployment
 - **[Configuration Samples](CONFIGURATION_SAMPLES.md)** - Ready-to-use configs for all platforms
+- **[Callback URL Configuration Guide](CALLBACK_URL_CONFIGURATION_GUIDE.md)** - ⭐ **NEW** - Complete OAuth callback setup for all environments
+- **[Token Refresh Implementation](TOKEN_REFRESH_IMPLEMENTATION.md)** - ⭐ **NEW** - Automatic JWT token refresh documentation
 - **[Webhook Setup](WEBHOOK_SETUP.md)** - Environment variables and webhook configuration
 - **[Deployment Guide](../DEPLOYMENT.md)** - Railway, Docker, Kubernetes deployment
 
