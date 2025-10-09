@@ -47,6 +47,21 @@ Welcome to the comprehensive documentation for the Disco MCP Server! This guide 
 - **[Build Tooling Quick Reference](BUILD_TOOLING_QUICK_REFERENCE.md)** - Fast decision guide and cheat sheet
 - **[Nx Implementation Guide](NX_IMPLEMENTATION_GUIDE.md)** - Step-by-step Nx setup instructions
 
+## 📋 Documentation Review & Outstanding Tasks (NEW - 2025-01-07)
+
+**Comprehensive review of all documentation and outstanding tasks:**
+
+- **[📖 START HERE: Documentation Review Index](DOCUMENTATION_REVIEW_INDEX.md)** - ⭐ Navigation hub and quick reference
+- **[📊 Outstanding Tasks - Comprehensive Review](OUTSTANDING_TASKS_COMPREHENSIVE_REVIEW.md)** - Complete technical analysis (25KB)
+- **[🎯 Improvement Priorities Summary](IMPROVEMENT_PRIORITIES_SUMMARY.md)** - Executive summary (23KB)
+- **[✅ Action Checklist](ACTION_CHECKLIST.md)** - Implementation plan with timelines (14KB)
+
+**Key Findings**:
+- 150+ tasks identified across authentication, service integration, types, client access
+- Critical: OAuth setup complexity, missing OpenAI/Anthropic contracts
+- Week 1 quick wins: Fix 8 TypeScript errors, add token auto-refresh
+- Complete roadmap with effort estimates (~500 hours total)
+
 ## 🛠️ Developer Resources
 
 ### Code Examples
