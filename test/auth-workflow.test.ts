@@ -32,7 +32,10 @@ describe('Authentication Workflow Tests (Step 8)', () => {
 
   beforeAll(() => {
     process.env.JWT_SECRET = TEST_JWT_SECRET;
-    process.env.NODE_ENV = 'test';
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'test',
+      writable: true
+    });
   });
 
   beforeEach(() => {

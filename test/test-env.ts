@@ -4,7 +4,10 @@
  */
 
 // Test environment variables
-process.env.NODE_ENV = 'test';
+Object.defineProperty(process.env, 'NODE_ENV', {
+  value: 'test',
+  writable: true
+});
 process.env.JWT_SECRET = 'test-secret-key-for-testing-only';
 process.env.WEBCONTAINER_CLIENT_ID = 'test-webcontainer-id';
 process.env.PORT = '0'; // Use random port for tests

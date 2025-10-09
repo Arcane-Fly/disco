@@ -358,34 +358,33 @@ describe('🚀 Ultimate MCP Platform Integration Tests', () => {
       expect(platforms.length).toBeGreaterThanOrEqual(7);
     });
   });
-});
 
-// Performance benchmarking
-describe('🏆 Performance Benchmarks', () => {
-  test('Concurrent request handling', async () => {
-    const promises = Array.from({ length: 10 }, () => request(app).get('/health').expect(200));
+  describe('🏆 Performance Benchmarks', () => {
+    test('Concurrent request handling', async () => {
+      const promises = Array.from({ length: 10 }, () => request(app).get('/health').expect(200));
 
-    const startTime = Date.now();
-    await Promise.all(promises);
-    const totalTime = Date.now() - startTime;
+      const startTime = Date.now();
+      await Promise.all(promises);
+      const totalTime = Date.now() - startTime;
 
-    // Should handle 10 concurrent requests in under 500ms
-    expect(totalTime).toBeLessThan(500);
-  });
+      // Should handle 10 concurrent requests in under 500ms
+      expect(totalTime).toBeLessThan(500);
+    });
 
-  test('Memory usage optimization', async () => {
-    const initialMemory = process.memoryUsage().heapUsed;
+    test('Memory usage optimization', async () => {
+      const initialMemory = process.memoryUsage().heapUsed;
 
-    // Make multiple requests
-    for (let i = 0; i < 50; i++) {
-      await request(app).get('/api/v1/dashboard/platforms');
-    }
+      // Make multiple requests
+      for (let i = 0; i < 50; i++) {
+        await request(app).get('/api/v1/dashboard/platforms');
+      }
 
-    const finalMemory = process.memoryUsage().heapUsed;
-    const memoryGrowth = finalMemory - initialMemory;
+      const finalMemory = process.memoryUsage().heapUsed;
+      const memoryGrowth = finalMemory - initialMemory;
 
-    // Memory growth should be minimal (less than 10MB)
-    expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024);
+      // Memory growth should be minimal (less than 10MB)
+      expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024);
+    });
   });
 });
 
