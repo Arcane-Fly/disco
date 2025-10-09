@@ -52,9 +52,13 @@ Welcome to the comprehensive documentation for the Disco MCP Server! This guide 
 **Comprehensive review of all documentation and outstanding tasks:**
 
 - **[📖 START HERE: Documentation Review Index](DOCUMENTATION_REVIEW_INDEX.md)** - ⭐ Navigation hub and quick reference
+- **[🤖 NEW: Coding Agent Prompts](CODING_AGENT_PROMPTS.md)** - ⭐⭐ **For solo developers with AI coding assistants** (36KB)
 - **[📊 Outstanding Tasks - Comprehensive Review](OUTSTANDING_TASKS_COMPREHENSIVE_REVIEW.md)** - Complete technical analysis (25KB)
 - **[🎯 Improvement Priorities Summary](IMPROVEMENT_PRIORITIES_SUMMARY.md)** - Executive summary (23KB)
 - **[✅ Action Checklist](ACTION_CHECKLIST.md)** - Implementation plan with timelines (14KB)
+
+**🤖 Solo Developer with Coding Agents?**
+Use the **[Coding Agent Prompts](CODING_AGENT_PROMPTS.md)** document! It contains 20 ready-to-use prompts specifically designed for AI coding assistants (Cursor, Copilot, Claude, etc.) with all Nx commands included.
 
 **Key Findings**:
 - 150+ tasks identified across authentication, service integration, types, client access

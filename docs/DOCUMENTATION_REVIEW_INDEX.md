@@ -14,6 +14,11 @@ This review identified **150+ outstanding tasks** across 5 main areas:
 4. **Types & Linting** - TypeScript errors, TODOs, type generation
 5. **Client Access** - Platform-specific documentation
 
+### 🤖 NEW: Solo Developer with Coding Agents
+**File**: `CODING_AGENT_PROMPTS.md` (36KB) - **For solo developers using AI coding assistants**
+
+A comprehensive series of **20 detailed prompts** specifically designed for use with coding agents (Cursor, Copilot, Claude, etc.). Each prompt is self-contained, includes Nx-specific commands, and provides step-by-step instructions to address all outstanding tasks systematically.
+
 ---
 
 ## 📄 Review Documents
@@ -95,6 +100,28 @@ This review identified **150+ outstanding tasks** across 5 main areas:
 - Progress Tracking
 - Success Metrics
 
+### 4. Coding Agent Prompts (NEW)
+**File**: `CODING_AGENT_PROMPTS.md` (36KB)
+
+**What it contains**:
+- 20 detailed prompts for AI coding assistants
+- Nx-specific commands for every task
+- Self-contained instructions with full context
+- Step-by-step implementation guides
+- Success criteria and deliverables
+
+**When to use**:
+- When working solo with coding agents
+- To systematically implement features
+- For copy-paste prompts to AI assistants
+- To ensure Nx commands are used correctly
+
+**Key features**:
+- ✅ Nx-aware (all commands included)
+- ✅ Prioritized by timeline
+- ✅ Self-contained (no external dependencies)
+- ✅ Complete with testing strategies
+
 ---
 
 ## 🎯 Quick Reference
@@ -169,6 +196,11 @@ This review identified **150+ outstanding tasks** across 5 main areas:
 - See what to work on this week
 - Get specific implementation tasks
 - Track progress
+
+**Solo developers with coding agents**: `CODING_AGENT_PROMPTS.md`
+- Use ready-made prompts for AI assistants
+- Copy-paste into Cursor, Copilot, Claude, etc.
+- Includes all Nx commands and context
 
 **Then refer to**: `OUTSTANDING_TASKS_COMPREHENSIVE_REVIEW.md` for technical details
 
@@ -377,5 +409,6 @@ This documentation review provides a **complete picture** of outstanding work:
 - [Comprehensive Review](./OUTSTANDING_TASKS_COMPREHENSIVE_REVIEW.md) - Full technical details
 - [Priorities Summary](./IMPROVEMENT_PRIORITIES_SUMMARY.md) - Executive overview
 - [Action Checklist](./ACTION_CHECKLIST.md) - Implementation checklist
+- [Coding Agent Prompts](./CODING_AGENT_PROMPTS.md) - ⭐ NEW: For solo developers with AI assistants
 - [Auth Flow Analysis](./AUTH_FLOW_ANALYSIS.md) - Current auth state
 - [Improvement Roadmap](./improvement_roadmap.md) - Long-term vision
