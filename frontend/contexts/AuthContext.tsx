@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { setupTokenRefresh, stopTokenRefresh } from '../lib/auth/tokenRefresh';
 
 interface User {
   id: string;
@@ -36,6 +37,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
         setUser(data.user);
         setToken(data.token);
+        
+        // Setup automatic token refresh if we have a valid token
+        if (data.token) {
+          setupTokenRefresh(
+            data.token,
+            (newToken: string) => {
+              // Update token when refreshed
+              setToken(newToken);
+              console.log('🔄 Token refreshed and updated in auth context');
+            },
+            () => {
+              // Logout on refresh failure
+              console.error('❌ Token refresh failed, logging out');
+              logout();
+            }
+          );
+        }
       } else {
         setUser(null);
         setToken(null);
@@ -59,16 +77,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      // Stop token refresh
+      stopTokenRefresh();
+      
       await fetch('/api/v1/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
       setUser(null);
+      setToken(null);
       router.push('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopTokenRefresh();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout, checkSession }}>
