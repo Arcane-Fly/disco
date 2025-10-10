@@ -20,12 +20,14 @@ describe('API Integration Tests', () => {
     process.env.PORT = testPort.toString();
     process.env.JWT_SECRET = 'test-secret-key-for-integration-testing-minimum-32-chars';
     process.env.ALLOWED_ORIGINS = 'http://localhost:8081';
-    process.env.NODE_ENV = 'test';
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'test',
+      writable: true
+    });
     process.env.DOCKER_HOST = process.env.CI ? 'tcp://docker:2375' : '/var/run/docker.sock';
 
-    const result = await createServer();
-    app = result.app;
-    server = result.server;
+    app = await createServer();
+    server = app.listen(testPort);
 
     // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 2000));

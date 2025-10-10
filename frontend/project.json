@@ -39,7 +39,16 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["frontend/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "frontend/components/**/*.{ts,tsx}",
+          "frontend/contexts/**/*.{ts,tsx}",
+          "frontend/hooks/**/*.{ts,tsx}",
+          "frontend/modules/**/*.{ts,tsx}",
+          "frontend/pages/**/*.{ts,tsx,js,jsx}",
+          "frontend/styles/**/*.{ts,tsx}",
+          "frontend/utils/**/*.{ts,tsx}"
+        ],
+        "eslintConfig": "frontend/eslint.config.mjs"
       }
     }
   }

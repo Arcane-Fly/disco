@@ -44,6 +44,8 @@
     "railway:validate-auth": "node scripts/railway-validation/auth-validator.cjs",
     "railway:report": "node scripts/railway-validation/generate-report.cjs",
     "railway:check-all": "yarn railway:validate && yarn railway:validate-env && yarn railway:validate-auth",
+    "// Callback URL validation": "",
+    "validate:callbacks": "tsx scripts/validate-callback-urls.ts",
     "// Documentation": "",
     "docs:check-links": "yarn dlx linkinator docs/ --recurse --timeout 10000",
     "setup:dev": "./scripts/setup-dev-environment.sh",
