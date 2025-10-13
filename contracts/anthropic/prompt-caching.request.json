@@ -9,8 +9,8 @@
   "properties": {
     "model": {
       "type": "string",
-      "description": "ID of the model to use (must support prompt caching)",
-      "examples": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+      "description": "ID of the model to use (must support prompt caching, only current 2025 models from MODEL_MANIFEST.md)",
+      "examples": ["claude-sonnet-4-5-20250929", "claude-opus-4-1-20250805", "claude-sonnet-4-20250514"]
     },
     "messages": {
       "type": "array",

@@ -20,7 +20,7 @@ This directory contains JSON Schema definitions for OpenAI API endpoints.
 **Example**:
 ```json
 {
-  "model": "gpt-4",
+  "model": "gpt-4.1",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Hello!"}
@@ -45,7 +45,7 @@ This directory contains JSON Schema definitions for OpenAI API endpoints.
 **Example**:
 ```json
 {
-  "model": "text-embedding-ada-002",
+  "model": "text-embedding-3-small",
   "input": "The food was delicious and the waiter was very friendly."
 }
 ```
@@ -70,15 +70,34 @@ See `contracts/examples/openai/` for complete request/response examples.
 
 ## Models
 
-### Chat Models
-- `gpt-4` - Most capable model
-- `gpt-4-turbo-preview` - Latest GPT-4 with extended context
-- `gpt-3.5-turbo` - Fast and cost-effective
+> **⚠️ Note**: Only current models from 2025 as specified in MODEL_MANIFEST.md should be used.
+
+### Chat Models (GPT-5 Series - Latest 2025)
+- `gpt-5` - Best model for coding and agentic tasks
+- `gpt-5-mini` - Faster, cost-efficient version
+- `gpt-5-nano` - Fastest, most cost-efficient
+- `gpt-5-codex` - Optimized for agentic coding
+
+### Chat Models (GPT-4.1 Series - Current Recommended)
+- `gpt-4.1` - Smartest non-reasoning model (1M context)
+- `gpt-4.1-mini` - Smaller, faster, balanced (1M context)
+- `gpt-4.1-nano` - Fastest, most cost-efficient (1M context)
+
+### Reasoning Models (o-series)
+- `o3-pro` - Extended reasoning for toughest problems
+- `o3` - Advanced reasoning for complex problems
+- `o4-mini` - Fast, affordable reasoning
+- `o1` - Chain-of-thought reasoning
 
 ### Embedding Models
-- `text-embedding-ada-002` - Standard embedding model (1536 dimensions)
-- `text-embedding-3-small` - Smaller, faster v3 model
-- `text-embedding-3-large` - Larger, more accurate v3 model
+- `text-embedding-3-large` - Most capable embedding model
+- `text-embedding-3-small` - Efficient embedding model
+
+### ⚠️ Deprecated Models (DO NOT USE)
+- ~~gpt-4-turbo~~ → Use `gpt-4.1`
+- ~~gpt-4~~ → Use `gpt-4.1`
+- ~~gpt-3.5-turbo~~ → Use `gpt-4.1-nano` or `gpt-5-nano`
+- ~~text-embedding-ada-002~~ → Use `text-embedding-3-small` or `text-embedding-3-large`
 
 ## References
 
