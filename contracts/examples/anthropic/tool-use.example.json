@@ -1,6 +1,6 @@
 {
   "request": {
-    "model": "claude-3-opus-20240229",
+    "model": "claude-sonnet-4-5-20250929",
     "messages": [
       {
         "role": "user",
@@ -45,7 +45,7 @@
         }
       }
     ],
-    "model": "claude-3-opus-20240229",
+    "model": "claude-sonnet-4-5-20250929",
     "stop_reason": "tool_use",
     "stop_sequence": null,
     "usage": {

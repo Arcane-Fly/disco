@@ -9,8 +9,8 @@
   "properties": {
     "model": {
       "type": "string",
-      "description": "ID of the model to use (e.g., gpt-4, gpt-3.5-turbo)",
-      "examples": ["gpt-4", "gpt-4-turbo-preview", "gpt-3.5-turbo"]
+      "description": "ID of the model to use (only current 2025 models from MODEL_MANIFEST.md)",
+      "examples": ["gpt-5", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3", "o4-mini"]
     },
     "messages": {
       "type": "array",

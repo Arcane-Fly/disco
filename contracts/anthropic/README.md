@@ -21,7 +21,7 @@ This directory contains JSON Schema definitions for Anthropic Claude API endpoin
 **Example**:
 ```json
 {
-  "model": "claude-3-opus-20240229",
+  "model": "claude-sonnet-4-5-20250929",
   "messages": [
     {
       "role": "user",
@@ -41,13 +41,13 @@ This directory contains JSON Schema definitions for Anthropic Claude API endpoin
 **Features**:
 - Cache frequently used prompts
 - Reduce latency and costs
-- Ephemeral caching (5-minute TTL)
+- Ephemeral caching (60-minute TTL)
 - Cache control on system prompts and messages
 
 **Example**:
 ```json
 {
-  "model": "claude-3-opus-20240229",
+  "model": "claude-sonnet-4-5-20250929",
   "system": [
     {
       "type": "text",
@@ -94,10 +94,35 @@ See `contracts/examples/anthropic/` for complete request/response examples.
 
 ## Models
 
-### Claude 3 Family
-- `claude-3-opus-20240229` - Most capable, best for complex tasks
-- `claude-3-sonnet-20240229` - Balanced performance and speed
-- `claude-3-haiku-20240307` - Fastest, best for simple tasks
+> **⚠️ Note**: Only current models from 2025 as specified in MODEL_MANIFEST.md should be used.
+
+### Claude 4.5 Series (Latest - September 2025)
+- `claude-sonnet-4-5-20250929` - Best model for complex agents and coding (200K context, 1M beta)
+  - Alias: `claude-sonnet-4-5`
+  - State-of-the-art coding performance
+  - Extended autonomous operation (hours)
+  - Parallel tool usage, memory tool, context editing
+
+### Claude 4 Series
+- `claude-opus-4-1-20250805` - Exceptional model for specialized complex tasks (200K context)
+  - Alias: `claude-opus-4-1`
+  - Superior reasoning and vision
+- `claude-sonnet-4-20250514` - High-performance balanced model (200K context, 1M beta)
+  - Alias: `claude-sonnet-4` or `claude-sonnet-4-0`
+  - Balanced performance and cost
+
+### Claude 3.7 Series
+- `claude-3-7-sonnet-20250219` - Toggleable extended thinking (200K context)
+  - Alias: `claude-3-7-sonnet-latest`
+
+### Claude 3.5 Series (Legacy)
+- `claude-3-5-haiku-20241022` - Fast and efficient (200K context)
+  - Alias: `claude-3-5-haiku-latest`
+
+### ⚠️ Deprecated Models (DO NOT USE)
+- ~~claude-3-opus-20240229~~ → Use `claude-opus-4-1-20250805`
+- ~~claude-3-sonnet-20240229~~ → Use `claude-sonnet-4-5-20250929`
+- ~~claude-2.1~~ → Use `claude-sonnet-4-5-20250929`
 
 ## Key Differences from OpenAI
 

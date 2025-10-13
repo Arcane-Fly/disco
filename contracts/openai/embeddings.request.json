@@ -9,8 +9,8 @@
   "properties": {
     "model": {
       "type": "string",
-      "description": "ID of the model to use (e.g., text-embedding-ada-002)",
-      "examples": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+      "description": "ID of the model to use (only current 2025 models from MODEL_MANIFEST.md)",
+      "examples": ["text-embedding-3-large", "text-embedding-3-small"]
     },
     "input": {
       "oneOf": [

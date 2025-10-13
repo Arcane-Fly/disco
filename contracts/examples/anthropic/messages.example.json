@@ -1,6 +1,6 @@
 {
   "request": {
-    "model": "claude-3-opus-20240229",
+    "model": "claude-sonnet-4-5-20250929",
     "messages": [
       {
         "role": "user",
@@ -21,7 +21,7 @@
         "text": "Quantum computing is a type of computing that uses the principles of quantum mechanics to process information. Unlike classical computers that use bits (0s and 1s), quantum computers use quantum bits or 'qubits' that can exist in multiple states simultaneously. This allows them to perform certain calculations much faster than traditional computers, particularly for problems involving large amounts of data or complex simulations."
       }
     ],
-    "model": "claude-3-opus-20240229",
+    "model": "claude-sonnet-4-5-20250929",
     "stop_reason": "end_turn",
     "stop_sequence": null,
     "usage": {
