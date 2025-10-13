@@ -9,7 +9,7 @@ declare module 'express-serve-static-core' {
   }
 }
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -50,6 +50,19 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     }
 
     try {
+      // Check if token has been revoked (for token rotation)
+      // Import dynamically to avoid circular dependencies
+      const authModule = await import('../api/auth.js');
+      if (authModule.isTokenRevoked && authModule.isTokenRevoked(token)) {
+        return res.status(401).json({
+          status: 'error',
+          error: {
+            code: ErrorCode.AUTH_FAILED,
+            message: 'Token has been revoked. Please refresh your token.',
+          },
+        });
+      }
+      
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
       req.user = decoded;
       next();

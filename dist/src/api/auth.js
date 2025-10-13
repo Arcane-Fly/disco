@@ -3,6 +3,18 @@ import jwt from 'jsonwebtoken';
 import { ErrorCode } from '../types/index.js';
 import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/enhanced-auth.js';
 const router = Router();
+// Token revocation tracking (MCP spec requirement for token rotation)
+// In production, use Redis or a database for distributed systems
+const revokedTokens = new Set();
+// Helper to check if a token is revoked
+export function isTokenRevoked(token) {
+    return revokedTokens.has(token);
+}
+// Helper to revoke a token
+export function revokeToken(token) {
+    revokedTokens.add(token);
+    console.log(`🚫 Token revoked for rotation`);
+}
 /**
  * GET /api/v1/auth/status
  * Enhanced authentication status with token refresh information
@@ -129,6 +141,8 @@ router.post('/refresh', async (req, res) => {
             });
             return;
         }
+        // Revoke old token (MCP spec: token rotation requirement)
+        revokeToken(token);
         // Create new token
         const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, {
             expiresIn: '1h',
@@ -140,7 +154,7 @@ router.post('/refresh', async (req, res) => {
             expires: Date.now() + 60 * 60 * 1000,
             userId: decoded.userId,
         };
-        console.log(`🔄 Token refreshed for user: ${decoded.userId}`);
+        console.log(`🔄 Token refreshed and rotated for user: ${decoded.userId}`);
         res.json({
             status: 'success',
             data: response,
