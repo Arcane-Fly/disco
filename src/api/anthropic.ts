@@ -80,4 +80,69 @@ router.post('/chat', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/v1/anthropic/messages
+ * Create a message using Anthropic Messages API (follows contract schema)
+ * 
+ * @see contracts/anthropic/messages.request.json for request schema
+ * @see contracts/anthropic/messages.response.json for response schema
+ */
+router.post('/messages', async (req: Request, res: Response) => {
+  try {
+    const client = getClient();
+    if (!client) {
+      return res.status(400).json({
+        status: 'error',
+        error: { code: ErrorCode.AUTH_FAILED, message: 'ANTHROPIC_API_KEY not configured' },
+      });
+    }
+
+    const { model = DEFAULT_CLAUDE_MODEL, messages, max_tokens, system, ...options } = req.body || {};
+
+    // Validate required fields
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({
+        status: 'error',
+        error: { code: ErrorCode.INVALID_REQUEST, message: 'messages array is required' },
+      });
+    }
+
+    if (!max_tokens || typeof max_tokens !== 'number') {
+      return res.status(400).json({
+        status: 'error',
+        error: { code: ErrorCode.INVALID_REQUEST, message: 'max_tokens is required' },
+      });
+    }
+
+    if (!isAllowedClaudeModel(model)) {
+      return res.status(400).json({
+        status: 'error',
+        error: { code: ErrorCode.INVALID_REQUEST, message: `Model '${model}' is not allowed` },
+      });
+    }
+
+    // Create the request following the API contract
+    const requestParams: any = {
+      model,
+      messages,
+      max_tokens,
+      ...options,
+    };
+
+    if (system) {
+      requestParams.system = system;
+    }
+
+    const response = await client.messages.create(requestParams);
+
+    res.json({ status: 'success', data: response });
+  } catch (error) {
+    console.error('Anthropic messages error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: { code: ErrorCode.INTERNAL_ERROR, message: 'Anthropic request failed' },
+    });
+  }
+});
+
 export { router as anthropicRouter };
