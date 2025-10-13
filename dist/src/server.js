@@ -44,7 +44,6 @@ import { enhancedCSPMiddleware, nextjsCSPMiddleware } from './middleware/csp.js'
 import { metricsHandler } from './routes/metrics.js';
 // Import middleware
 import { authMiddleware } from './middleware/auth.js';
-import { flexibleAuthMiddleware } from './middleware/flexibleAuth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { securityAuditMiddleware, securityInputValidationMiddleware, } from './middleware/securityAudit.js';
 import faviconRouter from './middleware/favicon.js';
@@ -2370,15 +2369,11 @@ app.get('/oauth/authorize', async (req, res) => {
                 error_description: 'Only authorization_code flow is supported',
             });
         }
-        // Validate redirect URI for ChatGPT
-        const allowedRedirectUris = [
-            'https://chat.openai.com/oauth/callback',
-            'https://chatgpt.com/oauth/callback',
-        ];
-        if (!allowedRedirectUris.includes(redirect_uri)) {
+        // Validate redirect URI using registered client data (MCP spec requirement)
+        if (!isValidRedirectUri(client_id, redirect_uri)) {
             return res.status(400).json({
                 error: 'invalid_request',
-                error_description: 'Invalid redirect_uri. Must be a ChatGPT callback URL.',
+                error_description: 'Invalid redirect_uri. URI not registered for this client.',
             });
         }
         // Check if user is already authenticated
@@ -2614,29 +2609,40 @@ app.get('/oauth/authorize', async (req, res) => {
         });
     }
 });
-// OAuth Authorization POST handler (consent response)
-/**
- * @swagger
- * /oauth/authorize:
- *   post:
- *     tags: [OAuth Authorization]
- *     summary: Handle OAuth consent response
- *     description: Process user consent and redirect to ChatGPT with authorization code
- */
-// --- Allowed redirect URIs per client_id (for demo; in production, fetch from registry/database)
-const allowedRedirectUris = {
-    YOUR_CLIENT_ID_1: ['https://your.safe.domain/callback'],
-    YOUR_CLIENT_ID_2: ['https://another.safe.domain/callback'],
-    // Add additional client_id/URI pairs as needed
-};
+// In-memory client registry (in production, use a database)
+const registeredClients = new Map();
+// Pre-register ChatGPT clients for backward compatibility
+const chatGPTClients = [
+    {
+        client_id: 'chatgpt-connector',
+        client_secret: 'chatgpt-secret', // In production, use secure secrets
+        client_name: 'ChatGPT Connector',
+        redirect_uris: [
+            'https://chat.openai.com/oauth/callback',
+            'https://chatgpt.com/oauth/callback',
+        ],
+        scope: 'mcp:tools mcp:resources',
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+        created_at: new Date(),
+    },
+];
+// Initialize pre-registered clients
+chatGPTClients.forEach(client => {
+    registeredClients.set(client.client_id, client);
+});
 function isValidRedirectUri(client_id, redirect_uri) {
     if (typeof redirect_uri !== 'string') {
         return false;
     }
-    const uris = allowedRedirectUris[client_id];
-    if (!uris)
+    // Check in registered clients
+    const client = registeredClients.get(client_id);
+    if (!client)
         return false;
-    return uris.includes(redirect_uri);
+    return client.redirect_uris.includes(redirect_uri);
+}
+function getClientById(client_id) {
+    return registeredClients.get(client_id);
 }
 app.post('/oauth/authorize', express.urlencoded({ extended: true }), async (req, res) => {
     try {
@@ -2863,12 +2869,40 @@ app.post('/oauth/register', express.json(), async (req, res) => {
             });
             return;
         }
+        // Validate redirect URIs (MCP spec: must be HTTPS or localhost)
+        const invalidUris = redirect_uris.filter((uri) => {
+            try {
+                const url = new URL(uri);
+                return !(url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1');
+            }
+            catch {
+                return true; // Invalid URL format
+            }
+        });
+        if (invalidUris.length > 0) {
+            res.status(400).json({
+                error: 'invalid_request',
+                error_description: `Invalid redirect URIs: ${invalidUris.join(', ')}. Must use HTTPS or localhost`,
+            });
+            return;
+        }
         // Generate client credentials
         const crypto = await import('crypto');
         const clientId = `disco_${crypto.randomBytes(16).toString('hex')}`;
         const clientSecret = crypto.randomBytes(32).toString('hex');
-        // In production, store these in a database
-        console.log(`📝 OAuth client registered: ${client_name} (${clientId})`);
+        // Store client registration (MCP spec requirement)
+        const clientData = {
+            client_id: clientId,
+            client_secret: clientSecret,
+            client_name,
+            redirect_uris,
+            scope: scope || 'mcp:tools mcp:resources',
+            grant_types: ['authorization_code', 'refresh_token'],
+            response_types: ['code'],
+            created_at: new Date(),
+        };
+        registeredClients.set(clientId, clientData);
+        console.log(`📝 OAuth client registered and stored: ${client_name} (${clientId})`);
         res.status(201).json({
             client_id: clientId,
             client_secret: clientSecret,
@@ -3254,8 +3288,37 @@ app.options('/mcp', (_req, res) => {
     res.setHeader('Access-Control-Max-Age', '86400');
     res.status(204).end();
 });
+// Helper function to validate Origin header for SSE endpoints (MCP transport security requirement)
+const validateOriginHeader = (req, res) => {
+    const origin = req.headers.origin;
+    // If no origin header, allow (e.g., non-browser clients)
+    if (!origin)
+        return true;
+    // Check against allowed origins
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (typeof allowedOrigin === 'string') {
+            return allowedOrigin === origin;
+        }
+        else if (allowedOrigin instanceof RegExp) {
+            return allowedOrigin.test(origin);
+        }
+        return false;
+    });
+    if (!isAllowed) {
+        console.warn(`⚠️  Origin validation failed for SSE endpoint: ${origin}`);
+        res.status(403).json({
+            error: 'forbidden',
+            error_description: 'Origin not allowed',
+        });
+        return false;
+    }
+    return true;
+};
 // Handle GET requests for HTTP Stream transport (SSE)
-app.get('/mcp', flexibleAuthMiddleware, (req, res) => {
+app.get('/mcp', authMiddleware, (req, res) => {
+    // Validate Origin header to prevent DNS rebinding attacks (MCP transport spec requirement)
+    if (!validateOriginHeader(req, res))
+        return;
     const acceptHeader = req.headers.accept;
     // Check if client wants SSE
     if (acceptHeader && acceptHeader.includes('text/event-stream')) {
@@ -3303,7 +3366,10 @@ app.get('/mcp', flexibleAuthMiddleware, (req, res) => {
     });
 });
 // Handle POST requests for JSON-RPC
-app.post('/mcp', express.json(), flexibleAuthMiddleware, (req, res) => {
+app.post('/mcp', express.json(), authMiddleware, (req, res) => {
+    // Validate Origin header to prevent DNS rebinding attacks (MCP transport spec requirement)
+    if (!validateOriginHeader(req, res))
+        return;
     try {
         const { jsonrpc, id, method } = req.body;
         // Validate JSON-RPC format
@@ -4697,10 +4763,13 @@ const gracefulShutdown = async () => {
 // Handle shutdown signals
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
-// Start server - Railway compliance with 0.0.0.0 binding
+// Start server - Use localhost in development, 0.0.0.0 in production (MCP transport spec requirement)
 // Only start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
-    server.listen(port, '0.0.0.0', async () => {
+    // MCP spec recommends binding to localhost (127.0.0.1) in development to prevent network exposure
+    const bindAddress = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
+    server.listen(port, bindAddress, async () => {
+        console.log(`🔒 Server binding to ${bindAddress} (${process.env.NODE_ENV === 'production' ? 'production' : 'development'} mode)`);
         // Prepare Next.js and ensure data directory exists before starting
         await prepareNextApp();
         await ensureDataDirectory();
