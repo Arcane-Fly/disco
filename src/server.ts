@@ -3112,7 +3112,8 @@ app.post('/oauth/register', express.json(), async (req, res): Promise<void> => {
     
     registeredClients.set(clientId, clientData);
     
-    console.log(`📝 OAuth client registered and stored: ${client_name} (${clientId})`);
+    const safeClientName = client_name.replace(/[\r\n]/g, '');
+    console.log(`📝 OAuth client registered and stored: ${safeClientName} (${clientId})`);
 
     res.status(201).json({
       client_id: clientId,
