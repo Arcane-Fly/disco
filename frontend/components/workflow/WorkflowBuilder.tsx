@@ -40,6 +40,33 @@ import {
   Plus
 } from 'lucide-react';
 
+// Theme-aware color mapping using CSS variables
+const getNodeColor = (type: string): string => {
+  if (typeof window === 'undefined') {
+    // Fallback for SSR
+    const colorMap: Record<string, string> = {
+      'input': '#22c55e',
+      'output': '#f59e0b',
+      'condition': '#3b82f6',
+      'loop': '#9b6bff',
+      'process': '#6366f1',
+      'custom': '#6ee7ff'
+    };
+    return colorMap[type] || '#6366f1';
+  }
+  
+  const style = getComputedStyle(document.documentElement);
+  const colorMap: Record<string, string> = {
+    'input': style.getPropertyValue('--success').trim() || '#22c55e',
+    'output': style.getPropertyValue('--warning').trim() || '#f59e0b',
+    'condition': style.getPropertyValue('--info').trim() || '#3b82f6',
+    'loop': style.getPropertyValue('--brand-purple').trim() || '#9b6bff',
+    'process': '#6366f1',
+    'custom': style.getPropertyValue('--brand-cyan').trim() || '#6ee7ff'
+  };
+  return colorMap[type] || '#6366f1';
+};
+
 // Core workflow node types with extensible architecture
 export interface WorkflowNode {
   id: string;
@@ -175,7 +202,7 @@ const VisualNode: React.FC<{
         height="80"
         rx="8"
         fill={isSelected ? '#6366f1' : node.config.color}
-        stroke={isSelected ? '#4f46e5' : '#e5e7eb'}
+        stroke={isSelected ? '#4f46e5' : 'var(--border-moderate, #e5e7eb)'}
         strokeWidth={isSelected ? 3 : 1}
         className="transition-all duration-200"
       />
@@ -221,7 +248,7 @@ const VisualNode: React.FC<{
           }}
           className="cursor-pointer"
         >
-          <circle cx="140" cy="20" r="10" fill="#ef4444" />
+          <circle cx="140" cy="20" r="10" fill="var(--error, #ef4444)" />
           <text x="135" y="25" fontSize="12" fill="white">×</text>
         </g>
       )}
@@ -233,8 +260,8 @@ const VisualNode: React.FC<{
             cx="0"
             cy={30 + (index * 15)}
             r="4"
-            fill="#10b981"
-            stroke="#ffffff"
+            fill="var(--success, #22c55e)"
+            stroke="var(--text-inverse, #ffffff)"
             strokeWidth="2"
           />
         </g>
@@ -247,8 +274,8 @@ const VisualNode: React.FC<{
             cx="160"
             cy={30 + (index * 15)}
             r="4"
-            fill="#f59e0b"
-            stroke="#ffffff"
+            fill="var(--warning, #f59e0b)"
+            stroke="var(--text-inverse, #ffffff)"
             strokeWidth="2"
           />
         </g>
@@ -278,14 +305,14 @@ const ConnectionLine: React.FC<{
       <path
         d={path}
         fill="none"
-        stroke={connection.validation.isValid ? '#10b981' : '#ef4444'}
+        stroke={connection.validation.isValid ? 'var(--success, #22c55e)' : 'var(--error, #ef4444)'}
         strokeWidth={isActive ? 3 : 2}
         opacity={isActive ? 1 : 0.6}
         className="transition-all duration-200"
       />
 
       {isActive && (
-        <circle r="4" fill="#6366f1" opacity="0.8">
+        <circle r="4" fill="var(--info, #3b82f6)" opacity="0.8">
           <animateMotion dur="2s" repeatCount="indefinite">
             <mpath href={`#path-${connection.id}`} />
           </animateMotion>
@@ -426,38 +453,38 @@ const NodeConfigPanel: React.FC<{
   // };
 
   return (
-    <div className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-700 z-40">
+    <div className="fixed right-0 top-0 h-full w-96 bg-bg-secondary shadow-elev-4 border-l border-border-moderate z-fixed">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">Configure Node</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Configure Node</h3>
           <Button variant="ghost" onClick={onClose}>×</Button>
         </div>
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Node Label</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Node Label</label>
             <input
               type="text"
               value={node.label}
               onChange={(e) => onUpdate({ ...node, label: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+              className="form-input w-full px-3 py-2 border border-border-moderate rounded-lg bg-bg-tertiary text-text-primary focus:border-brand-cyan"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Description</label>
             <textarea
               value={node.config.description}
               onChange={(e) => onUpdate({
                 ...node,
                 config: { ...node.config, description: e.target.value }
               })}
-              className="w-full px-3 py-2 border rounded-lg h-20 resize-none dark:bg-gray-800 dark:border-gray-600"
+              className="form-input w-full px-3 py-2 border border-border-moderate rounded-lg h-20 resize-none bg-bg-tertiary text-text-primary focus:border-brand-cyan"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Node Color</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Node Color</label>
             <input
               type="color"
               value={node.config.color}
@@ -465,19 +492,19 @@ const NodeConfigPanel: React.FC<{
                 ...node,
                 config: { ...node.config, color: e.target.value }
               })}
-              className="w-full h-10 border rounded-lg"
+              className="w-full h-10 border border-border-moderate rounded-lg"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Category</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Category</label>
             <select
               value={node.config.category}
               onChange={(e) => onUpdate({
                 ...node,
                 config: { ...node.config, category: e.target.value }
               })}
-              className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+              className="form-input w-full px-3 py-2 border border-border-moderate rounded-lg bg-bg-tertiary text-text-primary focus:border-brand-cyan"
             >
               <option value="input">Input</option>
               <option value="process">Process</option>
@@ -556,7 +583,7 @@ export const WorkflowBuilder: React.FC = () => {
       inputs: type !== 'input' ? [{ id: 'input-1', name: 'Input', type: 'any', required: false }] : [],
       outputs: type !== 'output' ? [{ id: 'output-1', name: 'Output', type: 'any', required: false }] : [],
       config: {
-        color: type === 'input' ? '#10b981' : type === 'output' ? '#f59e0b' : '#6366f1',
+        color: getNodeColor(type),
         icon: 'zap',
         category: type,
         description: `A ${type} node for workflow processing`
@@ -615,7 +642,7 @@ export const WorkflowBuilder: React.FC = () => {
         inputs: paletteDropState.nodeType !== 'input' ? [{ id: 'input-1', name: 'Input', type: 'any', required: false }] : [],
         outputs: paletteDropState.nodeType !== 'output' ? [{ id: 'output-1', name: 'Output', type: 'any', required: false }] : [],
         config: {
-          color: paletteDropState.nodeType === 'input' ? '#10b981' : paletteDropState.nodeType === 'output' ? '#f59e0b' : '#6366f1',
+          color: getNodeColor(paletteDropState.nodeType),
           icon: 'zap',
           category: paletteDropState.nodeType,
           description: `A ${paletteDropState.nodeType} node for workflow processing`

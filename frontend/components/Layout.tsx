@@ -8,7 +8,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="app-layout">
+    <div className="app-shell">
       <Navigation />
       <main className="main-content">
         {children}
