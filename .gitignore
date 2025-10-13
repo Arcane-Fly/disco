@@ -100,3 +100,6 @@ __pycache__/
 
 # Visual test screenshots (large binary files)
 screenshots/
+
+# Build artifacts
+dist/
