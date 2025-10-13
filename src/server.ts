@@ -35,6 +35,7 @@ import { enhancedDashboardRouter } from './api/enhanced-dashboard.js';
 import { performanceRouter } from './api/performance.js';
 import { securityRouter } from './api/security.js';
 import { anthropicRouter } from './api/anthropic.js';
+import { openaiRouter } from './api/openai.js';
 import enhancementRouter from './api/enhancement.js';
 import strategicUXRouter from './api/strategic-ux.js';
 import { platformConnectorsRouter } from './api/platform-connectors.js';
@@ -4248,6 +4249,7 @@ registerAPIRoute('strategic-ux', strategicUXRouter);
 registerAPIRoute('mcp', mcpRouter);
 registerAPIRoute('mcp-a2a', mcpA2aRouter);
 registerAPIRoute('anthropic', anthropicRouter);
+registerAPIRoute('openai', openaiRouter);
 registerAPIRoute('contract-demo', contractDemoRouter);
 
 // Platform Connectors - Public endpoints for easy integration
