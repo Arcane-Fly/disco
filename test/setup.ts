@@ -49,6 +49,11 @@ jest.mock('fs/promises', () => ({
   stat: jest.fn().mockResolvedValue({ isDirectory: () => true, isFile: () => true }),
 }));
 
+// Mock uuid to avoid ESM import issues
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'test-uuid-' + Math.random().toString(36).substring(7)),
+}));
+
 // Import test utilities
 import { releaseAllPorts } from './utils/port-manager';
 
