@@ -49,6 +49,24 @@ Welcome to the comprehensive documentation for the Disco MCP Server! This guide 
 - **[Build Tooling Quick Reference](BUILD_TOOLING_QUICK_REFERENCE.md)** - Fast decision guide and cheat sheet
 - **[Nx Implementation Guide](NX_IMPLEMENTATION_GUIDE.md)** - Step-by-step Nx setup instructions
 
+## 🚀 PocketFlow Integration Proposal (NEW - 2025-10-13)
+
+**Strategic proposal to enhance workflow builder with AI agent patterns:**
+
+- **[📖 START HERE: PocketFlow Integration Summary](POCKETFLOW_INTEGRATION_SUMMARY.md)** - ⭐ Executive summary (5KB)
+- **[📊 Comprehensive Review & Proposal](DISCO_POCKETFLOW_INTEGRATION_REVIEW.md)** - ⭐⭐ Full analysis and roadmap (39KB)
+- **[🎨 Architecture Diagrams](diagrams/pocketflow-integration-architecture.md)** - Visual representations (9KB)
+
+**Key Highlights**:
+- Transform Disco into cutting-edge AI agent platform
+- 15+ AI-specific node types (RAG, LLM, multi-agent, agents)
+- 8+ ready-made templates from PocketFlow cookbook
+- Agentic coding for auto-generated implementations
+- 5-phase implementation roadmap (10 weeks)
+- Builds on Sessions 8-10 infrastructure foundation
+- **Risk**: Low (additive, incremental, well-tested patterns)
+- **Impact**: High (visual AI workflows, faster development, community templates)
+
 ## 📋 Documentation Review & Outstanding Tasks (NEW - 2025-01-07)
 
 **Comprehensive review of all documentation and outstanding tasks:**
