@@ -1,0 +1,32 @@
+{
+  "request": {
+    "model": "claude-3-opus-20240229",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello! Can you explain what quantum computing is in simple terms?"
+      }
+    ],
+    "max_tokens": 1024,
+    "system": "You are a helpful AI assistant that explains complex topics in simple, easy-to-understand language.",
+    "temperature": 0.7
+  },
+  "response": {
+    "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Quantum computing is a type of computing that uses the principles of quantum mechanics to process information. Unlike classical computers that use bits (0s and 1s), quantum computers use quantum bits or 'qubits' that can exist in multiple states simultaneously. This allows them to perform certain calculations much faster than traditional computers, particularly for problems involving large amounts of data or complex simulations."
+      }
+    ],
+    "model": "claude-3-opus-20240229",
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 28,
+      "output_tokens": 89
+    }
+  }
+}

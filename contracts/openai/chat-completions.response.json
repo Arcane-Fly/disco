@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/openai/chat-completions.response.json",
+  "title": "openai.chat-completions.response",
+  "description": "Response schema for OpenAI Chat Completions API",
+  "type": "object",
+  "required": ["id", "object", "created", "model", "choices"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the completion"
+    },
+    "object": {
+      "type": "string",
+      "const": "chat.completion",
+      "description": "Object type"
+    },
+    "created": {
+      "type": "integer",
+      "description": "Unix timestamp of when the completion was created"
+    },
+    "model": {
+      "type": "string",
+      "description": "Model used for the completion"
+    },
+    "choices": {
+      "type": "array",
+      "description": "Array of completion choices",
+      "items": {
+        "type": "object",
+        "required": ["index", "message", "finish_reason"],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "Index of the choice"
+          },
+          "message": {
+            "type": "object",
+            "required": ["role", "content"],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["assistant"],
+                "description": "Role of the message author"
+              },
+              "content": {
+                "type": "string",
+                "description": "Content of the message"
+              },
+              "function_call": {
+                "type": "object",
+                "required": ["name", "arguments"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Name of the function to call"
+                  },
+                  "arguments": {
+                    "type": "string",
+                    "description": "JSON string of function arguments"
+                  }
+                }
+              }
+            }
+          },
+          "finish_reason": {
+            "type": "string",
+            "enum": ["stop", "length", "function_call", "content_filter"],
+            "description": "Reason why the completion finished"
+          }
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "required": ["prompt_tokens", "completion_tokens", "total_tokens"],
+      "properties": {
+        "prompt_tokens": {
+          "type": "integer",
+          "description": "Number of tokens in the prompt"
+        },
+        "completion_tokens": {
+          "type": "integer",
+          "description": "Number of tokens in the completion"
+        },
+        "total_tokens": {
+          "type": "integer",
+          "description": "Total tokens used"
+        }
+      }
+    }
+  }
+}

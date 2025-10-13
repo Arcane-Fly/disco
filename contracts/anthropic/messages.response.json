@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/anthropic/messages.response.json",
+  "title": "anthropic.messages.response",
+  "description": "Response schema for Anthropic Messages API (Claude)",
+  "type": "object",
+  "required": ["id", "type", "role", "content", "model", "stop_reason", "usage"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the message"
+    },
+    "type": {
+      "type": "string",
+      "const": "message",
+      "description": "Object type"
+    },
+    "role": {
+      "type": "string",
+      "const": "assistant",
+      "description": "Role of the message author"
+    },
+    "content": {
+      "type": "array",
+      "description": "Array of content blocks",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["text", "tool_use"]
+          },
+          "text": {
+            "type": "string",
+            "description": "Text content"
+          },
+          "id": {
+            "type": "string",
+            "description": "ID for tool use block"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the tool"
+          },
+          "input": {
+            "type": "object",
+            "description": "Tool input parameters"
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "string",
+      "description": "Model used for the completion"
+    },
+    "stop_reason": {
+      "type": "string",
+      "enum": ["end_turn", "max_tokens", "stop_sequence", "tool_use"],
+      "description": "Reason why the model stopped generating"
+    },
+    "stop_sequence": {
+      "type": ["string", "null"],
+      "description": "Stop sequence that caused the model to stop, if any"
+    },
+    "usage": {
+      "type": "object",
+      "required": ["input_tokens", "output_tokens"],
+      "properties": {
+        "input_tokens": {
+          "type": "integer",
+          "description": "Number of input tokens"
+        },
+        "output_tokens": {
+          "type": "integer",
+          "description": "Number of output tokens"
+        }
+      }
+    }
+  }
+}

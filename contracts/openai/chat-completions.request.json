@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/openai/chat-completions.request.json",
+  "title": "openai.chat-completions.request",
+  "description": "Request schema for OpenAI Chat Completions API",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model", "messages"],
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "ID of the model to use (e.g., gpt-4, gpt-3.5-turbo)",
+      "examples": ["gpt-4", "gpt-4-turbo-preview", "gpt-3.5-turbo"]
+    },
+    "messages": {
+      "type": "array",
+      "description": "Array of message objects in the conversation",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["system", "user", "assistant", "function"],
+            "description": "Role of the message author"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content of the message"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional name of the author"
+          }
+        }
+      }
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 1,
+      "description": "Sampling temperature (0-2). Higher values make output more random"
+    },
+    "max_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum number of tokens to generate"
+    },
+    "top_p": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1,
+      "description": "Nucleus sampling parameter"
+    },
+    "n": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Number of completions to generate"
+    },
+    "stream": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to stream partial responses"
+    },
+    "stop": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" }, "maxItems": 4 }
+      ],
+      "description": "Up to 4 sequences where the API will stop generating"
+    },
+    "presence_penalty": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2,
+      "default": 0,
+      "description": "Penalty for new tokens based on presence in text so far"
+    },
+    "frequency_penalty": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2,
+      "default": 0,
+      "description": "Penalty for new tokens based on frequency in text so far"
+    },
+    "user": {
+      "type": "string",
+      "description": "Unique identifier for end-user (for abuse monitoring)"
+    },
+    "functions": {
+      "type": "array",
+      "description": "List of functions the model may generate JSON inputs for",
+      "items": {
+        "type": "object",
+        "required": ["name", "parameters"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the function"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what the function does"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "JSON Schema for the function parameters"
+          }
+        }
+      }
+    },
+    "function_call": {
+      "oneOf": [
+        { "type": "string", "enum": ["none", "auto"] },
+        { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } } }
+      ],
+      "description": "Controls how the model responds to function calls"
+    }
+  }
+}
