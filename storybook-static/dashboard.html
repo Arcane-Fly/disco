@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disco MCP - Performance Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #334155;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header .subtitle {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-top: 0.25rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-healthy { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-critical { background-color: #ef4444; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .metric-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-unit {
+            font-size: 1rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .metric-change {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .metric-change.positive {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .metric-change.negative {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .time-selector {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .time-btn {
+            padding: 0.25rem 0.75rem;
+            background: transparent;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-btn.active,
+        .time-btn:hover {
+            background: #60a5fa;
+            color: #0f172a;
+            border-color: #60a5fa;
+        }
+
+        .alerts-section {
+            margin-top: 2rem;
+        }
+
+        .alerts-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid;
+        }
+
+        .alert.warning { border-left-color: #f59e0b; }
+        .alert.critical { border-left-color: #ef4444; }
+        .alert.info { border-left-color: #3b82f6; }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-message {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-action {
+            color: #60a5fa;
+            font-size: 0.75rem;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #fca5a5;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .dashboard {
+                padding: 1rem;
+            }
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.75rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>
+            <div class="status-indicator status-healthy" id="statusIndicator"></div>
+            Disco MCP Dashboard
+        </h1>
+        <div class="subtitle">Performance Analytics & System Monitoring</div>
+    </header>
+
+    <main class="dashboard">
+        <div class="loading" id="loading">
+            Loading dashboard metrics...
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <!-- Key Metrics -->
+            <section class="metrics-grid" id="metricsGrid">
+                <!-- Metrics will be populated by JavaScript -->
+            </section>
+
+            <!-- Charts -->
+            <section class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        System Resources
+                        <div class="time-selector">
+                            <button class="time-btn active" data-period="1h">1H</button>
+                            <button class="time-btn" data-period="6h">6H</button>
+                            <button class="time-btn" data-period="24h">24H</button>
+                            <button class="time-btn" data-period="7d">7D</button>
+                        </div>
+                    </div>
+                    <canvas id="resourceChart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">
+                        Performance Metrics
+                        <div class="time-selector">
+                            <button class="time-btn active" data-period="1h">1H</button>
+                            <button class="time-btn" data-period="6h">6H</button>
+                            <button class="time-btn" data-period="24h">24H</button>
+                            <button class="time-btn" data-period="7d">7D</button>
+                        </div>
+                    </div>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+            </section>
+
+            <!-- Performance Optimization -->
+            <section class="performance-optimization-section">
+                <h2 style="color: #60a5fa; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    🚀 Performance Optimization
+                    <button id="refreshOptimization" style="background: #1e40af; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
+                </h2>
+                <div class="optimization-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="optimization-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #38bdf8; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Smart Scaling</h3>
+                        <div id="scalingMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="triggerScaling" style="background: #0ea5e9; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Analyze & Scale</button>
+                    </div>
+                    <div class="optimization-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #fbbf24; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Container Pre-warming</h3>
+                        <div id="prewarmingMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="triggerPrewarming" style="background: #f59e0b; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Analyze Patterns</button>
+                    </div>
+                    <div class="optimization-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Resource Optimization</h3>
+                        <div id="resourceOptimizationMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="triggerResourceOptimization" style="background: #059669; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Optimize Now</button>
+                    </div>
+                </div>
+                <div class="optimization-summary" style="background: rgba(30, 41, 59, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                    <h4 style="color: #e2e8f0; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Optimization Status</h4>
+                    <div id="optimizationStatus" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                </div>
+            </section>
+
+            <!-- Security & Compliance -->
+            <section class="security-compliance-section">
+                <h2 style="color: #ef4444; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    🛡️ Security & Compliance
+                    <button id="refreshSecurity" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
+                </h2>
+                <div class="security-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #f59e0b; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Audit Logs</h3>
+                        <div id="auditLogMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                    </div>
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #ef4444; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Security Incidents</h3>
+                        <div id="securityIncidentMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="viewIncidents" style="background: #dc2626; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">View Incidents</button>
+                    </div>
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Compliance Status</h3>
+                        <div id="complianceMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                        <button id="generateReport" style="background: #059669; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 0.5rem;">Generate Report</button>
+                    </div>
+                    <div class="security-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1rem; border-radius: 8px; border: 1px solid #475569;">
+                        <h3 style="color: #8b5cf6; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Zero Trust</h3>
+                        <div id="zeroTrustMetrics" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                    </div>
+                </div>
+                <div class="security-summary" style="background: rgba(30, 41, 59, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid #334155;">
+                    <h4 style="color: #e2e8f0; margin: 0 0 0.5rem 0; font-size: 0.875rem;">Security Overview</h4>
+                    <div id="securityOverview" style="font-size: 0.75rem; color: #cbd5e1;"></div>
+                </div>
+            </section>
+
+            <!-- Alerts -->
+            <section class="alerts-section">
+                <h2 class="alerts-header">
+                    🚨 System Alerts
+                    <span id="alertCount" style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">0</span>
+                </h2>
+                <div id="alertsContainer">
+                    <!-- Alerts will be populated by JavaScript -->
+                </div>
+            </section>
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+    </main>
+
+    <script>
+        class DashboardManager {
+            constructor() {
+                this.resourceChart = null;
+                this.performanceChart = null;
+                this.currentPeriod = '1h';
+                this.updateInterval = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadInitialData();
+                this.setupCharts();
+                this.setupEventListeners();
+                this.startAutoRefresh();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+            }
+
+            async loadInitialData() {
+                try {
+                    await Promise.all([
+                        this.updateMetrics(),
+                        this.updateCharts(),
+                        this.updateAlerts(),
+                        this.updatePerformanceOptimization(),
+                        this.updateSecurityCompliance()
+                    ]);
+                } catch (error) {
+                    console.error('Failed to load initial data:', error);
+                    this.showError('Failed to load dashboard data');
+                }
+            }
+
+            async updateMetrics() {
+                try {
+                    const response = await fetch('/dashboard/api/metrics');
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.error || 'Failed to fetch metrics');
+                    
+                    this.renderMetrics(data);
+                    this.updateStatusIndicator(data.health_status);
+                } catch (error) {
+                    console.error('Error updating metrics:', error);
+                    this.showError('Failed to update metrics');
+                }
+            }
+
+            renderMetrics(data) {
+                const metricsGrid = document.getElementById('metricsGrid');
+                
+                const metrics = [
+                    {
+                        title: 'Memory Usage',
+                        value: `${data.system.memory.used}`,
+                        unit: `MB / ${data.system.memory.total} MB`,
+                        change: data.system.memory.usage_percent < 75 ? 'positive' : 'negative',
+                        changeText: `${data.system.memory.usage_percent}% used`
+                    },
+                    {
+                        title: 'Active Containers',
+                        value: data.containers.active,
+                        unit: `/ ${data.containers.max_containers} max`,
+                        change: data.containers.utilization_percent < 80 ? 'positive' : 'negative',
+                        changeText: `${data.containers.utilization_percent}% utilization`
+                    },
+                    {
+                        title: 'Response Time',
+                        value: data.performance.avg_response_time,
+                        unit: 'ms',
+                        change: data.performance.avg_response_time < 200 ? 'positive' : 'negative',
+                        changeText: data.performance.avg_response_time < 200 ? 'Excellent' : 'Needs attention'
+                    },
+                    {
+                        title: 'Success Rate',
+                        value: data.performance.success_rate,
+                        unit: '%',
+                        change: data.performance.success_rate > 95 ? 'positive' : 'negative',
+                        changeText: `${data.performance.error_rate}% error rate`
+                    },
+                    {
+                        title: 'Uptime',
+                        value: this.formatUptime(data.system.uptime),
+                        unit: '',
+                        change: 'positive',
+                        changeText: 'Running stable'
+                    },
+                    {
+                        title: 'Requests/Min',
+                        value: data.performance.requests_per_minute,
+                        unit: 'req/min',
+                        change: 'positive',
+                        changeText: 'Active traffic'
+                    }
+                ];
+
+                metricsGrid.innerHTML = metrics.map(metric => `
+                    <div class="metric-card">
+                        <div class="metric-title">${metric.title}</div>
+                        <div class="metric-value">
+                            ${metric.value}
+                            <span class="metric-unit">${metric.unit}</span>
+                        </div>
+                        <div class="metric-change ${metric.change}">${metric.changeText}</div>
+                    </div>
+                `).join('');
+            }
+
+            formatUptime(seconds) {
+                const days = Math.floor(seconds / 86400);
+                const hours = Math.floor((seconds % 86400) / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                
+                if (days > 0) return `${days}d ${hours}h`;
+                if (hours > 0) return `${hours}h ${minutes}m`;
+                return `${minutes}m`;
+            }
+
+            updateStatusIndicator(status) {
+                const indicator = document.getElementById('statusIndicator');
+                indicator.className = `status-indicator status-${status}`;
+            }
+
+            async updateCharts() {
+                try {
+                    const response = await fetch(`/dashboard/api/historical?period=${this.currentPeriod}`);
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.error || 'Failed to fetch historical data');
+                    
+                    this.updateResourceChart(data.data);
+                    this.updatePerformanceChart(data.data);
+                } catch (error) {
+                    console.error('Error updating charts:', error);
+                    this.showError('Failed to update charts');
+                }
+            }
+
+            setupCharts() {
+                const chartConfig = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#374151' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#374151' }
+                        }
+                    }
+                };
+
+                this.resourceChart = new Chart(document.getElementById('resourceChart'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: chartConfig
+                });
+
+                this.performanceChart = new Chart(document.getElementById('performanceChart'), {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: chartConfig
+                });
+            }
+
+            updateResourceChart(data) {
+                const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+                
+                this.resourceChart.data = {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Memory Usage (%)',
+                            data: data.map(d => d.memory_usage),
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Container Usage (%)',
+                            data: data.map(d => d.container_usage),
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                };
+                this.resourceChart.update();
+            }
+
+            updatePerformanceChart(data) {
+                const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+                
+                this.performanceChart.data = {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Response Time (ms)',
+                            data: data.map(d => d.response_time),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Requests/Min',
+                            data: data.map(d => d.requests_per_minute),
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                };
+                
+                this.performanceChart.options.scales.y1 = {
+                    type: 'linear',
+                    display: false,
+                    position: 'right'
+                };
+                
+                this.performanceChart.update();
+            }
+
+            async updateAlerts() {
+                try {
+                    const response = await fetch('/dashboard/api/alerts');
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.error || 'Failed to fetch alerts');
+                    
+                    this.renderAlerts(data.alerts);
+                    document.getElementById('alertCount').textContent = data.alert_count;
+                } catch (error) {
+                    console.error('Error updating alerts:', error);
+                    this.showError('Failed to update alerts');
+                }
+            }
+
+            renderAlerts(alerts) {
+                const container = document.getElementById('alertsContainer');
+                
+                if (alerts.length === 0) {
+                    container.innerHTML = '<div class="alert info"><div class="alert-title">✅ All systems operational</div><div class="alert-message">No active alerts or warnings.</div></div>';
+                    return;
+                }
+
+                container.innerHTML = alerts.map(alert => `
+                    <div class="alert ${alert.severity}">
+                        <div class="alert-title">${alert.title}</div>
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-action">💡 ${alert.suggested_action}</div>
+                    </div>
+                `).join('');
+            }
+
+            setupEventListeners() {
+                // Time period selectors
+                document.querySelectorAll('.time-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.target.parentElement.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentPeriod = e.target.dataset.period;
+                        await this.updateCharts();
+                    });
+                });
+
+                // Performance optimization event listeners
+                document.getElementById('refreshOptimization').addEventListener('click', async () => {
+                    await this.updatePerformanceOptimization();
+                });
+
+                document.getElementById('triggerScaling').addEventListener('click', async () => {
+                    await this.triggerScalingAnalysis();
+                });
+
+                document.getElementById('triggerPrewarming').addEventListener('click', async () => {
+                    await this.triggerPrewarmingAnalysis();
+                });
+
+                document.getElementById('triggerResourceOptimization').addEventListener('click', async () => {
+                    await this.triggerResourceOptimization();
+                });
+
+                // Security compliance event listeners
+                document.getElementById('refreshSecurity').addEventListener('click', async () => {
+                    await this.updateSecurityCompliance();
+                });
+
+                document.getElementById('viewIncidents').addEventListener('click', async () => {
+                    await this.viewSecurityIncidents();
+                });
+
+                document.getElementById('generateReport').addEventListener('click', async () => {
+                    await this.generateComplianceReport();
+                });
+            }
+
+            startAutoRefresh() {
+                this.updateInterval = setInterval(async () => {
+                    await this.updateMetrics();
+                    await this.updateAlerts();
+                    await this.updatePerformanceOptimization();
+                    await this.updateSecurityCompliance();
+                    this.updateTimestamp();
+                }, 30000); // Refresh every 30 seconds
+
+                this.updateTimestamp();
+            }
+
+            updateTimestamp() {
+                document.getElementById('lastUpdated').textContent = 
+                    `Last updated: ${new Date().toLocaleString()}`;
+            }
+
+            showError(message) {
+                const dashboardContent = document.getElementById('dashboardContent');
+                if (dashboardContent) {
+                    dashboardContent.innerHTML = `<div class="error">${message}</div>`;
+                }
+            }
+
+            async updatePerformanceOptimization() {
+                try {
+                    const response = await fetch('/api/v1/performance/metrics', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.renderPerformanceOptimization(data);
+                    } else {
+                        console.warn('Performance optimization metrics unavailable:', data.error);
+                        this.renderPerformanceOptimizationUnavailable();
+                    }
+                } catch (error) {
+                    console.error('Error updating performance optimization:', error);
+                    this.renderPerformanceOptimizationUnavailable();
+                }
+            }
+
+            renderPerformanceOptimization(data) {
+                // Scaling metrics
+                document.getElementById('scalingMetrics').innerHTML = `
+                    <div>Scaling Actions Today: <strong>${data.scalingActionsToday}</strong></div>
+                    <div>Container Utilization: <strong>${data.averageContainerUtilization.toFixed(1)}%</strong></div>
+                    <div>Cost Savings: <strong>$${data.costSavings.toFixed(2)}</strong></div>
+                `;
+
+                // Prewarming metrics
+                document.getElementById('prewarmingMetrics').innerHTML = `
+                    <div>Users Analyzed: <strong>${data.totalUsersAnalyzed}</strong></div>
+                    <div>Prewarming Rules: <strong>${data.totalPrewarmingRules}</strong></div>
+                    <div>Performance Improvement: <strong>${data.performanceImprovement.toFixed(1)}%</strong></div>
+                `;
+
+                // Resource optimization metrics
+                document.getElementById('resourceOptimizationMetrics').innerHTML = `
+                    <div>Status: <strong style="color: ${data.optimizationStatus === 'active' ? '#10b981' : '#ef4444'}">${data.optimizationStatus.toUpperCase()}</strong></div>
+                    <div>Memory Optimizations: Available</div>
+                    <div>Container Pooling: Active</div>
+                `;
+
+                // Optimization status
+                const statusColor = data.optimizationStatus === 'active' ? '#10b981' : '#ef4444';
+                document.getElementById('optimizationStatus').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${statusColor};"></div>
+                        <span>Optimization System: <strong style="color: ${statusColor}">${data.optimizationStatus.toUpperCase()}</strong></span>
+                    </div>
+                    <div style="margin-top: 0.5rem; color: #94a3b8;">
+                        Total Users Analyzed: ${data.totalUsersAnalyzed} | 
+                        Performance Improvement: ${data.performanceImprovement.toFixed(1)}% | 
+                        Cost Savings: $${data.costSavings.toFixed(2)}
+                    </div>
+                `;
+            }
+
+            renderPerformanceOptimizationUnavailable() {
+                ['scalingMetrics', 'prewarmingMetrics', 'resourceOptimizationMetrics'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<div style="color: #94a3b8;">Metrics unavailable</div>';
+                });
+                
+                document.getElementById('optimizationStatus').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></div>
+                        <span>Optimization System: <strong style="color: #94a3b8">UNAVAILABLE</strong></span>
+                    </div>
+                    <div style="margin-top: 0.5rem; color: #64748b;">
+                        Performance optimization features require authentication
+                    </div>
+                `;
+            }
+
+            async triggerScalingAnalysis() {
+                const button = document.getElementById('triggerScaling');
+                const originalText = button.textContent;
+                button.textContent = 'Analyzing...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/performance/scaling/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Scaling analysis completed', `${data.executedActions} actions executed, ${data.deferredActions} deferred`);
+                        await this.updatePerformanceOptimization();
+                    } else {
+                        throw new Error(data.error || 'Scaling analysis failed');
+                    }
+                } catch (error) {
+                    console.error('Scaling analysis error:', error);
+                    this.showOptimizationMessage('Scaling analysis failed', error.message, true);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            async triggerPrewarmingAnalysis() {
+                const button = document.getElementById('triggerPrewarming');
+                const originalText = button.textContent;
+                button.textContent = 'Analyzing...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/performance/prewarming/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Prewarming analysis completed', `${data.rulesApplied} prewarming rules applied`);
+                        await this.updatePerformanceOptimization();
+                    } else {
+                        throw new Error(data.error || 'Prewarming analysis failed');
+                    }
+                } catch (error) {
+                    console.error('Prewarming analysis error:', error);
+                    this.showOptimizationMessage('Prewarming analysis failed', error.message, true);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            async triggerResourceOptimization() {
+                const button = document.getElementById('triggerResourceOptimization');
+                const originalText = button.textContent;
+                button.textContent = 'Optimizing...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/v1/performance/optimize', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Resource optimization completed', 
+                            `Memory: ${data.memoryOptimizations} optimizations, Container: ${data.containerOptimizations} optimizations, Performance gain: ${(data.performanceGains * 100).toFixed(1)}%`);
+                        await this.updatePerformanceOptimization();
+                    } else {
+                        throw new Error(data.error || 'Resource optimization failed');
+                    }
+                } catch (error) {
+                    console.error('Resource optimization error:', error);
+                    this.showOptimizationMessage('Resource optimization failed', error.message, true);
+                } finally {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            }
+
+            showOptimizationMessage(title, message, isError = false) {
+                const messageEl = document.createElement('div');
+                messageEl.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${isError ? '#ef4444' : '#10b981'};
+                    color: white;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    max-width: 300px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                `;
+                messageEl.innerHTML = `<strong>${title}</strong><br/>${message}`;
+                
+                document.body.appendChild(messageEl);
+                
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.parentNode.removeChild(messageEl);
+                    }
+                }, 5000);
+            }
+
+            async updateSecurityCompliance() {
+                try {
+                    const response = await fetch('/api/v1/security/metrics', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.renderSecurityCompliance(data);
+                    } else {
+                        console.warn('Security compliance metrics unavailable:', data.error);
+                        this.renderSecurityComplianceUnavailable();
+                    }
+                } catch (error) {
+                    console.error('Error updating security compliance:', error);
+                    this.renderSecurityComplianceUnavailable();
+                }
+            }
+
+            renderSecurityCompliance(data) {
+                // Audit log metrics
+                document.getElementById('auditLogMetrics').innerHTML = `
+                    <div>Total Logs: <strong>${data.auditLogs.total.toLocaleString()}</strong></div>
+                    <div>Last 24h: <strong>${data.auditLogs.last24h}</strong></div>
+                    <div>High Risk: <strong>${data.auditLogs.highRisk}</strong></div>
+                `;
+
+                // Security incident metrics
+                const incidentColor = data.securityIncidents.critical > 0 ? '#ef4444' : 
+                                    data.securityIncidents.unresolved > 0 ? '#f59e0b' : '#10b981';
+                document.getElementById('securityIncidentMetrics').innerHTML = `
+                    <div>Total: <strong>${data.securityIncidents.total}</strong></div>
+                    <div>Unresolved: <strong style="color: ${incidentColor}">${data.securityIncidents.unresolved}</strong></div>
+                    <div>Critical: <strong style="color: #ef4444">${data.securityIncidents.critical}</strong></div>
+                    <div>Last 24h: <strong>${data.securityIncidents.last24h}</strong></div>
+                `;
+
+                // Compliance metrics
+                const complianceColor = data.compliance.lastStatus === 'compliant' ? '#10b981' : 
+                                      data.compliance.lastStatus === 'warning' ? '#f59e0b' : '#ef4444';
+                document.getElementById('complianceMetrics').innerHTML = `
+                    <div>Status: <strong style="color: ${complianceColor}">${(data.compliance.lastStatus || 'unknown').toUpperCase()}</strong></div>
+                    <div>Reports: <strong>${data.compliance.reports}</strong></div>
+                    <div>SOC 2: Ready</div>
+                `;
+
+                // Zero Trust metrics
+                const zeroTrustColor = data.compliance.zeroTrustEnabled ? '#10b981' : '#ef4444';
+                document.getElementById('zeroTrustMetrics').innerHTML = `
+                    <div>Status: <strong style="color: ${zeroTrustColor}">${data.compliance.zeroTrustEnabled ? 'ACTIVE' : 'DISABLED'}</strong></div>
+                    <div>Monitoring: <strong style="color: ${data.compliance.securityMonitoring ? '#10b981' : '#ef4444'}">${data.compliance.securityMonitoring ? 'ENABLED' : 'DISABLED'}</strong></div>
+                    <div>Trust Validation: Real-time</div>
+                `;
+
+                // Security overview
+                const overallStatus = data.securityIncidents.critical > 0 ? 'CRITICAL' : 
+                                    data.securityIncidents.unresolved > 5 ? 'WARNING' : 'HEALTHY';
+                const overallColor = overallStatus === 'CRITICAL' ? '#ef4444' : 
+                                   overallStatus === 'WARNING' ? '#f59e0b' : '#10b981';
+
+                document.getElementById('securityOverview').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${overallColor};"></div>
+                        <span>Security Status: <strong style="color: ${overallColor}">${overallStatus}</strong></span>
+                    </div>
+                    <div style="color: #94a3b8;">
+                        SOC 2 Type II: Ready | Zero Trust: ${data.compliance.zeroTrustEnabled ? 'Active' : 'Inactive'} | 
+                        Audit Logs: ${data.auditLogs.total.toLocaleString()} | Incidents: ${data.securityIncidents.total}
+                    </div>
+                `;
+            }
+
+            renderSecurityComplianceUnavailable() {
+                ['auditLogMetrics', 'securityIncidentMetrics', 'complianceMetrics', 'zeroTrustMetrics'].forEach(id => {
+                    document.getElementById(id).innerHTML = '<div style="color: #94a3b8;">Metrics unavailable</div>';
+                });
+                
+                document.getElementById('securityOverview').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></div>
+                        <span>Security System: <strong style="color: #94a3b8">UNAVAILABLE</strong></span>
+                    </div>
+                    <div style="margin-top: 0.5rem; color: #64748b;">
+                        Security and compliance features require authentication
+                    </div>
+                `;
+            }
+
+            async viewSecurityIncidents() {
+                try {
+                    const response = await fetch('/api/v1/security/incidents', {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.incidents) {
+                        const incidentsList = data.incidents.slice(0, 10).map(incident => 
+                            `<div style="margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; border-radius: 4px;">
+                                <strong>${incident.severity.toUpperCase()}</strong>: ${incident.description}
+                                <br><small style="color: #94a3b8;">${new Date(incident.timestamp).toLocaleString()}</small>
+                            </div>`
+                        ).join('');
+                        
+                        this.showOptimizationMessage('Recent Security Incidents', 
+                            incidentsList || 'No recent security incidents', false);
+                    } else {
+                        throw new Error(data.error || 'Failed to fetch incidents');
+                    }
+                } catch (error) {
+                    console.error('Security incidents error:', error);
+                    this.showOptimizationMessage('Security incidents unavailable', error.message, true);
+                }
+            }
+
+            async generateComplianceReport() {
+                try {
+                    const endDate = new Date();
+                    const startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+                    
+                    const response = await fetch('/api/v1/security/compliance/generate-report', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'demo-token'}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type: 'weekly',
+                            startDate: startDate.toISOString(),
+                            endDate: endDate.toISOString()
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showOptimizationMessage('Compliance Report Generated', 
+                            `Weekly report created with ${data.metrics.totalRequests} requests analyzed. Status: ${data.status.toUpperCase()}`);
+                        await this.updateSecurityCompliance();
+                    } else {
+                        throw new Error(data.error || 'Report generation failed');
+                    }
+                } catch (error) {
+                    console.error('Compliance report error:', error);
+                    this.showOptimizationMessage('Compliance report failed', error.message, true);
+                }
+            }
+
+            destroy() {
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+                if (this.resourceChart) this.resourceChart.destroy();
+                if (this.performanceChart) this.performanceChart.destroy();
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new DashboardManager();
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (window.dashboard) {
+                window.dashboard.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

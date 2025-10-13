@@ -44,8 +44,8 @@ export default function WebContainerLoader() {
         <div className="container mx-auto px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">WebContainer Loader</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h1 className="text-3xl font-bold mb-2 text-text-primary">WebContainer Loader</h1>
+              <p className="text-text-secondary">
                 Initialize WebContainer runtime for advanced development features
               </p>
             </div>
@@ -71,17 +71,17 @@ export default function WebContainerLoader() {
 
                 <div className="space-y-4">
                   {!isInitialized && !initError && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <div className="callout callout--info">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                        <AlertCircle className="w-5 h-5 mt-0.5" />
                         <div>
-                          <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                          <h3 className="font-medium mb-1">
                             WebContainer Not Initialized
                           </h3>
-                          <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                          <p className="text-sm mb-3">
                             Click below to initialize WebContainer runtime. This enables advanced features like:
                           </p>
-                          <ul className="text-sm text-blue-700 dark:text-blue-300 list-disc list-inside space-y-1">
+                          <ul className="text-sm list-disc list-inside space-y-1">
                             <li>In-browser Node.js runtime</li>
                             <li>File system operations</li>
                             <li>Package installation with npm/yarn</li>
@@ -94,17 +94,17 @@ export default function WebContainerLoader() {
                   )}
 
                   {initError && (
-                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                    <div className="callout callout--danger">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+                        <AlertCircle className="w-5 h-5 mt-0.5" />
                         <div>
-                          <h3 className="font-medium text-red-800 dark:text-red-200 mb-1">
+                          <h3 className="font-medium mb-1">
                             Initialization Failed
                           </h3>
-                          <p className="text-sm text-red-700 dark:text-red-300 mb-2">
+                          <p className="text-sm mb-2">
                             {initError}
                           </p>
-                          <p className="text-sm text-red-600 dark:text-red-400">
+                          <p className="text-sm">
                             This feature requires a properly configured environment with Cross-Origin Isolation headers.
                           </p>
                         </div>
@@ -113,14 +113,14 @@ export default function WebContainerLoader() {
                   )}
 
                   {isInitialized && (
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                    <div className="callout callout--success">
                       <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <CheckCircle className="w-5 h-5" />
                         <div>
-                          <h3 className="font-medium text-green-800 dark:text-green-200 mb-1">
+                          <h3 className="font-medium mb-1">
                             WebContainer Initialized Successfully
                           </h3>
-                          <p className="text-sm text-green-700 dark:text-green-300">
+                          <p className="text-sm">
                             WebContainer runtime is ready. You can now use advanced development features.
                           </p>
                         </div>
