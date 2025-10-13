@@ -103,3 +103,4 @@ screenshots/
 
 # Build artifacts
 dist/
+storybook-static/
