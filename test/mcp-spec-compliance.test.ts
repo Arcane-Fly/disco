@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../src/middleware/auth.js';
 import { isTokenRevoked, revokeToken } from '../src/api/auth.js';
@@ -15,6 +16,17 @@ const createTestApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Rate limit refresh endpoint: max 5 requests per minute per IP
+  const refreshLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      status: 'error',
+      error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many token refresh requests, please try again later.' }
+    }
+  });
   // OAuth Client Registration Storage (matching server implementation)
   interface OAuthClient {
     client_id: string;
@@ -134,7 +146,7 @@ const createTestApp = () => {
   });
 
   // Token refresh endpoint
-  app.post('/api/v1/auth/refresh', async (req, res) => {
+  app.post('/api/v1/auth/refresh', refreshLimiter, async (req, res) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
