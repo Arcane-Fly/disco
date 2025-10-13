@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { ErrorCode } from '../types/index.js';
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         // Check if authorization header is provided
@@ -36,6 +36,18 @@ export const authMiddleware = (req, res, next) => {
             });
         }
         try {
+            // Check if token has been revoked (for token rotation)
+            // Import dynamically to avoid circular dependencies
+            const authModule = await import('../api/auth.js');
+            if (authModule.isTokenRevoked && authModule.isTokenRevoked(token)) {
+                return res.status(401).json({
+                    status: 'error',
+                    error: {
+                        code: ErrorCode.AUTH_FAILED,
+                        message: 'Token has been revoked. Please refresh your token.',
+                    },
+                });
+            }
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = decoded;
             next();

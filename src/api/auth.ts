@@ -5,6 +5,21 @@ import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/
 
 const router = Router();
 
+// Token revocation tracking (MCP spec requirement for token rotation)
+// In production, use Redis or a database for distributed systems
+const revokedTokens = new Set<string>();
+
+// Helper to check if a token is revoked
+export function isTokenRevoked(token: string): boolean {
+  return revokedTokens.has(token);
+}
+
+// Helper to revoke a token
+export function revokeToken(token: string): void {
+  revokedTokens.add(token);
+  console.log(`🚫 Token revoked for rotation`);
+}
+
 /**
  * GET /api/v1/auth/status
  * Enhanced authentication status with token refresh information
@@ -145,6 +160,9 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Revoke old token (MCP spec: token rotation requirement)
+    revokeToken(token);
+
     // Create new token
     const newToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET!, {
       expiresIn: '1h',
@@ -158,7 +176,7 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
       userId: decoded.userId,
     };
 
-    console.log(`🔄 Token refreshed for user: ${decoded.userId}`);
+    console.log(`🔄 Token refreshed and rotated for user: ${decoded.userId}`);
 
     res.json({
       status: 'success',
