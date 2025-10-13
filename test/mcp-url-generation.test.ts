@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { app, prepareNextApp } from '../src/server.js';
 
-describe('MCP URL Generation Feature', () => {
+describe('MCP Specification Compliance', () => {
   let server: any;
   let authToken: string;
 
@@ -17,8 +17,8 @@ describe('MCP URL Generation Feature', () => {
     authToken = authResponse.body.data.token;
   });
 
-  describe('Authentication Compatibility', () => {
-    test('should work with Bearer token authentication (existing method)', async () => {
+  describe('Bearer Token Authentication (MCP Spec Requirement)', () => {
+    test('should work with Bearer token authentication', async () => {
       const response = await request(server)
         .post('/mcp')
         .set('Authorization', `Bearer ${authToken}`)
@@ -34,7 +34,7 @@ describe('MCP URL Generation Feature', () => {
       expect(response.body.result.serverInfo.name).toBe('Disco MCP Server');
     });
 
-    test('should work with query parameter authentication (new method)', async () => {
+    test('should reject query parameter authentication (MCP spec violation)', async () => {
       const response = await request(server)
         .post(`/mcp?token=${authToken}`)
         .send({
@@ -44,9 +44,10 @@ describe('MCP URL Generation Feature', () => {
           params: {}
         });
 
-      expect(response.status).toBe(200);
-      expect(response.body.jsonrpc).toBe('2.0');
-      expect(response.body.result.serverInfo.name).toBe('Disco MCP Server');
+      // Should reject because tokens in query strings violate MCP spec
+      expect(response.status).toBe(401);
+      expect(response.body.status).toBe('error');
+      expect(response.body.error.code).toBe('AUTH_FAILED');
     });
 
     test('should reject requests without authentication', async () => {
@@ -66,17 +67,19 @@ describe('MCP URL Generation Feature', () => {
   });
 
   describe('MCP URL Generation API', () => {
-    test('should generate MCP URL for authenticated user', async () => {
+    test('should generate MCP URL without token in query string', async () => {
       const response = await request(server)
         .get('/api/v1/mcp/url')
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
-      expect(response.body.data.mcp_url).toContain('/mcp?token=');
-      expect(response.body.data.mcp_url).toContain(authToken);
-      expect(response.body.data.authentication.method).toBe('query_parameter');
-      expect(response.body.data.alternative_auth.method).toBe('bearer_token');
+      // URL should not contain token query parameter (MCP spec requirement)
+      expect(response.body.data.mcp_url).not.toContain('?token=');
+      expect(response.body.data.mcp_url).toContain('/mcp');
+      expect(response.body.data.authentication.method).toBe('bearer_token');
+      // Token should be provided separately for header usage
+      expect(response.body.data.token).toBeDefined();
     });
 
     test('should reject MCP URL generation for unauthenticated user', async () => {
@@ -88,10 +91,11 @@ describe('MCP URL Generation Feature', () => {
     });
   });
 
-  describe('MCP Protocol Methods', () => {
-    test('should list tools using query parameter auth', async () => {
+  describe('MCP Protocol Methods with Bearer Auth', () => {
+    test('should list tools using Bearer token authentication', async () => {
       const response = await request(server)
-        .post(`/mcp?token=${authToken}`)
+        .post('/mcp')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           jsonrpc: '2.0',
           id: 1,
@@ -110,19 +114,19 @@ describe('MCP URL Generation Feature', () => {
       expect(toolNames).toContain('terminal_execute');
     });
 
-    test('should work with generated URL', async () => {
-      // First get the generated URL
+    test('should use generated token in Authorization header', async () => {
+      // First get the token from URL generation endpoint
       const urlResponse = await request(server)
         .get('/api/v1/mcp/url')
         .set('Authorization', `Bearer ${authToken}`);
       
-      const mcpUrl = urlResponse.body.data.mcp_url;
-      const urlObj = new URL(mcpUrl);
-      const token = urlObj.searchParams.get('token');
+      const token = urlResponse.body.data.token;
+      expect(token).toBeDefined();
 
-      // Test the URL works
+      // Use token in Authorization header (not query string)
       const response = await request(server)
-        .post(`/mcp?token=${token}`)
+        .post('/mcp')
+        .set('Authorization', `Bearer ${token}`)
         .send({
           jsonrpc: '2.0',
           id: 1,

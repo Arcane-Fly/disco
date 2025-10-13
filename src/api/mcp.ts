@@ -26,8 +26,9 @@ router.get('/url', authMiddleware, (req: Request, res: Response) => {
         ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN || 'disco-mcp.up.railway.app'}`
         : `http://localhost:${process.env.PORT || 3000}`;
 
-    const mcpUrl = `${domain}/mcp?token=${token}`;
-    const mcpStreamUrl = `${domain}/mcp?token=${token}`;
+    // MCP spec requires tokens to be sent via Authorization header, not query strings
+    const mcpUrl = `${domain}/mcp`;
+    const mcpStreamUrl = `${domain}/mcp`;
 
     res.json({
       status: 'success',
@@ -35,7 +36,7 @@ router.get('/url', authMiddleware, (req: Request, res: Response) => {
         mcp_url: mcpUrl,
         stream_url: mcpStreamUrl,
         usage: {
-          description: 'Use this URL in your MCP client (Claude, ChatGPT, etc.)',
+          description: 'Use this URL in your MCP client (Claude, ChatGPT, etc.) with Bearer token authentication',
           examples: [
             'Claude.ai External API configuration',
             'ChatGPT connector setup',
@@ -43,16 +44,13 @@ router.get('/url', authMiddleware, (req: Request, res: Response) => {
           ]
         },
         authentication: {
-          method: 'query_parameter',
-          parameter: 'token',
-          note: 'Token is embedded in URL for easy configuration'
-        },
-        alternative_auth: {
           method: 'bearer_token',
           endpoint: `${domain}/mcp`,
-          header: `Authorization: Bearer ${token.substring(0, 20)}...`,
-          note: 'Traditional Bearer token authentication also supported'
-        }
+          header: `Authorization: Bearer YOUR_TOKEN`,
+          note: 'Token must be sent in Authorization header as per MCP specification'
+        },
+        token: token,
+        token_note: 'Include this token in the Authorization: Bearer header for all MCP requests'
       },
     });
   } catch (error) {
