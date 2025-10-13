@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/anthropic/prompt-caching.request.json",
+  "title": "anthropic.prompt-caching.request",
+  "description": "Request schema for Anthropic Prompt Caching feature",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model", "messages", "max_tokens"],
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "ID of the model to use (must support prompt caching)",
+      "examples": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+    },
+    "messages": {
+      "type": "array",
+      "description": "Array of message objects",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant"]
+          },
+          "content": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["type"],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["text"]
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "cache_control": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "ephemeral",
+                          "description": "Cache type (currently only 'ephemeral' is supported)"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "max_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum number of tokens to generate"
+    },
+    "system": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "text"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "text"
+              },
+              "text": {
+                "type": "string"
+              },
+              "cache_control": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "ephemeral"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "System prompt with optional cache control"
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1
+    },
+    "top_p": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "top_k": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

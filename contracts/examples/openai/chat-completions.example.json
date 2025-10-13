@@ -1,0 +1,38 @@
+{
+  "request": {
+    "model": "gpt-4",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful AI assistant that provides clear and concise answers."
+      },
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 150
+  },
+  "response": {
+    "id": "chatcmpl-123",
+    "object": "chat.completion",
+    "created": 1677652288,
+    "model": "gpt-4-0613",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "The capital of France is Paris. It is located in the north-central part of the country and is known for its art, culture, and iconic landmarks like the Eiffel Tower."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 30,
+      "completion_tokens": 35,
+      "total_tokens": 65
+    }
+  }
+}

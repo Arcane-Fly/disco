@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/openai/embeddings.request.json",
+  "title": "openai.embeddings.request",
+  "description": "Request schema for OpenAI Embeddings API",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model", "input"],
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "ID of the model to use (e.g., text-embedding-ada-002)",
+      "examples": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+    },
+    "input": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "Input text to get embeddings for (string or array of strings)"
+    },
+    "user": {
+      "type": "string",
+      "description": "Unique identifier for end-user (for abuse monitoring)"
+    },
+    "encoding_format": {
+      "type": "string",
+      "enum": ["float", "base64"],
+      "default": "float",
+      "description": "Format to return the embeddings in"
+    },
+    "dimensions": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of dimensions for the output embeddings (only for text-embedding-3 models)"
+    }
+  }
+}

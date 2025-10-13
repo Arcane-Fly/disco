@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://disco-mcp.up.railway.app/contracts/openai/embeddings.response.json",
+  "title": "openai.embeddings.response",
+  "description": "Response schema for OpenAI Embeddings API",
+  "type": "object",
+  "required": ["object", "data", "model", "usage"],
+  "properties": {
+    "object": {
+      "type": "string",
+      "const": "list",
+      "description": "Object type"
+    },
+    "data": {
+      "type": "array",
+      "description": "Array of embedding objects",
+      "items": {
+        "type": "object",
+        "required": ["object", "embedding", "index"],
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "embedding",
+            "description": "Object type"
+          },
+          "embedding": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "The embedding vector (array of floats)"
+          },
+          "index": {
+            "type": "integer",
+            "description": "Index of the embedding in the list"
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "string",
+      "description": "Model used for generating embeddings"
+    },
+    "usage": {
+      "type": "object",
+      "required": ["prompt_tokens", "total_tokens"],
+      "properties": {
+        "prompt_tokens": {
+          "type": "integer",
+          "description": "Number of tokens in the input"
+        },
+        "total_tokens": {
+          "type": "integer",
+          "description": "Total tokens used"
+        }
+      }
+    }
+  }
+}
