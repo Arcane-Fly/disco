@@ -2,11 +2,13 @@
   "parser": "@typescript-eslint/parser",
   "plugins": [
     "@typescript-eslint",
-    "import"
+    "import",
+    "regexp"
   ],
   "extends": [
     "eslint:recommended", 
-    "plugin:@typescript-eslint/recommended", 
+    "plugin:@typescript-eslint/recommended",
+    "plugin:regexp/recommended",
     "prettier"
   ],
   "env": {
@@ -29,6 +31,37 @@
     "no-console": "off",
     "prefer-const": "error",
     "no-var": "error",
+    
+    "no-new-wrappers": "error",
+    "no-eval": "error",
+    "regexp/no-super-linear-backtracking": "error",
+    "regexp/no-useless-quantifier": "error",
+    "regexp/no-empty-alternative": "error",
+    "regexp/no-dupe-characters-character-class": "error",
+    "regexp/optimal-quantifier-concatenation": "error",
+    "regexp/no-legacy-features": "error",
+    
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "NewExpression[callee.name='RegExp']",
+        "message": "Regex is disallowed. Use a parser or approved helper. If truly needed, document exception in CONTRIBUTING.md."
+      }
+    ],
+    
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "String",
+        "property": "match",
+        "message": "Use typed parsing, URL, JSON, DOM APIs instead of regex match."
+      },
+      {
+        "object": "String",
+        "property": "search",
+        "message": "Avoid regex search; use includes/startsWith/endsWith."
+      }
+    ],
     "import/no-restricted-paths": [
       "error",
       {

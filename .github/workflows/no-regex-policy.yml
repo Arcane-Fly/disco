@@ -1,0 +1,130 @@
+name: No-Regex Policy
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  lint:
+    name: ESLint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Enable Corepack
+        run: corepack enable
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install --immutable
+        
+      - name: Run lint
+        run: yarn lint
+        
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Enable Corepack
+        run: corepack enable
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install --immutable
+        
+      - name: Run typecheck
+        run: yarn typecheck
+        continue-on-error: true
+        
+  regex-guard:
+    name: Regex Usage Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Enable Corepack
+        run: corepack enable
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+          
+      - name: Install dependencies
+        run: yarn install --immutable
+        
+      - name: Check for new regex usage
+        run: |
+          echo "Checking for new regex patterns in changed files..."
+          
+          # Get list of changed files
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' || echo "")
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No TypeScript/JavaScript files changed."
+            exit 0
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Check for new RegExp usage
+          echo ""
+          echo "Checking for 'new RegExp' usage..."
+          NEW_REGEXP=$(echo "$CHANGED_FILES" | xargs grep -n "new RegExp" || true)
+          
+          if [ -n "$NEW_REGEXP" ]; then
+            echo "⚠️  Warning: Found 'new RegExp' usage:"
+            echo "$NEW_REGEXP"
+            echo ""
+            echo "Please justify this usage in CONTRIBUTING.md or use an alternative."
+          fi
+          
+          # Check for regex literals (basic check)
+          echo ""
+          echo "Checking for regex literal usage..."
+          REGEX_LITERALS=$(echo "$CHANGED_FILES" | xargs grep -nE "/(\\.|[^/])+/[gimsuvy]*" | grep -v "^//" | grep -v "http://" | grep -v "https://" | head -20 || true)
+          
+          if [ -n "$REGEX_LITERALS" ]; then
+            echo "ℹ️  Info: Found potential regex literals (review these):"
+            echo "$REGEX_LITERALS"
+            echo ""
+            echo "Note: These may be URLs or comments. Manual review recommended."
+          fi
+          
+          # Run ESLint to enforce rules (this is the real guard)
+          echo ""
+          echo "Running ESLint to enforce regex policy..."
+          yarn lint
+          
+      - name: Policy Reminder
+        if: always()
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "No-Regex-by-Default Policy Reminder"
+          echo "=========================================="
+          echo ""
+          echo "✅ Prefer: URL, JSON.parse, DOMParser, csv-parse, validator"
+          echo "❌ Avoid: Complex regex, regex for parsing structured data"
+          echo ""
+          echo "See CONTRIBUTING.md for full policy and examples."
+          echo ""

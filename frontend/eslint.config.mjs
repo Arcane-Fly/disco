@@ -1,7 +1,9 @@
 // ESLint flat config for Next.js frontend
+// Implements No-Regex-by-Default policy.
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import nextPlugin from '@next/eslint-plugin-next';
+import regexpPlugin from 'eslint-plugin-regexp';
 
 export default [
   {
@@ -65,6 +67,7 @@ export default [
     plugins: {
       '@typescript-eslint': tseslint,
       '@next/next': nextPlugin,
+      'regexp': regexpPlugin,
     },
     rules: {
       // Next.js specific rules
@@ -78,6 +81,38 @@ export default [
       'no-console': 'off',
       'prefer-const': 'off',
       'no-var': 'off',
+      
+      // No-Regex-by-Default Policy
+      'no-new-wrappers': 'error',
+      'no-eval': 'error',
+      'regexp/no-super-linear-backtracking': 'warn', // Warn initially, upgrade to error after fixing
+      'regexp/no-useless-quantifier': 'warn',
+      'regexp/no-empty-alternative': 'warn',
+      'regexp/no-dupe-characters-character-class': 'error',
+      'regexp/optimal-quantifier-concatenation': 'warn',
+      'regexp/no-legacy-features': 'error',
+      
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: "NewExpression[callee.name='RegExp']",
+          message: 'Regex is discouraged. Use a parser or approved helper. If truly needed, document exception in CONTRIBUTING.md.'
+        }
+      ],
+      
+      'no-restricted-properties': [
+        'warn',
+        {
+          object: 'String',
+          property: 'match',
+          message: 'Use typed parsing, URL, JSON, DOM APIs instead of regex match.'
+        },
+        {
+          object: 'String',
+          property: 'search',
+          message: 'Avoid regex search; use includes/startsWith/endsWith.'
+        }
+      ],
     },
   },
 ];
