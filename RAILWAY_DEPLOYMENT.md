@@ -2,15 +2,14 @@
 
 ## Memory Allocation
 
-⚠️ **CRITICAL**: This application requires **4GB** of memory to run optimally in production.
+✅ **Railway Configuration**: This application utilizes Railway's allocated memory (32GiB).
 
 ### Railway Memory Configuration
 
-1. Navigate to your Railway project settings
-2. Go to the **Service** → **Settings** tab
-3. Under **Resources**, set:
-   - **Memory**: `4096 MB` (4GB)
-   - This prevents OOM kills and ensures stable operation
+The application is configured to use the memory allocated by Railway without artificial limits:
+- Node.js heap size: 28GB (leaving 4GB for system overhead)
+- No `memoryMB` constraint in railpack.json
+- Memory monitoring and automatic GC enabled
 
 ### Memory Optimization Features
 
@@ -38,8 +37,8 @@ The following environment variables are configured in `railpack.json`:
 
 ```bash
 NODE_ENV=production
-LOG_LEVEL=warn                                    # Reduce logging verbosity
-NODE_OPTIONS=--max-old-space-size=3584 --expose-gc # Enable GC and set heap limit
+LOG_LEVEL=warn                                     # Reduce logging verbosity
+NODE_OPTIONS=--max-old-space-size=28672 --expose-gc # Enable GC and set heap limit (28GB)
 ```
 
 ### Expected Performance
@@ -89,8 +88,8 @@ Monitor memory usage via:
 
 If you experience OOM (Out of Memory) issues:
 
-1. Verify memory allocation is set to 4GB in Railway
-2. Check `NODE_OPTIONS` includes `--max-old-space-size=3584`
+1. Verify Railway memory allocation (should be 32GiB)
+2. Check `NODE_OPTIONS` includes `--max-old-space-size=28672` (28GB)
 3. Verify `--expose-gc` flag is in start command
 4. Review logs for memory warnings
 5. Check `/health` endpoint for memory stats

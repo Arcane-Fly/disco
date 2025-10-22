@@ -46,8 +46,8 @@ All 4 critical production issues have been successfully resolved with minimal, s
 ### 💥 Critical Issue #3: Memory Usage at 95%+
 **Problem**: High memory usage approaching OOM kills, no optimization.  
 **Solution**: 
-- Set memory allocation to 4GB in `railpack.json` (memoryMB: 4096)
-- Added `NODE_OPTIONS: --max-old-space-size=3584 --expose-gc`
+- Removed artificial memory limit from railpack.json (Railway allocates 32GiB)
+- Set `NODE_OPTIONS: --max-old-space-size=28672 --expose-gc` (28GB heap, 4GB system overhead)
 - Created memory monitoring utility (`src/lib/memoryMonitor.ts`)
 - Reduced production logging to `warn` level (70% reduction)
 - Optimized metrics service logging
@@ -158,10 +158,9 @@ This enables:
 {
   "deploy": {
     "startCommand": "node --expose-gc dist/src/server.js",
-    "memoryMB": 4096,
     "variables": {
       "LOG_LEVEL": "warn",
-      "NODE_OPTIONS": "--max-old-space-size=3584 --expose-gc"
+      "NODE_OPTIONS": "--max-old-space-size=28672 --expose-gc"
     }
   }
 }
@@ -226,7 +225,7 @@ Done compiling TypeScript files
 Before deploying to Railway:
 
 - [x] Code changes merged to main
-- [ ] **CRITICAL**: Set Railway memory to 4GB in project settings
+- [x] Railway memory allocation: 32GiB (configured by Railway)
 - [x] Environment variables configured in railpack.json
 - [x] Start command includes --expose-gc flag
 - [x] Trust proxy enabled for rate limiting
