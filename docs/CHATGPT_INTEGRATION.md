@@ -170,6 +170,55 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 }
 ```
 
+## MCP Tools Exposed to ChatGPT
+
+Disco exposes **10 high-level development operation tools** via the MCP protocol:
+
+### Available Tools
+
+1. **file_read** - Read file contents with intelligent encoding detection
+2. **file_write** - Write content to files with atomic operations
+3. **file_search** - Search for files and content with advanced filtering
+4. **terminal_execute** - Execute commands in WebContainer terminal with streaming
+5. **git_clone** - Clone repositories with authentication support
+6. **git_commit** - Create Git commits with files and message
+7. **computer_use_screenshot** - Take screenshots using browser automation
+8. **computer_use_click** - Perform click actions on web page elements
+9. **ai_complete** - Request AI completions from connected language models
+10. **code_analyze** - Analyze code structure, dependencies, and quality metrics
+
+### Tool Discovery
+
+ChatGPT can discover available tools via:
+
+```bash
+curl -X POST https://disco-mcp.up.railway.app/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+### Tool Invocation
+
+ChatGPT invokes tools via:
+
+```bash
+curl -X POST https://disco-mcp.up.railway.app/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "jsonrpc":"2.0",
+    "id":2,
+    "method":"tools/call",
+    "params":{
+      "name":"file_read",
+      "arguments":{"path":"/README.md"}
+    }
+  }'
+```
+
+**Note**: These tools are abstracted as high-level development operations that map to underlying REST API endpoints. They provide ChatGPT with powerful development capabilities without requiring knowledge of WebContainer internals.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -189,6 +238,11 @@ railway variables set GITHUB_REDIRECT_URI="https://disco-mcp.up.railway.app/oaut
 4. **WebSocket Connection Fails**
    - Confirm `WEBSOCKET_URL` is set correctly
    - Test WebSocket connection manually
+
+5. **Tool Calls Fail**
+   - Verify Bearer token is provided in Authorization header
+   - Check tool name is spelled correctly (use tools/list to verify)
+   - Ensure required parameters are provided per tool schema
 
 ### Monitoring
 
