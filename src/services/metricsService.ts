@@ -18,7 +18,9 @@ class MetricsService {
 
   addClient(socket: Socket) {
     this.clients.add(socket);
-    console.log(`📊 Metrics client connected: ${socket.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📊 Metrics client connected: ${socket.id}`);
+    }
 
     // Send initial metrics immediately
     this.sendMetricsToClient(socket);
@@ -35,7 +37,9 @@ class MetricsService {
 
   removeClient(socket: Socket) {
     this.clients.delete(socket);
-    console.log(`📊 Metrics client disconnected: ${socket.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📊 Metrics client disconnected: ${socket.id}`);
+    }
 
     // Stop metrics broadcasting if no clients
     if (this.clients.size === 0) {
@@ -44,7 +48,9 @@ class MetricsService {
   }
 
   private startMetricsBroadcast() {
-    console.log('📊 Starting real-time metrics broadcast');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('📊 Starting real-time metrics broadcast');
+    }
     this.metricsInterval = setInterval(() => {
       this.broadcastMetrics();
     }, 5000); // Update every 5 seconds
@@ -52,7 +58,9 @@ class MetricsService {
 
   private stopMetricsBroadcast() {
     if (this.metricsInterval) {
-      console.log('📊 Stopping real-time metrics broadcast');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📊 Stopping real-time metrics broadcast');
+      }
       clearInterval(this.metricsInterval);
       this.metricsInterval = null;
     }
@@ -102,7 +110,9 @@ class MetricsService {
         }
       });
 
-      console.log(`📊 Broadcasted metrics to ${this.clients.size} clients`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`📊 Broadcasted metrics to ${this.clients.size} clients`);
+      }
     } catch (error) {
       console.error('Error broadcasting metrics:', error);
     }
