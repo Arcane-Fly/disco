@@ -14,7 +14,7 @@
     "build:frontend": "nx build frontend",
     "build:all": "nx run-many --target=build --all --parallel=2",
     "// Development commands": "",
-    "start": "node dist/src/server.js",
+    "start": "node --expose-gc dist/src/server.js",
     "dev": "nodemon --exec tsx src/server.ts",
     "dev:frontend": "nx serve frontend",
     "// Testing commands": "",
@@ -53,7 +53,8 @@
     "constraints:fix": "yarn constraints --fix",
     "// Storybook": "",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "prepare": "husky"
   },
   "keywords": [
     "mcp",
@@ -153,7 +154,9 @@
     "eslint-config-next": "^15.5.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-regexp": "^2.10.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
     "nodemon": "^3.1.10",
     "nx": "^21.6.3",
@@ -166,7 +169,7 @@
     "ts-jest": "^29.4.4",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "vite": "^7.1.9"
+    "vite": "^7.1.11"
   },
   "engines": {
     "node": ">=22.0.0",
