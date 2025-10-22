@@ -3524,6 +3524,157 @@ app.options('/mcp', (_req, res): void => {
   res.status(204).end();
 });
 
+// MCP Tools Definition - High-level development operations exposed to clients
+const getMCPTools = () => [
+  {
+    name: 'file_read',
+    description: 'Read file contents from WebContainer with intelligent encoding detection',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path to read' },
+        encoding: { type: 'string', enum: ['utf8', 'base64', 'binary'], default: 'utf8' },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'file_write',
+    description: 'Write content to file in WebContainer with atomic operations',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path to write' },
+        content: { type: 'string', description: 'Content to write' },
+        encoding: { type: 'string', enum: ['utf8', 'base64'], default: 'utf8' },
+        createDirs: { type: 'boolean', default: true },
+      },
+      required: ['path', 'content'],
+    },
+  },
+  {
+    name: 'file_search',
+    description: 'Search for files and content with advanced filtering',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' },
+        path: { type: 'string', description: 'Base search path', default: '/' },
+        fileType: { type: 'string', description: 'File extension filter' },
+        includeContent: { type: 'boolean', default: false },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'terminal_execute',
+    description: 'Execute command in WebContainer terminal with streaming output',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        command: { type: 'string', description: 'Command to execute' },
+        workingDir: { type: 'string', description: 'Working directory' },
+        timeout: { type: 'number', default: 30000 },
+        stream: { type: 'boolean', default: true },
+      },
+      required: ['command'],
+    },
+  },
+  {
+    name: 'git_clone',
+    description: 'Clone repository in WebContainer with authentication support',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'Repository URL' },
+        path: { type: 'string', description: 'Target path' },
+        branch: { type: 'string', description: 'Specific branch to clone' },
+        depth: { type: 'number', description: 'Clone depth for shallow clones' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'git_commit',
+    description: 'Create Git commit with files and message',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'Commit message' },
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Files to commit',
+        },
+        author: {
+          type: 'object',
+          properties: { name: { type: 'string' }, email: { type: 'string' } },
+        },
+      },
+      required: ['message'],
+    },
+  },
+  {
+    name: 'computer_use_screenshot',
+    description: 'Take screenshot using browser automation with element targeting',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL to screenshot' },
+        element: { type: 'string', description: 'CSS selector for specific element' },
+        viewport: {
+          type: 'object',
+          properties: { width: { type: 'number' }, height: { type: 'number' } },
+        },
+        fullPage: { type: 'boolean', default: false },
+      },
+    },
+  },
+  {
+    name: 'computer_use_click',
+    description: 'Perform click action on web page elements',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'Target page URL' },
+        selector: { type: 'string', description: 'CSS selector for element to click' },
+        coordinates: {
+          type: 'object',
+          properties: { x: { type: 'number' }, y: { type: 'number' } },
+        },
+      },
+    },
+  },
+  {
+    name: 'ai_complete',
+    description: 'Request AI completion from connected language models',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Completion prompt' },
+        maxTokens: { type: 'number', default: 1000 },
+        temperature: { type: 'number', default: 0.7 },
+        model: { type: 'string', description: 'Preferred model' },
+      },
+      required: ['prompt'],
+    },
+  },
+  {
+    name: 'code_analyze',
+    description: 'Analyze code structure, dependencies, and quality metrics',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Code file or directory path' },
+        language: { type: 'string', description: 'Programming language' },
+        includeMetrics: { type: 'boolean', default: true },
+        includeDependencies: { type: 'boolean', default: true },
+      },
+      required: ['path'],
+    },
+  },
+];
+
 // Helper function to validate Origin header for SSE endpoints (MCP transport security requirement)
 const validateOriginHeader = (req: Request, res: Response): boolean => {
   const origin = req.headers.origin;
@@ -3672,54 +3823,7 @@ app.post('/mcp', express.json(), authMiddleware, (req, res) => {
           jsonrpc: '2.0',
           id,
           result: {
-            tools: [
-              {
-                name: 'file_read',
-                description: 'Read file contents from WebContainer',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    path: { type: 'string', description: 'File path to read' },
-                  },
-                  required: ['path'],
-                },
-              },
-              {
-                name: 'file_write',
-                description: 'Write content to file in WebContainer',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    path: { type: 'string', description: 'File path to write' },
-                    content: { type: 'string', description: 'Content to write' },
-                  },
-                  required: ['path', 'content'],
-                },
-              },
-              {
-                name: 'terminal_execute',
-                description: 'Execute command in WebContainer terminal',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    command: { type: 'string', description: 'Command to execute' },
-                  },
-                  required: ['command'],
-                },
-              },
-              {
-                name: 'git_clone',
-                description: 'Clone repository in WebContainer',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    url: { type: 'string', description: 'Repository URL' },
-                    path: { type: 'string', description: 'Target path' },
-                  },
-                  required: ['url'],
-                },
-              },
-            ],
+            tools: getMCPTools(),
           },
         });
 
@@ -3950,54 +4054,7 @@ app.post('/messages', express.json(), (req, res) => {
           jsonrpc: '2.0',
           id,
           result: {
-            tools: [
-              {
-                name: 'file_read',
-                description: 'Read file contents from WebContainer',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    path: { type: 'string', description: 'File path to read' },
-                  },
-                  required: ['path'],
-                },
-              },
-              {
-                name: 'file_write',
-                description: 'Write content to file in WebContainer',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    path: { type: 'string', description: 'File path to write' },
-                    content: { type: 'string', description: 'Content to write' },
-                  },
-                  required: ['path', 'content'],
-                },
-              },
-              {
-                name: 'terminal_execute',
-                description: 'Execute command in WebContainer terminal',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    command: { type: 'string', description: 'Command to execute' },
-                  },
-                  required: ['command'],
-                },
-              },
-              {
-                name: 'git_clone',
-                description: 'Clone repository in WebContainer',
-                inputSchema: {
-                  type: 'object',
-                  properties: {
-                    url: { type: 'string', description: 'Repository URL' },
-                    path: { type: 'string', description: 'Target path' },
-                  },
-                  required: ['url'],
-                },
-              },
-            ],
+            tools: getMCPTools(),
           },
         });
 
