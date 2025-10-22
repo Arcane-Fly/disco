@@ -109,6 +109,29 @@ The server provides a comprehensive REST API for:
 
 See [API.md](./API.md) for complete API documentation.
 
+### 🛠️ MCP Tools for AI Clients
+
+The server exposes **10 high-level development operation tools** to AI clients via the Model Context Protocol (MCP):
+
+1. **file_read** - Read file contents with encoding detection
+2. **file_write** - Write files with atomic operations
+3. **file_search** - Search for files and content with advanced filtering
+4. **terminal_execute** - Execute commands with streaming output
+5. **git_clone** - Clone repositories with authentication support
+6. **git_commit** - Create Git commits with files and messages
+7. **computer_use_screenshot** - Take screenshots using browser automation
+8. **computer_use_click** - Perform click actions on web elements
+9. **ai_complete** - Request AI completions from connected language models
+10. **code_analyze** - Analyze code structure, dependencies, and quality metrics
+
+These tools are abstracted as high-level development operations rather than generic utilities, providing AI clients (ChatGPT, Claude, etc.) with powerful capabilities for code development, testing, and automation without requiring direct knowledge of WebContainer internals.
+
+Access via MCP protocol:
+- **Endpoint**: `https://disco-mcp.up.railway.app/mcp`
+- **Protocol**: JSON-RPC 2.0 over HTTP/SSE
+- **Methods**: `tools/list`, `tools/call`
+- **Authentication**: Bearer token (JWT)
+
 ### 📜 MCP Contracts
 
 The server includes JSON Schema contracts for all MCP operations, providing:
