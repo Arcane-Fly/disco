@@ -977,6 +977,10 @@ function isCommandSafe(command) {
     ];
     const lowerCommand = command.toLowerCase().trim();
     // Check against dangerous patterns
+    // ALLOWED EXCEPTION: Dynamic RegExp for security command filtering
+    // Justification: Pattern strings are compile-time constants from dangerousCommands array.
+    // This is a security feature to block dangerous shell commands.
+    // Alternative approaches (string.includes) would miss command variations.
     const isDangerous = dangerousCommands.some(dangerous => {
         const regex = new RegExp(dangerous, 'i');
         return regex.test(lowerCommand);
