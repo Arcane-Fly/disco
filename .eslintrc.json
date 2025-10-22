@@ -23,6 +23,17 @@
       "jsx": true
     }
   },
+  "overrides": [
+    {
+      "files": ["test/**/*.ts", "test/**/*.js", "**/*.test.ts", "**/*.test.js", "**/*.spec.ts", "**/*.spec.js"],
+      "rules": {
+        "no-restricted-syntax": "off",
+        "no-restricted-properties": "off",
+        "regexp/no-super-linear-backtracking": "warn",
+        "regexp/no-useless-quantifier": "warn"
+      }
+    }
+  ],
   "rules": {
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/explicit-function-return-type": "off",

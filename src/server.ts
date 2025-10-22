@@ -70,6 +70,7 @@ import { metricsService } from './services/metricsService.js';
 import { performanceOptimizer } from './lib/performanceOptimizer.js';
 import { mcpEnhancementEngine } from './lib/mcpEnhancementEngine.js';
 import { enhancedBrowserManager } from './lib/enhanced-browser.js';
+import { memoryMonitor } from './lib/memoryMonitor.js';
 
 // Transport interface for manifest
 interface ManifestTransport {
@@ -109,6 +110,10 @@ const ensureDataDirectory = async () => {
 
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
+// Enable trust proxy for Railway deployment (required for rate limiting and IP identification)
+// Railway uses a reverse proxy, so we need to trust the X-Forwarded-* headers
+app.set('trust proxy', true);
 
 // Initialize Next.js app
 const nextApp = next({
@@ -5043,6 +5048,12 @@ console.log('🤝 Collaboration manager initialized');
 initializeTeamCollaborationManager();
 console.log('👥 Team collaboration manager initialized');
 
+// Start memory monitoring in production
+if (process.env.NODE_ENV === 'production') {
+  memoryMonitor.start();
+  console.log('📊 Memory monitor started');
+}
+
 // Graceful shutdown
 const gracefulShutdown = async () => {
   console.log('🔄 Starting graceful shutdown...');
@@ -5080,6 +5091,10 @@ const gracefulShutdown = async () => {
   // Cleanup enhanced browser manager
   enhancedBrowserManager.destroy();
   console.log('🌐 Enhanced browser manager shutdown complete');
+
+  // Stop memory monitor
+  memoryMonitor.stop();
+  console.log('📊 Memory monitor stopped');
 
   console.log('✅ Graceful shutdown complete');
   process.exit(0);
