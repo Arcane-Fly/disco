@@ -3524,6 +3524,46 @@ app.options('/mcp', (_req, res): void => {
   res.status(204).end();
 });
 
+// MCP Tool Call Handler - Execute tools via existing API endpoints
+const handleMCPToolCall = async (toolName: string, args: any, req: Request, res: Response): Promise<any> => {
+  try {
+    // Note: Actual implementation requires container ID from session
+    // For now, return guidance to use REST API directly for full functionality
+    const apiGuidance: Record<string, string> = {
+      file_read: 'Use GET /api/v1/files/:containerId/content?path={path}',
+      file_write: 'Use POST /api/v1/files/:containerId with {path, content}',
+      file_search: 'Use GET /api/v1/files/:containerId?search={query}',
+      terminal_execute: 'Use POST /api/v1/terminal/:containerId/execute with {command}',
+      git_clone: 'Use POST /api/v1/git/:containerId/clone with {url, branch}',
+      git_commit: 'Use POST /api/v1/git/:containerId/commit with {message, files}',
+      computer_use_screenshot: 'Use POST /api/v1/computer-use/:containerId/screenshot with {url}',
+      computer_use_click: 'Use POST /api/v1/computer-use/:containerId/click with {url, selector}',
+      ai_complete: 'Use POST /api/v1/providers/complete with {prompt, model}',
+      code_analyze: 'Use POST /api/v1/files/:containerId/analyze with {path}',
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Tool "${toolName}" is available. ${apiGuidance[toolName] || 'See API documentation for usage.'}\n\nNote: MCP tools abstract high-level development operations. For full WebContainer integration, authenticate and use the REST API endpoints directly with a container ID.`,
+        },
+      ],
+      isError: false,
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error executing tool "${toolName}": ${error instanceof Error ? error.message : 'Unknown error'}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+};
+
 // MCP Tools Definition - High-level development operations exposed to clients
 const getMCPTools = () => [
   {
@@ -3770,12 +3810,13 @@ app.get('/mcp', authMiddleware, (req, res) => {
 });
 
 // Handle POST requests for JSON-RPC
-app.post('/mcp', express.json(), authMiddleware, (req, res) => {
+app.post('/mcp', express.json(), authMiddleware, async (req, res) => {
   // Validate Origin header to prevent DNS rebinding attacks (MCP transport spec requirement)
   if (!validateOriginHeader(req, res)) return;
   
   try {
     const { jsonrpc, id, method } = req.body;
+    const params = req.body.params;
 
     // Validate JSON-RPC format
     if (jsonrpc !== '2.0') {
@@ -3841,17 +3882,29 @@ app.post('/mcp', express.json(), authMiddleware, (req, res) => {
           });
         }
 
+        // Extract tool name and arguments from params
+        const toolName = params?.name;
+        const toolArgs = params?.arguments || {};
+
+        if (!toolName) {
+          return res.status(400).json({
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32602,
+              message: 'Invalid params',
+              data: 'Tool name is required',
+            },
+          });
+        }
+
+        // Handle the tool call
+        const toolResult = await handleMCPToolCall(toolName, toolArgs, req, res);
+
         return res.json({
           jsonrpc: '2.0',
           id,
-          result: {
-            content: [
-              {
-                type: 'text',
-                text: 'Tool call received. Use the REST API endpoints directly for full functionality.',
-              },
-            ],
-          },
+          result: toolResult,
         });
 
       default:
@@ -3994,7 +4047,7 @@ app.get('/sse', (req, res) => {
  *                 result:
  *                   type: object
  */
-app.post('/messages', express.json(), (req, res) => {
+app.post('/messages', express.json(), async (req, res) => {
   // Set JSON headers
   res.setHeader('Content-Type', 'application/json');
 
@@ -4007,6 +4060,7 @@ app.post('/messages', express.json(), (req, res) => {
   // Reuse the same JSON-RPC logic from /mcp POST handler
   try {
     const { jsonrpc, id, method } = req.body;
+    const params = req.body.params;
 
     // Validate JSON-RPC format
     if (jsonrpc !== '2.0') {
@@ -4072,17 +4126,29 @@ app.post('/messages', express.json(), (req, res) => {
           });
         }
 
+        // Extract tool name and arguments from params
+        const toolName = params?.name;
+        const toolArgs = params?.arguments || {};
+
+        if (!toolName) {
+          return res.status(400).json({
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32602,
+              message: 'Invalid params',
+              data: 'Tool name is required',
+            },
+          });
+        }
+
+        // Handle the tool call
+        const toolResult = await handleMCPToolCall(toolName, toolArgs, req, res);
+
         return res.json({
           jsonrpc: '2.0',
           id,
-          result: {
-            content: [
-              {
-                type: 'text',
-                text: 'Tool call received. Use the REST API endpoints directly for full functionality.',
-              },
-            ],
-          },
+          result: toolResult,
         });
 
       default:
