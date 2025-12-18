@@ -18,6 +18,10 @@ export type { EmptyStateProps } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export type { ErrorStateProps } from './ErrorState';
 
+// Toast notifications
+export { Toast, ToastProvider, useToast } from './Toast';
+export type { ToastProps, ToastType } from './Toast';
+
 // Placeholder components (to be implemented)
 export {
   Badge,
