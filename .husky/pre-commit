@@ -1,2 +1,16 @@
-yarn lint
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run linting
+echo "🔍 Running linter..."
+yarn lint || exit 1
+
+# Run type checking
+echo "🔍 Running type check..."
 yarn typecheck || true
+
+# Run format check
+echo "🔍 Checking code formatting..."
+yarn format:check || exit 1
+
+echo "✅ Pre-commit checks passed!"
