@@ -34,9 +34,8 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
   console.log('📨 Incoming request:', JSON.stringify(requestLog));
 
-  // Capture response
-  const originalSend = res.send;
-  res.send = function (body): Response {
+  // Log response using finish event instead of monkey-patching
+  res.on('finish', () => {
     const duration = Date.now() - startTime;
 
     const responseLog = {
@@ -58,9 +57,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         warning: 'Request took longer than 1 second',
       }));
     }
-
-    return originalSend.call(this, body);
-  };
+  });
 
   next();
 }

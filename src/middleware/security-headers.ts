@@ -6,9 +6,11 @@ import { Request, Response, NextFunction } from 'express';
  */
 export function securityHeaders(req: Request, res: Response, next: NextFunction): void {
   // Content Security Policy
+  // Note: 'unsafe-inline' and 'unsafe-eval' should be removed in production
+  // Use nonces or hashes for inline scripts instead
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com",
+    "script-src 'self' https://cdn.jsdelivr.net https://unpkg.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
@@ -26,7 +28,6 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
   // Additional security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 

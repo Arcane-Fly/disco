@@ -51,6 +51,7 @@ export function sanitizeCommand(command: string): string {
 
 /**
  * Sanitize URL to prevent SSRF attacks
+ * Note: For production, consider using a dedicated library like 'is-ip' and 'ip-cidr'
  */
 export function sanitizeUrl(url: string): string {
   try {
@@ -63,35 +64,35 @@ export function sanitizeUrl(url: string): string {
 
     // Prevent access to private IP ranges
     const hostname = parsed.hostname.toLowerCase();
-    const privateRanges = [
-      'localhost',
-      '127.',
-      '10.',
-      '172.16.',
-      '172.17.',
-      '172.18.',
-      '172.19.',
-      '172.20.',
-      '172.21.',
-      '172.22.',
-      '172.23.',
-      '172.24.',
-      '172.25.',
-      '172.26.',
-      '172.27.',
-      '172.28.',
-      '172.29.',
-      '172.30.',
-      '172.31.',
-      '192.168.',
-      '169.254.',
+    
+    // Check for localhost variations
+    const localhostPatterns = ['localhost', '127.', '0.0.0.0', '::1', '0:0:0:0:0:0:0:1'];
+    if (localhostPatterns.some(pattern => hostname.includes(pattern))) {
+      throw new Error('Access to localhost not allowed');
+    }
+
+    // Check for private IPv4 ranges (simplified check)
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16
+    const privateIPv4Patterns = [
+      /^10\./,
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+      /^192\.168\./,
+      /^169\.254\./,
     ];
 
-    for (const range of privateRanges) {
-      if (hostname.startsWith(range)) {
-        throw new Error('Access to private IP range not allowed');
-      }
+    if (privateIPv4Patterns.some(pattern => pattern.test(hostname))) {
+      throw new Error('Access to private IP range not allowed');
     }
+
+    // Check for link-local IPv6 addresses
+    if (hostname.startsWith('fe80:')) {
+      throw new Error('Access to link-local IPv6 not allowed');
+    }
+
+    // TODO: For production, use proper IP parsing library to handle:
+    // - IP address variations (hex, octal, integer representations)
+    // - IPv6 addresses comprehensively
+    // - CIDR range checking
 
     return parsed.toString();
   } catch (error) {
