@@ -1,6 +1,5 @@
 // Placeholder components - will be implemented in future phases
 export const Badge = () => <div>Badge</div>;
-export const Skeleton = () => <div>Skeleton</div>;
 export const Tooltip = () => <div>Tooltip</div>;
 export const NodeConnector = () => <div>NodeConnector</div>;
 export const Grid = () => <div>Grid</div>;
