@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { containerManager } from '../lib/containerManager.js';
+import { checkDatabaseHealth, isDatabaseConfigured } from '../lib/database.js';
 const router = Router();
 /**
  * @swagger
@@ -97,6 +98,8 @@ router.get('/', async (_req, res) => {
         const envInfo = containerManager.getEnvironmentInfo();
         const uptime = process.uptime();
         const memoryUsage = process.memoryUsage();
+        // Check database health
+        const dbHealth = await checkDatabaseHealth();
         const health = {
             status: 'healthy',
             timestamp: new Date().toISOString(),
@@ -124,6 +127,14 @@ router.get('/', async (_req, res) => {
                 webcontainer: envInfo.containerFunctionalityAvailable ? 'enabled' : 'disabled',
                 redis: process.env.REDIS_URL ? 'enabled' : 'disabled',
                 github: process.env.GITHUB_CLIENT_ID ? 'enabled' : 'disabled',
+                database: dbHealth.connected ? 'enabled' : 'disabled',
+            },
+            database: {
+                configured: isDatabaseConfigured(),
+                connected: dbHealth.connected,
+                healthy: dbHealth.healthy,
+                latency: dbHealth.latency,
+                error: dbHealth.error,
             },
         };
         // Check if system is under stress
@@ -131,6 +142,9 @@ router.get('/', async (_req, res) => {
             health.status = 'warning';
         }
         if (memoryUsage.heapUsed > memoryUsage.heapTotal * 0.9) {
+            health.status = 'warning';
+        }
+        if (!dbHealth.healthy && isDatabaseConfigured()) {
             health.status = 'warning';
         }
         const statusCode = health.status === 'healthy' ? 200 : 503;
