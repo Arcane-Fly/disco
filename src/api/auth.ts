@@ -5,6 +5,23 @@ import { enhancedAuthMiddleware, createAuthStatusEndpoint } from '../middleware/
 
 const router = Router();
 
+// Simple helper to ensure we only redirect to safe, internal paths
+function isSafeRedirectPath(target: string): boolean {
+  if (!target) return false;
+
+  // Must be a relative path starting with a single '/'
+  if (!target.startsWith('/')) return false;
+
+  // Disallow protocol-relative URLs like //evil.com and absolute URLs with a scheme
+  if (target.startsWith('//')) return false;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(target)) return false;
+
+  // Optionally, block backslashes and control characters
+  if (/[\\\r\n]/.test(target)) return false;
+
+  return true;
+}
+
 // Token revocation tracking (MCP spec requirement for token rotation)
 // In production, use Redis or a database for distributed systems
 const revokedTokens = new Set<string>();
@@ -541,8 +558,13 @@ router.get('/github/callback', async (req: Request, res: Response) => {
         }
         console.log(`🔐 Redirecting user to external app: ${redirectUri}`);
         res.redirect(callbackUrl.toString());
-      } else if (redirectTo && redirectTo !== '/' && !redirectTo.includes('/app-dashboard')) {
-        // Redirect to the original redirect_to location
+      } else if (
+        redirectTo &&
+        redirectTo !== '/' &&
+        !redirectTo.includes('/app-dashboard') &&
+        isSafeRedirectPath(redirectTo)
+      ) {
+        // Redirect to the original redirect_to location (validated as safe)
         res.redirect(redirectTo);
       } else {
         // Default: Redirect to frontend dashboard if authenticated, otherwise home
