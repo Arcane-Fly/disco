@@ -286,6 +286,10 @@ router.get('/github', (req, res) => {
     const state = Buffer.from(JSON.stringify({
         timestamp: Date.now(),
         redirectTo: req.query.redirect_to || req.headers.referer || '/',
+        redirectUri: req.query.redirect_uri || '',
+        codeChallenge: req.query.code_challenge || '',
+        codeChallengeMethod: req.query.code_challenge_method || 'S256',
+        clientId: req.query.client_id || 'disco-mcp-client',
     })).toString('base64');
     const githubUrl = `https://github.com/login/oauth/authorize?` +
         `client_id=${clientId}&` +
@@ -362,13 +366,15 @@ router.get('/github/callback', async (req, res) => {
         let codeChallenge = '';
         let codeChallengeMethod = 'S256';
         let clientId = 'disco-mcp-client';
+        let redirectUri = '';
         if (state) {
             try {
                 const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
                 redirectTo = stateData.redirectTo || '/';
                 codeChallenge = stateData.codeChallenge || '';
-                codeChallengeMethod = stateData.codeChallengeMethod || 'S256';
+                codeChallengeMethod = stateData.codeChallengeMethod || '';
                 clientId = stateData.clientId || 'disco-mcp-client';
+                redirectUri = stateData.redirectUri || '';
             }
             catch (e) {
                 console.warn('Failed to parse OAuth state:', e);
@@ -417,8 +423,19 @@ router.get('/github/callback', async (req, res) => {
                 clientId,
             });
             console.log(`🔐 GitHub user authenticated with PKCE: ${userData.login}, code stored`);
-            // For MCP OAuth 2.1 compliance, redirect to callback with authorization code
-            res.redirect(`/auth/callback?code=${authCode}&state=${state || ''}`);
+            // If there's a redirect_uri, use it; otherwise use /auth/callback
+            if (redirectUri) {
+                const callbackUrl = new URL(redirectUri);
+                callbackUrl.searchParams.set('code', authCode);
+                if (state) {
+                    callbackUrl.searchParams.set('state', state);
+                }
+                res.redirect(callbackUrl.toString());
+            }
+            else {
+                // For MCP OAuth 2.1 compliance, redirect to callback with authorization code
+                res.redirect(`/auth/callback?code=${authCode}&state=${state || ''}`);
+            }
         }
         else {
             // Fallback: Create JWT token directly (backward compatibility)
@@ -443,8 +460,25 @@ router.get('/github/callback', async (req, res) => {
                 maxAge: 24 * 60 * 60 * 1000, // 24 hours
                 path: '/',
             });
-            // Redirect to frontend dashboard if authenticated, otherwise home
-            res.redirect(userData ? '/app-dashboard' : '/');
+            // Check if there's a redirect_uri for external app authorization
+            if (redirectUri && redirectUri !== '/') {
+                // Redirect to external app with token
+                const callbackUrl = new URL(redirectUri);
+                callbackUrl.searchParams.set('token', token);
+                if (state) {
+                    callbackUrl.searchParams.set('state', state);
+                }
+                console.log(`🔐 Redirecting user to external app: ${redirectUri}`);
+                res.redirect(callbackUrl.toString());
+            }
+            else if (redirectTo && redirectTo !== '/' && !redirectTo.includes('/app-dashboard')) {
+                // Redirect to the original redirect_to location
+                res.redirect(redirectTo);
+            }
+            else {
+                // Default: Redirect to frontend dashboard if authenticated, otherwise home
+                res.redirect(userData ? '/app-dashboard' : '/');
+            }
         }
     }
     catch (error) {
