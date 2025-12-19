@@ -193,3 +193,57 @@ export const PERFORMANCE_THRESHOLDS = {
   MAX_COMPONENTS_PER_CHUNK: 20,
   LAZY_LOAD_THRESHOLD: 100, // KB
 } as const;
+
+// Database Configuration
+export const DATABASE_CONFIG = {
+  POOL_SIZE: 10,
+  CONNECTION_TIMEOUT: 30000, // 30 seconds
+  IDLE_TIMEOUT: 10000, // 10 seconds
+  MAX_RETRIES: 3,
+  RETRY_DELAY: 1000, // 1 second
+  QUERY_TIMEOUT: 30000, // 30 seconds
+} as const;
+
+// Cache Configuration
+export const CACHE_CONFIG = {
+  DEFAULT_TTL: 3600, // 1 hour in seconds
+  MAX_TTL: 86400, // 24 hours
+  MIN_TTL: 60, // 1 minute
+  MEMORY_CHECK_INTERVAL: 60000, // 1 minute in milliseconds
+} as const;
+
+// Container Configuration
+export const CONTAINER_CONFIG = {
+  MAX_CONTAINERS: 50,
+  TIMEOUT_MINUTES: 30,
+  POOL_SIZE: 5,
+  CLEANUP_THRESHOLD_MB: 1024,
+  MAX_MEMORY_MB: 256,
+  HEALTHCHECK_INTERVAL: 30000, // 30 seconds
+} as const;
+
+// API Rate Limiting
+export const RATE_LIMIT_CONFIG = {
+  WINDOW_MS: 60000, // 1 minute
+  MAX_REQUESTS: 100,
+  DELAY_MS: 0,
+  SKIP_SUCCESSFUL_REQUESTS: false,
+  SKIP_FAILED_REQUESTS: false,
+} as const;
+
+// Logging Configuration
+export const LOG_CONFIG = {
+  LEVELS: ['error', 'warn', 'info', 'http', 'debug'] as const,
+  DEFAULT_LEVEL: 'info',
+  MAX_FILE_SIZE: 10485760, // 10MB
+  MAX_FILES: 5,
+  DATE_PATTERN: 'YYYY-MM-DD',
+} as const;
+
+// WebSocket Configuration
+export const WEBSOCKET_CONFIG = {
+  PING_TIMEOUT: 60000, // 1 minute
+  PING_INTERVAL: 25000, // 25 seconds
+  MAX_HTTP_BUFFER_SIZE: 1e8, // 100MB
+  TRANSPORT: ['websocket', 'polling'] as const,
+} as const;
