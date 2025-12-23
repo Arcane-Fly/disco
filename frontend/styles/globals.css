@@ -774,7 +774,8 @@ svg {
 .stat-value {
   font-size: 2rem;
   font-weight: 800;
-  color: var(--primary-light);
+  /* Improved contrast: using darker cyan for better readability */
+  color: #0891b2;
 }
 
 .stat-label {
