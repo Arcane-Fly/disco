@@ -176,5 +176,5 @@ All new models maintain backward compatibility with existing APIs. Legacy model 
 
 ---
 
-**Updated:** December 23, 2025
+**Updated:** December 23, 2024
 **Commit:** 42177be
