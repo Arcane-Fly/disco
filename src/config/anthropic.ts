@@ -1,15 +1,19 @@
 // Centralized Anthropic (Claude) model policy
 // Only allow modern, supported models per project standards.
-// Based on MODEL_MANIFEST.md - Only current models from 2025
+// Updated December 2025 with latest Claude 4.5 models
 
 export const ALLOWED_CLAUDE_MODELS = [
-  // Claude 4.5 Series (Latest - September 2025)
-  'claude-sonnet-4-5-20250929',
-  'claude-sonnet-4-5', // Alias
+  // Claude 4.5 Series (Latest - December 2025)
+  'claude-sonnet-4-5-20250929', // Best model for complex agents and coding
+  'claude-sonnet-4-5', // Alias - highest intelligence across most tasks
+  'claude-haiku-4-5-20251001', // Fastest and most intelligent Haiku with near-frontier performance
+  'claude-haiku-4-5', // Alias
   
-  // Claude 4 Series
+  // Claude 4.1 Series
   'claude-opus-4-1-20250805',
   'claude-opus-4-1', // Alias
+  
+  // Claude 4 Series
   'claude-sonnet-4-20250514',
   'claude-sonnet-4', // Alias
   'claude-sonnet-4-0', // Alias
