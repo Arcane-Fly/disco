@@ -22,7 +22,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     children,
     ...props 
   }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap';
     
     const variants = {
       primary: 'bg-gradient-to-b from-brand-cyan to-[#4dcce5] text-[#001018] hover:shadow-elev-2 hover:shadow-glow-cyan focus-visible:shadow-[0_0_0_3px_rgba(110,231,255,0.4)] transform hover:-translate-y-0.5 active:translate-y-0',

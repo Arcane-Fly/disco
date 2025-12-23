@@ -44,8 +44,8 @@ export default function Profile() {
   const { addNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    { id: '1', name: 'Development Key', key: 'dcp_live_abc123...', created: '2025-01-15', lastUsed: '2025-01-16' },
-    { id: '2', name: 'Production Key', key: 'dcp_live_xyz789...', created: '2025-01-10', lastUsed: '2025-01-16' }
+    { id: '1', name: 'Development Key', key: 'dcp_live_abc123def456ghi789jkl012', created: '2025-01-15', lastUsed: '2025-01-16' },
+    { id: '2', name: 'Production Key', key: 'dcp_live_xyz789uvw456rst123opq901', created: '2025-01-10', lastUsed: '2025-01-16' }
   ]);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [newKeyName, setNewKeyName] = useState('');
@@ -297,7 +297,7 @@ export default function Profile() {
                     <span>Last used: {apiKey.lastUsed}</span>
                   </div>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] px-3 py-2 font-mono text-xs text-text-secondary">
+                <div className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] px-3 py-2 font-mono text-xs text-text-secondary break-all max-w-full">
                   {isVisible ? apiKey.key : `${apiKey.key.slice(0, 12)}…`}
                 </div>
               </div>
