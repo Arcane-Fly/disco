@@ -297,7 +297,7 @@ export default function Profile() {
                     <span>Last used: {apiKey.lastUsed}</span>
                   </div>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] px-3 py-2 font-mono text-xs text-text-secondary break-all max-w-full">
+                <div className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-[color-mix(in_oklab,var(--bg-secondary)_92%,transparent)] px-3 py-2 font-mono text-xs text-text-secondary break-all">
                   {isVisible ? apiKey.key : `${apiKey.key.slice(0, 12)}…`}
                 </div>
               </div>
