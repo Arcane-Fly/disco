@@ -402,7 +402,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         expect(decoded.provider).toBe('github');
         expect(decoded.name).toBe('Test User');
         expect(decoded.email).toBe('test@example.com');
-        expect(decoded.avatar).toBeDefined();
+        expect(decoded.avatar_url).toBeDefined();
 
         // Verify GitHub tokens have longer expiry (24h)
         const expiryTime = decoded.exp * 1000;
