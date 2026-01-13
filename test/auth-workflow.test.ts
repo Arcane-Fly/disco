@@ -385,7 +385,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
 
-      const tokenCookie = cookies?.find((c: string) => c.startsWith('token='));
+      const tokenCookie = cookies?.find((c: string) => c.startsWith('auth-token='));
       expect(tokenCookie).toBeDefined();
       const token = tokenCookie?.split(';')[0].split('=')[1];
       expect(token).toBeTruthy();
