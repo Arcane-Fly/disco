@@ -29,6 +29,7 @@ describe('Strategic UX Enhancements', () => {
       click: jest.fn(),
       fill: jest.fn(),
       scrollIntoViewIfNeeded: jest.fn(),
+      screenshot: jest.fn().mockResolvedValue(Buffer.from('fake-screenshot-data')),
       tagName: jest.fn(),
       evaluateHandle: jest.fn(),
     };
