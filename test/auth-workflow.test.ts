@@ -471,7 +471,8 @@ describe('Authentication Workflow Tests (Step 8)', () => {
       // Verify new token is valid
       const decoded = jwt.verify(newToken, TEST_JWT_SECRET) as any;
       expect(decoded.userId).toBe(userId);
-      expect(decoded.exp * 1000).toBe(expires);
+      // Allow small timing difference (within 1 second)
+      expect(Math.abs(decoded.exp * 1000 - expires)).toBeLessThan(1000);
     });
 
     test('should refresh expired tokens within grace period', async () => {
