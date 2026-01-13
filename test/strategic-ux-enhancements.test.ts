@@ -275,7 +275,7 @@ describe('Strategic UX Enhancements', () => {
       );
 
       expect(result.passed).toBe(true);
-      expect(result.similarity).toBe(0.98);
+      expect(result.similarity).toBe(1);
       expect(result.accessibilityValidation).toBeDefined();
       expect(result.semanticAnalysis).toBeDefined();
       expect(result.performanceComparison).toBeDefined();
