@@ -6,6 +6,15 @@ import {
   DEFAULT_CLAUDE_MODEL,
   isAllowedClaudeModel,
 } from '../config/anthropic.js';
+import {
+  ALLOWED_OPENAI_MODELS,
+  DEFAULT_OPENAI_MODEL,
+} from '../config/openai.js';
+import {
+  ALLOWED_GEMINI_MODELS,
+  DEFAULT_GEMINI_MODEL,
+  GEMINI_3_FEATURES,
+} from '../config/gemini.js';
 
 const router = Router();
 
@@ -15,28 +24,32 @@ const PROVIDERS = {
     name: 'OpenAI',
     status: 'active',
     endpoint: 'https://api.openai.com/v1',
-    models: ['gpt-4.1-turbo', 'gpt-3.5-turbo'],
-    capabilities: ['text-generation', 'embedding', 'image-generation'],
+    models: [...ALLOWED_OPENAI_MODELS],
+    defaultModel: DEFAULT_OPENAI_MODEL,
+    capabilities: ['text-generation', 'embedding', 'image-generation', 'reasoning', 'function-calling'],
   },
   Anthropic: {
     name: 'Anthropic',
     status: 'active',
     endpoint: 'https://api.anthropic.com/v1',
     models: [...ALLOWED_CLAUDE_MODELS],
-    capabilities: ['text-generation', 'tool-use', 'streaming', 'vision'],
+    defaultModel: DEFAULT_CLAUDE_MODEL,
+    capabilities: ['text-generation', 'tool-use', 'streaming', 'vision', 'extended-thinking'],
   },
   Google: {
     name: 'Google',
     status: 'active',
     endpoint: 'https://generativelanguage.googleapis.com/v1',
-    models: ['gemini-pro', 'gemini-pro-vision'],
-    capabilities: ['text-generation', 'multimodal', 'function-calling'],
+    models: [...ALLOWED_GEMINI_MODELS],
+    defaultModel: DEFAULT_GEMINI_MODEL,
+    capabilities: [...GEMINI_3_FEATURES],
   },
   Groq: {
     name: 'Groq',
     status: 'active',
     endpoint: 'https://api.groq.com/openai/v1',
     models: ['mixtral-8x7b', 'llama2-70b'],
+    defaultModel: 'mixtral-8x7b',
     capabilities: ['text-generation', 'fast-inference'],
   },
 };
@@ -88,6 +101,16 @@ router.get('/policy', async (_req: Request, res: Response) => {
           allowed: ALLOWED_CLAUDE_MODELS,
           deprecated: DEPRECATED_CLAUDE_MODELS,
         },
+        openai: {
+          default: DEFAULT_OPENAI_MODEL,
+          allowed: ALLOWED_OPENAI_MODELS,
+        },
+        google: {
+          default: DEFAULT_GEMINI_MODEL,
+          allowed: ALLOWED_GEMINI_MODELS,
+        },
+        updated: 'December 2025',
+        note: 'Models updated to latest versions: Claude 4.5, GPT-5.2, Gemini 3',
       },
     });
   } catch (error) {
