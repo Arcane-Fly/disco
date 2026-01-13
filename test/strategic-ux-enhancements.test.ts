@@ -403,7 +403,7 @@ describe('Strategic UX Enhancements', () => {
       // Test scoring algorithm with various quality levels
       const testScenarios = [
         { accessibility: 100, performance: 95, usability: 90, expected: 95.5 },
-        { accessibility: 80, performance: 85, usability: 75, expected: 80.5 },
+        { accessibility: 80, performance: 85, usability: 75, expected: 80 },
         { accessibility: 60, performance: 70, usability: 65, expected: 64.5 },
       ];
 
