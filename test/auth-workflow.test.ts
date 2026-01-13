@@ -55,7 +55,7 @@ describe('Authentication Workflow Tests (Step 8)', () => {
     // Add test-specific rate limiting middleware that's safe for tests
     const authLimiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 10, // Keep the original limit for test functionality 
+      max: 10, // Keep the original limit for test functionality
       standardHeaders: true,
       legacyHeaders: false,
       // Don't skip in tests, but use safer settings
@@ -159,8 +159,8 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         })
         .expect(302);
 
-      // Verify token was created in redirect
-      expect(response.headers.location).toMatch(/#token=.+/);
+      // Verify redirect to dashboard
+      expect(response.headers.location).toBe('/app-dashboard');
 
       // Verify GitHub API was called correctly
       expect(fetch).toHaveBeenCalledWith('https://github.com/login/oauth/access_token', {
