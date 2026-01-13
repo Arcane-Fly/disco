@@ -381,13 +381,17 @@ describe('Authentication Workflow Tests (Step 8)', () => {
         .query({ code: 'test_auth_code' })
         .expect(302);
 
-      // Extract token from redirect URL
       const location = response.headers.location;
-      const tokenMatch = location.match(/token=([^&]+)/);
       expect(tokenMatch).toBeTruthy();
 
-      if (tokenMatch) {
-        const token = decodeURIComponent(tokenMatch[1]);
+      // Extract token from cookie instead of URL
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+
+      const authCookie = cookies?.find((c: string) => c.startsWith('auth-token='));
+      expect(authCookie).toBeDefined();
+
+      if (authCookie) {
         const decoded = jwt.verify(token, TEST_JWT_SECRET) as any;
 
         // Verify GitHub-specific claims
